@@ -1,0 +1,57 @@
+# ==============================================================================
+# Go_Volt Infrastructure CI Pipeline Definition
+# Compatible with generic CI engines, GitLab CI, or Cloud Build runners
+# ==============================================================================
+
+stages:
+  - lint
+  - test
+  - simulate
+  - build
+
+variables:
+  DART_SDK_VERSION: "stable"
+  FLUTTER_SDK_VERSION: "stable"
+  MELOS_VERSION: "8.9.0"
+
+default:
+  image: ghcr.io/cirruslabs/flutter:stable
+  before_script:
+    - dart pub global activate melos ${MELOS_VERSION}
+    - dart pub get
+    - melos bootstrap
+
+lint_and_format:
+  stage: lint
+  script:
+    - dart format --output=none --set-exit-if-changed .
+    - tool/lint_all.sh
+
+test_backend_and_packages:
+  stage: test
+  script:
+    - cd backend && dart test
+    - cd ../packages/design_system && flutter test
+    - cd ../packages/app_models && dart test
+
+test_client_apps:
+  stage: test
+  script:
+    - cd apps/merchant_portal && flutter test
+    - cd ../apps/customer_app && flutter test
+    - cd ../apps/rider_app && flutter test
+
+e2e_simulation:
+  stage: simulate
+  script:
+    - tool/simulate.sh
+
+build_backend_docker:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script: []
+  script:
+    - docker build -f infra/docker/Dockerfile.backend -t govolt/backend:ci .
+    - docker compose -f docker-compose.yml config

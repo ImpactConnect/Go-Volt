@@ -1,0 +1,49 @@
+# melos.yaml — Melos 8.x (packages/name defined in root pubspec.yaml)
+sdkPath: auto
+
+command:
+  bootstrap:
+    runPubGetInParallel: true
+
+scripts:
+  lint:
+    run: dart analyze --fatal-infos
+    exec:
+      concurrency: 6
+    description: Run dart analyzer across all packages
+
+  format:
+    run: dart format --set-exit-if-changed .
+    exec:
+      concurrency: 6
+    description: Check formatting across all packages
+
+  test:
+    run: flutter test --coverage
+    exec:
+      concurrency: 4
+    packageFilters:
+      flutter: true
+    description: Run Flutter tests
+
+  test:backend:
+    run: dart test
+    exec:
+      concurrency: 1
+    packageFilters:
+      scope: backend
+    description: Run backend unit tests
+
+  gen:
+    run: dart run build_runner build --delete-conflicting-outputs
+    exec:
+      concurrency: 1
+    description: Run code generation (freezed, json_serializable)
+
+  clean:
+    run: flutter clean
+    exec:
+      concurrency: 6
+    packageFilters:
+      flutter: true
+    description: Clean all Flutter build artifacts

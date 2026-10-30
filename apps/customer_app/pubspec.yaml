@@ -1,0 +1,84 @@
+name: customer_app
+description: Go-Volts customer mobile app for booking rides, deliveries and scheduled pickup.
+version: 1.0.0+1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Internal packages (workspace-resolved)
+  design_system:
+    path: ../../packages/design_system
+  app_models:
+    path: ../../packages/app_models
+  api_client:
+    path: ../../packages/api_client
+  app_config:
+    path: ../../packages/app_config
+
+  # Navigation
+  go_router: ^14.6.3
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Supabase
+  supabase_flutter: ^2.18.3
+
+  # Maps (2.18.1 = last with ^3.10.0 SDK req)
+  google_maps_flutter: ^2.18.1
+
+  # Payment handled via backend Paystack adapter + url_launcher
+
+  # Firebase / Push notifications
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
+
+  # Serialization
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Utilities
+  equatable: ^2.0.7
+  intl: ^0.19.0
+  url_launcher: 6.3.2
+  image_picker: 1.2.3
+  flutter_secure_storage: ^11.2.0
+  connectivity_plus: ^6.1.0
+  cupertino_icons: ^1.0.8
+  flutter_svg: ^2.3.0
+  cached_network_image: 3.4.1
+  geolocator: ^14.1.2
+  permission_handler: ^13.0.2
+  shimmer: ^3.0.0
+  lottie: 3.3.3
+  # pinput 6.0.1 = last version with >=2.19.0 <4.0.0 (Dart 3.10 compatible)
+  pinput: ^6.0.1
+  dio: ^5.11.1
+  google_sign_in: ^6.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  testing_support:
+    path: ../../packages/testing_support
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.6.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/

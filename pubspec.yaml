@@ -1,0 +1,49 @@
+name: go_volts_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+
+# Melos 8.x — Dart Pub Workspaces declaration
+workspace:
+  - apps/customer_app
+  - apps/rider_app
+  - apps/admin_web
+  - apps/merchant_portal
+  - packages/design_system
+  - packages/app_models
+  - packages/api_client
+  - packages/app_config
+  - packages/testing_support
+  - backend
+
+melos:
+  command:
+    bootstrap:
+      runPubGetInParallel: true
+  scripts:
+    lint:
+      exec:
+        command: dart analyze .
+        concurrency: 6
+      description: Run dart analyzer across all packages
+    test:
+      exec:
+        command: flutter test
+        concurrency: 4
+      packageFilters:
+        flutter: true
+      description: Run Flutter tests
+    test:backend:
+      exec:
+        command: dart test
+        concurrency: 1
+      packageFilters:
+        scope: backend
+      description: Run backend unit tests
+
+dev_dependencies:
+  melos: ^8.9.0
+
+dependency_overrides:
+  permission_handler_android: 13.0.1

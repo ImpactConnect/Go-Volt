@@ -1,0 +1,62 @@
+# Duplicate reference for infra/docker location
+# See /docker-compose.yml at workspace root for main configuration.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: govolts_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: govolts_db
+      POSTGRES_USER: govolts_user
+      POSTGRES_PASSWORD: govolts_secret_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../supabase/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U govolts_user -d govolts_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: govolts_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: govolts_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      ENVIRONMENT: development
+      DATABASE_URL: postgres://govolts_user:govolts_secret_password@postgres:5432/govolts_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_jwt_key_govolt_production_2026
+      PAYSTACK_SECRET_KEY: sk_test_mock_paystack_secret_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

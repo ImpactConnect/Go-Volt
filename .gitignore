@@ -1,0 +1,59 @@
+# Go-Volts Monorepo .gitignore
+
+# Dart/Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+build/
+.packages
+pubspec.lock
+!backend/pubspec.lock
+
+# Melos
+.melos_tool/
+
+# Environment / Secrets — NEVER commit
+.env
+.env.*
+*.secret
+*_service_account.json
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+key.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+lcov.info
+
+# Generated OpenAPI
+backend/lib/generated/
+
+# Test artifacts
+test-results/
+
+# Compiled server binary
+backend/bin/server
+*.exe
+
+# Supabase
+supabase/.temp/
+.temp/
+
+# Logs
+*.log

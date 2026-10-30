@@ -1,0 +1,58 @@
+# ==============================================================================
+# Go_Volt Flutter Web Applications — Multi-Stage Production Dockerfile
+# Supports building: apps/admin_web OR apps/merchant_portal
+# ==============================================================================
+
+# Stage 1: Build Flutter Web Artifacts
+FROM ghcr.io/cirruslabs/flutter:stable AS build
+
+ARG APP_DIR=apps/admin_web
+
+WORKDIR /app
+
+# Copy root workspace and package manifests
+COPY pubspec.yaml melos.yaml ./
+COPY packages/app_models/pubspec.yaml packages/app_models/
+COPY packages/app_config/pubspec.yaml packages/app_config/
+COPY packages/api_client/pubspec.yaml packages/api_client/
+COPY packages/design_system/pubspec.yaml packages/design_system/
+COPY packages/testing_support/pubspec.yaml packages/testing_support/
+COPY backend/pubspec.yaml backend/
+COPY apps/customer_app/pubspec.yaml apps/customer_app/
+COPY apps/rider_app/pubspec.yaml apps/rider_app/
+COPY apps/admin_web/pubspec.yaml apps/admin_web/
+COPY apps/merchant_portal/pubspec.yaml apps/merchant_portal/
+
+# Activate melos and resolve dependencies
+RUN dart pub global activate melos 8.9.0
+RUN flutter pub get
+RUN melos bootstrap
+
+# Copy full application sources
+COPY packages/ packages/
+COPY backend/ backend/
+COPY apps/ apps/
+
+# Build Web distribution bundle in release mode
+WORKDIR /app/${APP_DIR}
+RUN flutter build web --release --wasm
+
+# ==============================================================================
+# Stage 2: Production Nginx Server
+# ==============================================================================
+FROM nginx:1.27-alpine
+
+ARG APP_DIR=apps/admin_web
+
+# Copy custom Nginx configuration
+COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy compiled web assets from build stage
+COPY --from=build /app/${APP_DIR}/build/web /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget --quiet --tries=1 --spider http://localhost/healthz || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

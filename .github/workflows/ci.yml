@@ -1,0 +1,180 @@
+name: Go_Volt Monorepo CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Code Formatting & Static Analysis
+  # ----------------------------------------------------------------------------
+  analyze-and-lint:
+    name: Code Formatting & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Activate Melos
+        run: dart pub global activate melos 8.9.0
+
+      - name: Workspace Bootstrap
+        run: |
+          dart pub get
+          melos bootstrap
+
+      - name: Verify Code Formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Monorepo Static Analysis (All 10 Packages)
+        run: tool/lint_all.sh
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Backend & Shared Packages Test Suite
+  # ----------------------------------------------------------------------------
+  backend-and-packages-test:
+    name: Backend & Shared Packages Tests
+    runs-on: ubuntu-latest
+    needs: analyze-and-lint
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Activate Melos
+        run: dart pub global activate melos 8.9.0
+
+      - name: Workspace Bootstrap
+        run: |
+          dart pub get
+          melos bootstrap
+
+      - name: Run Backend Unit & Integration Tests
+        run: |
+          cd backend
+          dart test
+
+      - name: Run Design System Tests
+        run: |
+          cd packages/design_system
+          flutter test
+
+      - name: Run App Models Tests
+        run: |
+          cd packages/app_models
+          dart test
+
+  # ----------------------------------------------------------------------------
+  # Job 3: Flutter Client Applications Test Suite
+  # ----------------------------------------------------------------------------
+  client-apps-test:
+    name: Flutter Applications Tests
+    runs-on: ubuntu-latest
+    needs: analyze-and-lint
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Activate Melos
+        run: dart pub global activate melos 8.9.0
+
+      - name: Workspace Bootstrap
+        run: |
+          dart pub get
+          melos bootstrap
+
+      - name: Run Merchant Portal Widget Tests
+        run: |
+          cd apps/merchant_portal
+          flutter test
+
+      - name: Run Customer App Widget Tests
+        run: |
+          cd apps/customer_app
+          flutter test
+
+      - name: Run Rider App Widget Tests
+        run: |
+          cd apps/rider_app
+          flutter test
+
+  # ----------------------------------------------------------------------------
+  # Job 4: End-to-End Multi-Surface Simulation
+  # ----------------------------------------------------------------------------
+  e2e-simulation:
+    name: E2E Multi-Surface Simulation
+    runs-on: ubuntu-latest
+    needs: [backend-and-packages-test, client-apps-test]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Activate Melos
+        run: dart pub global activate melos 8.9.0
+
+      - name: Workspace Bootstrap
+        run: |
+          dart pub get
+          melos bootstrap
+
+      - name: Execute Multi-Surface Live Simulation
+        run: tool/simulate.sh
+
+  # ----------------------------------------------------------------------------
+  # Job 5: Docker Container Build Verification
+  # ----------------------------------------------------------------------------
+  docker-build-verification:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    needs: analyze-and-lint
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile.backend Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.backend
+          push: false
+          tags: govolt/backend:ci-test
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose -f docker-compose.yml config --quiet

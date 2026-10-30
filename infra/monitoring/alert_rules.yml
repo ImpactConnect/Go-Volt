@@ -1,0 +1,111 @@
+# ==============================================================================
+# Go_Volt Prometheus Operational Alerting Rules
+# Mandated by Technical Specification §13.2 (Logs, Metrics, Traces)
+# ==============================================================================
+
+groups:
+  - name: govolts_financial_integrity_alerts
+    rules:
+      - alert: LedgerImbalanceDetected
+        expr: govolts_ledger_imbalance_cents != 0
+        for: 1m
+        labels:
+          severity: critical
+          team: finance-ops
+        annotations:
+          summary: "Financial ledger credits do not equal debits"
+          description: "A financial ledger imbalance was detected: {{ $value }} kobo. Double-entry integrity has been violated."
+
+      - alert: RepeatedPaymentVerificationFailures
+        expr: rate(govolts_payment_verification_failures_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          team: platform-core
+        annotations:
+          summary: "Elevated payment verification failure rate"
+          description: "Payment verification failures exceeded 5% over the last 5 minutes. Check Paystack gateway connectivity and webhook signature keys."
+
+      - alert: ElevatedRefundReversalRate
+        expr: rate(govolts_refunds_processed_total[15m]) / (rate(govolts_bookings_completed_total[15m]) + 0.001) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: ops-support
+        annotations:
+          summary: "Refund/reversal rate exceeded 10% of completions"
+          description: "Elevated refund rate detected: {{ $value | humanizePercentage }}. Investigate potential fleet dispatch or merchant quality anomalies."
+
+  - name: govolts_dispatch_and_operations_alerts
+    rules:
+      - alert: StuckBookingsDetected
+        expr: govolts_bookings_stuck_unassigned_count > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: dispatch-ops
+        annotations:
+          summary: "Bookings stuck in requested status without dispatch"
+          description: "There are currently {{ $value }} bookings waiting for rider assignment longer than the maximum dispatch timeout."
+
+      - alert: DispatchLatencyElevated
+        expr: histogram_quantile(0.90, rate(govolts_dispatch_assignment_duration_seconds_bucket[5m])) > 180
+        for: 5m
+        labels:
+          severity: warning
+          team: dispatch-ops
+        annotations:
+          summary: "P90 rider dispatch assignment time exceeds 3 minutes"
+          description: "P90 dispatch latency is currently {{ $value }}s in the active service zones."
+
+      - alert: GrowingQueueAgeOutboxBacklog
+        expr: govolts_outbox_events_backlog_count > 100
+        for: 3m
+        labels:
+          severity: warning
+          team: backend-engineers
+        annotations:
+          summary: "Transactional outbox event backlog is growing"
+          description: "Unprocessed outbox events count is {{ $value }}. The background worker or event relay may be stalled."
+
+  - name: govolts_api_and_service_health_alerts
+    rules:
+      - alert: HighApiErrorRate
+        expr: sum(rate(govolts_http_requests_total{status=~"5.."}[5m])) / sum(rate(govolts_http_requests_total[5m])) > 0.02
+        for: 2m
+        labels:
+          severity: critical
+          team: platform-core
+        annotations:
+          summary: "Backend 5xx error rate exceeds 2%"
+          description: "HTTP 5xx error rate is currently {{ $value | humanizePercentage }} over the past 5 minutes."
+
+      - alert: HighApiLatencyP95
+        expr: histogram_quantile(0.95, rate(govolts_http_request_duration_seconds_bucket[5m])) > 0.500
+        for: 5m
+        labels:
+          severity: warning
+          team: platform-core
+        annotations:
+          summary: "API P95 response latency exceeds 500ms"
+          description: "P95 response latency is {{ $value }}s across all API routes."
+
+      - alert: ExcessiveFailedLoginAttempts
+        expr: rate(govolts_auth_login_failures_total[5m]) > 20
+        for: 2m
+        labels:
+          severity: warning
+          team: security-ops
+        annotations:
+          summary: "Surge in authentication login failures"
+          description: "Detected {{ $value }} failed login attempts per second. Investigate potential brute-force or credential stuffing attack."
+
+      - alert: DatabaseConnectionPoolSaturated
+        expr: govolts_db_active_connections / govolts_db_max_connections > 0.85
+        for: 3m
+        labels:
+          severity: critical
+          team: platform-core
+        annotations:
+          summary: "PostgreSQL connection pool near exhaustion (> 85%)"
+          description: "Database connection saturation reached {{ $value | humanizePercentage }}."

@@ -1,0 +1,67 @@
+# ==============================================================================
+# Go_Volt Backend API Server — Multi-Stage Production Dockerfile
+# ==============================================================================
+
+# Stage 1: Build & Compile AOT Native Executable
+FROM dart:stable AS build
+
+WORKDIR /app
+
+# Copy root workspace and package manifests for dependency resolution
+COPY pubspec.yaml melos.yaml ./
+COPY packages/app_models/pubspec.yaml packages/app_models/
+COPY packages/app_config/pubspec.yaml packages/app_config/
+COPY packages/api_client/pubspec.yaml packages/api_client/
+COPY packages/design_system/pubspec.yaml packages/design_system/
+COPY packages/testing_support/pubspec.yaml packages/testing_support/
+COPY backend/pubspec.yaml backend/
+COPY apps/customer_app/pubspec.yaml apps/customer_app/
+COPY apps/rider_app/pubspec.yaml apps/rider_app/
+COPY apps/admin_web/pubspec.yaml apps/admin_web/
+COPY apps/merchant_portal/pubspec.yaml apps/merchant_portal/
+
+# Activate melos and bootstrap dependencies
+RUN dart pub global activate melos 8.9.0
+RUN dart pub get
+RUN melos bootstrap
+
+# Copy full backend and dependent shared packages source
+COPY packages/app_models/ packages/app_models/
+COPY packages/app_config/ packages/app_config/
+COPY backend/ backend/
+
+# Compile standalone AOT native binary
+WORKDIR /app/backend
+RUN dart compile exe bin/api_server.dart -o bin/server
+
+# ==============================================================================
+# Stage 2: Minimal Distroless / Slim Runtime Environment
+# ==============================================================================
+FROM debian:bookworm-slim
+
+# Install CA certificates and curl for healthcheck probe
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create secure non-root service account
+RUN groupadd -r govolts && useradd -r -g govolts -s /bin/false govolts
+
+WORKDIR /app
+
+# Copy compiled binary from build stage
+COPY --from=build /app/backend/bin/server /app/server
+RUN chown -R govolts:govolts /app
+
+USER govolts
+
+# Expose default HTTP port
+ENV PORT=8080
+ENV ENVIRONMENT=production
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["/app/server"]

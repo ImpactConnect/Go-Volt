@@ -54,6 +54,27 @@ class ProfileDto extends Equatable {
   bool get isRider => roles.contains(UserRole.rider);
   bool get isAdmin => roles.contains(UserRole.admin) || roles.contains(UserRole.superAdmin);
 
+  /// Convenient helper to get first name dynamically.
+  String get firstName {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    return parts.isNotEmpty && parts.first.isNotEmpty ? parts.first : 'Customer';
+  }
+
+  /// Convenient helper to get last name dynamically.
+  String get lastName {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    return parts.length > 1 ? parts.sublist(1).join(' ') : '';
+  }
+
+  /// Profile avatar initials.
+  String get initials {
+    final f = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
+    final l = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
+    if (f.isNotEmpty && l.isNotEmpty) return '$f$l';
+    if (f.isNotEmpty) return f;
+    return 'U';
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'full_name': fullName,

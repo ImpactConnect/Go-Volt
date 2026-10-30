@@ -184,19 +184,22 @@ class _SupportScreenState extends State<SupportScreen> {
                   color: GVColors.softBackground,
                   borderRadius: BorderRadius.circular(GVBorderRadius.sm),
                 ),
-                child: ExpansionTile(
-                  title: Text(faq['question']!,
-                      style: GVTypography.bodySmallMedium),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(GVSpacing.md),
-                      child: Text(
-                        faq['answer']!,
-                        style: GVTypography.bodySmall
-                            .copyWith(color: GVColors.textSecondary),
+                child: Material(
+                  color: Colors.transparent,
+                  child: ExpansionTile(
+                    title: Text(faq['question']!,
+                        style: GVTypography.bodySmallMedium),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(GVSpacing.md),
+                        child: Text(
+                          faq['answer']!,
+                          style: GVTypography.bodySmall
+                              .copyWith(color: GVColors.textSecondary),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -7,261 +7,200 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../application/booking_notifier.dart';
 
-/// R06 — Finding Driver & Dispatch Radar Screen
+/// Screen 11 — Finding a Rider ("Searching for a nearby rider")
+///
+/// Features:
+/// - Smooth animated concentric radar waves with nearby driver markers.
+/// - Dynamic 4-step matching checklist.
+/// - Status notification alert.
+/// - Cancellation action with confirmation sheet.
 class FindingDriverScreen extends ConsumerStatefulWidget {
-  const FindingDriverScreen({super.key});
+  const FindingDriverScreen({
+    super.key,
+    this.autoAdvance = true,
+  });
+
+  final bool autoAdvance;
 
   @override
   ConsumerState<FindingDriverScreen> createState() => _FindingDriverScreenState();
 }
 
-class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
-  late final Animation<double> _pulseAnimation;
-  Timer? _simulatedMatchTimer;
+class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen> {
+  int _currentStepIndex = 1; // 0: Sending, 1: Looking, 2: Confirming, 3: Finalizing
+  Timer? _stepTimer;
+  Timer? _completionTimer;
+
+  static const List<String> _steps = [
+    'Sending your request',
+    'Looking for nearby riders',
+    'Confirming rider',
+    'Finalizing your ride',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
+    if (widget.autoAdvance) {
+      _startStepProgression();
+    }
+  }
 
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+  void _startStepProgression() {
+    _stepTimer = Timer.periodic(const Duration(milliseconds: 1400), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_currentStepIndex < _steps.length - 1) {
+        setState(() {
+          _currentStepIndex++;
+        });
+      } else {
+        timer.cancel();
+        _navigateToLiveTracking();
+      }
+    });
+  }
 
-    // Simulate driver match after 4.5 seconds for interactive prototype flow
-    _simulatedMatchTimer = Timer(const Duration(milliseconds: 4500), () {
-      if (mounted) {
-        _showDriverMatchedDialog();
+  void _navigateToLiveTracking() {
+    _completionTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      if (GoRouter.maybeOf(context) != null) {
+        context.go(AppRoutes.liveTracking);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.liveTracking);
       }
     });
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
-    _simulatedMatchTimer?.cancel();
+    _stepTimer?.cancel();
+    _completionTimer?.cancel();
     super.dispose();
   }
 
-  void _showDriverMatchedDialog() {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GVBorderRadius.md),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded,
-                color: GVColors.brandGreen, size: 28),
-            const SizedBox(width: GVSpacing.sm),
-            Text('Driver Assigned! ⚡', style: GVTypography.h3),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Driver Emeka Adeleke is en route in a clean BYD Atto 3 (LAG-729-EV).',
-              style: GVTypography.body,
-            ),
-            const SizedBox(height: GVSpacing.sm),
-            Text(
-              'ETA: 4 minutes • 4.9 ★ Rating',
-              style: GVTypography.bodySmallMedium.copyWith(
-                color: GVColors.brandGreen,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          GVPrimaryButton(
-            label: 'Track Driver Live',
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.go(AppRoutes.liveTracking);
-            },
-          ),
-        ],
-      ),
-    );
+  void _handleBack() {
+    _confirmCancel();
   }
 
-  Future<void> _cancelSearch() async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _confirmCancel() async {
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Request?'),
-        content: const Text(
-          'Are you sure you want to cancel? No cancellation fees apply while searching for an electric driver.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Keep Searching'),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final isDark = theme.brightness == Brightness.dark;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E2621) : GVColors.white,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(GVBorderRadius.xl),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: GVColors.error),
-            child: const Text('Cancel Request'),
+          padding: const EdgeInsets.all(GVSpacing.lg),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? GVColors.neutral700 : GVColors.neutral300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: GVSpacing.md),
+                Text(
+                  'Cancel ride request?',
+                  style: GVTypography.titleLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: GVSpacing.sm),
+                Text(
+                  'Are you sure you want to cancel? No cancellation fee applies before a rider is assigned.',
+                  style: GVTypography.bodyMedium.copyWith(
+                    color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: GVSpacing.xl),
+                GVPrimaryButton(
+                  label: 'Keep searching',
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                ),
+                const SizedBox(height: GVSpacing.sm),
+                GVOutlinedButton(
+                  label: 'Cancel ride',
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true && mounted) {
-      _simulatedMatchTimer?.cancel();
+      _stepTimer?.cancel();
+      _completionTimer?.cancel();
       ref.read(bookingNotifierProvider.notifier).resetFlow();
-      context.go(AppRoutes.home);
+      if (GoRouter.maybeOf(context) != null) {
+        context.go(AppRoutes.home);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookingState = ref.watch(bookingNotifierProvider);
-    final booking = bookingState.activeBooking;
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Connecting to Driver',
-          style: GVTypography.h3.copyWith(fontWeight: FontWeight.bold),
-        ),
-        automaticallyImplyLeading: false,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(GVSpacing.xl),
-          child: Column(
-            children: [
-              const Spacer(),
-
-              // Animated Radar / Electric Orb
-              Center(
-                child: ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: GVColors.brandGreen.withValues(alpha: 0.12),
-                      border: Border.all(
-                        color: GVColors.brandGreen.withValues(alpha: 0.4),
-                        width: 3,
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: GVColors.brandGreen,
-                        ),
-                        child: const Icon(
-                          Icons.electric_bolt_rounded,
-                          color: Colors.white,
-                          size: 44,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: GVSpacing.xxl),
-
-              Text(
-                'Searching Near You',
-                style: GVTypography.h2.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: GVSpacing.xs),
-              Text(
-                'Matching you with vetted 100% electric drivers within your Lagos corridor.',
-                textAlign: TextAlign.center,
-                style: GVTypography.body.copyWith(
-                  color: GVColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: GVSpacing.xl),
-
-              // Booking Details Badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: GVSpacing.md,
-                  vertical: GVSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: GVColors.softBackground,
-                  borderRadius: BorderRadius.circular(GVBorderRadius.full),
-                  border: Border.all(color: GVColors.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.confirmation_number_outlined,
-                        size: 16, color: GVColors.brandGreen),
-                    const SizedBox(width: 6),
-                    Text(
-                      booking?.bookingReference ?? 'GV-2026-0042',
-                      style: GVTypography.label.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: GVColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-
-              // Eco Offset Alert
-              Container(
-                padding: const EdgeInsets.all(GVSpacing.md),
-                decoration: BoxDecoration(
-                  color: GVColors.limeHighlight.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                  border: Border.all(
-                    color: GVColors.limeHighlight.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.energy_savings_leaf_rounded,
-                        color: GVColors.deepGreen, size: 24),
-                    const SizedBox(width: GVSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'This trip will eliminate ~1.2 kg of CO₂ exhaust from Lagos air!',
-                        style: GVTypography.caption.copyWith(
-                          color: GVColors.deepGreen,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: GVSpacing.lg),
-
-              // Cancel button
-              GVOutlinedButton(
-                label: 'Cancel Request',
-                onPressed: _cancelSearch,
-              ),
-            ],
+      body: Stack(
+        children: [
+          // Screen 11 Radar & Status View
+          SafeArea(
+            child: GVRadarMatchingView(
+              currentStep: _currentStepIndex,
+              steps: _steps,
+              title: 'Finding a rider for you...',
+              subtitle: 'This usually takes less than 1 minute.',
+              noticeText: "You'll be notified as soon as a rider accepts your request.",
+              cancelButtonText: 'Cancel ride',
+              onCancel: _confirmCancel,
+            ),
           ),
-        ),
+
+          // Floating Back Arrow Button
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: GVSpacing.md,
+                vertical: GVSpacing.sm,
+              ),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.white.withValues(alpha: 0.9),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: GVColors.textPrimary, size: 20),
+                    onPressed: _handleBack,
+                    tooltip: 'Back',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -163,12 +163,12 @@ class AccountScreen extends ConsumerWidget {
             const SizedBox(height: GVSpacing.md),
 
             // Navigation Sections
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                boxShadow: GVShadows.card,
-              ),
+            Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(GVBorderRadius.md),
+              clipBehavior: Clip.antiAlias,
+              elevation: 1,
+              shadowColor: Colors.black.withValues(alpha: 0.05),
               child: Column(
                 children: [
                   ListTile(

@@ -106,6 +106,7 @@ class WalletScreen extends ConsumerWidget {
                             backgroundColor: GVColors.brandGreen,
                             foregroundColor: GVColors.deepGreen,
                             elevation: 0,
+                            minimumSize: const Size(80, 36),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(

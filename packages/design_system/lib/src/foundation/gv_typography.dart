@@ -42,6 +42,44 @@ abstract final class GVTypography {
         color: GVColors.textPrimary,
       );
 
+  // ── Material 3 Semantic Aliases ──────────────────────────────────────────
+
+  static TextStyle get headlineLarge => h1;
+  static TextStyle get headlineMedium => h2;
+  static TextStyle get headlineSmall => h3;
+
+  static TextStyle get titleLarge => h3;
+
+  static TextStyle get titleMedium => GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+        color: GVColors.textPrimary,
+      );
+
+  static TextStyle get titleSmall => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+        color: GVColors.textPrimary,
+      );
+
+  static TextStyle get labelLarge => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+        color: GVColors.textPrimary,
+      );
+
+  static TextStyle get labelMedium => GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+        color: GVColors.textPrimary,
+      );
+
+  static TextStyle get labelSmall => caption;
+
   // ── Body ──────────────────────────────────────────────────────────────────
 
   static TextStyle get body => GoogleFonts.poppins(

@@ -5,6 +5,7 @@ import 'package:customer_app/src/features/home/presentation/notifications_screen
 import 'package:customer_app/src/features/scheduled/presentation/plan_modification_screen.dart';
 import 'package:customer_app/src/features/tracking/presentation/receipt_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -15,22 +16,24 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: NotificationsScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: NotificationsScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.text('Notifications'), findsOneWidget);
-      expect(find.text('Driver Approaching Pickup'), findsOneWidget);
-      expect(find.text('School-Run Handover Security Code'), findsOneWidget);
+      expect(find.text('Rider approaching'), findsOneWidget);
+      expect(find.text('Special offer'), findsOneWidget);
 
-      // Filter by "Trips"
-      await tester.tap(find.text('Trips'));
+      // Filter by "Promotions"
+      await tester.tap(find.text('Promotions'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Driver Approaching Pickup'), findsOneWidget);
-      expect(find.text('School-Run Handover Security Code'), findsNothing);
+      expect(find.text('Special offer'), findsOneWidget);
+      expect(find.text('Rider approaching'), findsNothing);
 
       // Return to "All" and mark all as read
       await tester.tap(find.text('All'));
@@ -39,7 +42,8 @@ void main() {
       await tester.tap(find.text('Mark all read'));
       await tester.pumpAndSettle();
 
-      expect(find.text('All notifications marked as read.'), findsOneWidget);
+      final markAllReadBtn = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Mark all read'));
+      expect(markAllReadBtn.onPressed, isNull);
     });
 
     testWidgets('SavedPlacesScreen (H05) enforces dependent plan warning on deletion', (tester) async {
@@ -113,23 +117,24 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: ReceiptScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: ReceiptScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Trip Receipt & Tax Invoice'), findsOneWidget);
-      expect(find.text('GO-VOLTS NIGERIA'), findsOneWidget);
-      expect(find.text('PAID & SETTLED'), findsOneWidget);
-      expect(find.text('TRP-LAG-8921'), findsOneWidget);
-      expect(find.textContaining('1.84 kg CO2 Offset'), findsOneWidget);
-      expect(find.text('Download PDF Invoice'), findsOneWidget);
+      expect(find.text('Trip receipt'), findsOneWidget);
+      expect(find.text('Here are the details of your trip.'), findsOneWidget);
+      expect(find.text('Daniel Okafor'), findsWidgets);
+      expect(find.textContaining('TRP123456789'), findsWidgets);
+      expect(find.text('Download receipt'), findsOneWidget);
 
-      await tester.tap(find.text('Download PDF Invoice'));
+      await tester.tap(find.text('Download receipt'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Invoice PDF saved to device downloads.'), findsOneWidget);
+      expect(find.textContaining('Downloading digital receipt PDF'), findsOneWidget);
     });
 
     testWidgets('PreferencesScreen (A15) toggles settings and opens delete dialog', (tester) async {

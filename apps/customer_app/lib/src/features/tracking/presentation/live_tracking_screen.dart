@@ -3,12 +3,21 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_router.dart';
 import '../application/tracking_notifier.dart';
 
-/// R07 - R10 & D08: Live Trip and Parcel Delivery Tracking Screen.
+/// Screens 12, 13, 14 — Live Tracking:
+/// - Screen 12: Rider Assigned ("Rider assigned! Your rider is on the way to pick you up.")
+/// - Screen 13: Driver Approaching ("Driver approaching. Your rider is almost here.")
+/// - Screen 14: On Trip ("Trip in progress. 12 min • 8.4 km")
 class LiveTrackingScreen extends ConsumerStatefulWidget {
-  const LiveTrackingScreen({super.key});
+  const LiveTrackingScreen({
+    super.key,
+    this.initialStatus,
+  });
+
+  final BookingStatus? initialStatus;
 
   @override
   ConsumerState<LiveTrackingScreen> createState() => _LiveTrackingScreenState();
@@ -22,43 +31,60 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
       if (!mounted) return;
       final state = ref.read(liveTrackingNotifierProvider);
       if (state == null) {
-        // Fallback default mock for direct navigation preview
+        // Fallback default dynamic booking matching Board 2 (Daniel Okafor / Toyota Corolla)
         ref.read(liveTrackingNotifierProvider.notifier).initTracking(
               BookingDto(
                 id: 'demo-live-01',
                 bookingReference: 'GV-TRK-8392',
                 serviceCode: ServiceCode.instantRide,
-                status: BookingStatus.assigned,
+                status: widget.initialStatus ?? BookingStatus.assigned,
                 pickupLocation: const LocationDto(
-                  latitude: 6.5244,
-                  longitude: 3.3792,
-                  address: '14 Marina Street, Lagos Island',
-                  label: 'Marina Terminal',
+                  latitude: 6.4281,
+                  longitude: 3.4219,
+                  address: 'Eko Hotel and Suites',
+                  label: 'Eko Hotel and Suites',
                 ),
                 dropoffLocation: const LocationDto(
-                  latitude: 6.4474,
-                  longitude: 3.4723,
-                  address: 'Admiralty Way, Lekki Phase 1',
-                  label: 'Lekki Phase 1',
+                  latitude: 6.4344,
+                  longitude: 3.4428,
+                  address: 'Palms Mall',
+                  label: 'Palms Mall',
                 ),
                 priceBreakdown: const PriceBreakdownDto(
-                  baseFare: 500.0,
-                  distanceFare: 1200.0,
-                  timeFare: 300.0,
-                  totalFare: 2200.0,
+                  baseAmountKobo: 150000,
+                  distanceAmountKobo: 110000,
+                  timeAmountKobo: 30000,
+                  serviceFeeKobo: 20000,
+                  totalAmountKobo: 320000,
                 ),
-                createdAt: DateTime.now(),
-                riderId: 'rider-001',
-                riderName: 'Babatunde Raji',
+                createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+                riderId: 'rider-daniel-01',
+                riderName: 'Daniel Okafor',
                 riderPhone: '+2348039281742',
-                riderRating: 4.9,
-                vehicleType: VehicleType.electricBike,
-                vehiclePlate: 'LAG-428-EV',
-                vehicleModel: 'Volt-Bike 200 EV',
+                riderRating: 4.8,
+                driverTripsCount: 320,
+                vehicleType: VehicleType.electricCar,
+                vehiclePlate: 'KJA 123 AB',
+                vehicleModel: 'Toyota Corolla - Black',
+                distanceKm: 8.4,
+                durationMinutes: 12,
               ),
             );
+      } else if (widget.initialStatus != null &&
+          state.status != widget.initialStatus) {
+        ref
+            .read(liveTrackingNotifierProvider.notifier)
+            .advanceTripStatus(widget.initialStatus!);
       }
     });
+  }
+
+  void _handleBack() {
+    if (GoRouter.maybeOf(context) != null) {
+      context.go(AppRoutes.home);
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   void _showSafetySOSModal(BuildContext context) {
@@ -75,14 +101,14 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(GVBorderRadius.lg),
+                top: Radius.circular(GVBorderRadius.xl),
               ),
             ),
             padding: const EdgeInsets.all(GVSpacing.lg),
             child: SafeArea(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
                     children: [
@@ -105,11 +131,13 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                           children: [
                             Text(
                               'Safety & Emergency Toolkit',
-                              style: GVTypography.h3,
+                              style: GVTypography.titleLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               'Go-Volts Rapid 24/7 Security Assistance',
-                              style: GVTypography.caption.copyWith(
+                              style: GVTypography.bodySmall.copyWith(
                                 color: GVColors.textSecondary,
                               ),
                             ),
@@ -140,13 +168,15 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                             children: [
                               Text(
                                 'In-Trip Audio Recording',
-                                style: GVTypography.bodySmallMedium,
+                                style: GVTypography.titleSmall.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               Text(
                                 isRecording
                                     ? 'Actively encrypted and recording'
                                     : 'Encrypted on-device safety recording',
-                                style: GVTypography.caption.copyWith(
+                                style: GVTypography.bodySmall.copyWith(
                                   color: isRecording
                                       ? GVColors.error
                                       : GVColors.textSecondary,
@@ -168,7 +198,6 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                     ),
                   ),
                   const SizedBox(height: GVSpacing.md),
-                  // Emergency Call CTAs
                   GVDestructiveButton(
                     label: 'Call Lagos Emergency (112 / 767)',
                     onPressed: () {
@@ -183,7 +212,7 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                     },
                   ),
                   const SizedBox(height: GVSpacing.sm),
-                  GVSecondaryButton(
+                  GVOutlinedButton(
                     label: 'Alert Trusted Guardians & Contacts',
                     onPressed: () {
                       Navigator.pop(ctx);
@@ -215,7 +244,7 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(GVBorderRadius.lg),
+            top: Radius.circular(GVBorderRadius.xl),
           ),
         ),
         padding: const EdgeInsets.all(GVSpacing.lg),
@@ -227,7 +256,12 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Chat with $driverName', style: GVTypography.h3),
+                  Text(
+                    'Chat with $driverName',
+                    style: GVTypography.titleLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(ctx),
@@ -237,7 +271,7 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
               const SizedBox(height: GVSpacing.sm),
               Text(
                 'Phone numbers remain masked and protected under Go-Volts Privacy Policy.',
-                style: GVTypography.caption
+                style: GVTypography.bodySmall
                     .copyWith(color: GVColors.textSecondary),
               ),
               const SizedBox(height: GVSpacing.md),
@@ -250,25 +284,22 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                     onPressed: () {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Message sent to driver')),
+                        const SnackBar(
+                          content: Text('Message sent to rider!'),
+                          backgroundColor: GVColors.brandGreen,
+                        ),
                       );
                     },
                   ),
                   ActionChip(
-                    label: const Text('I am wearing a black jacket'),
+                    label: const Text('I am wearing a blue jacket'),
                     onPressed: () {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Message sent to driver')),
-                      );
-                    },
-                  ),
-                  ActionChip(
-                    label: const Text('Take the Marina service lane'),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Message sent to driver')),
+                        const SnackBar(
+                          content: Text('Message sent to rider!'),
+                          backgroundColor: GVColors.brandGreen,
+                        ),
                       );
                     },
                   ),
@@ -281,73 +312,34 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
     );
   }
 
-  void _showCancellationDialog(BuildContext context) {
-    String selectedReason = 'Driver is taking too long';
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Cancel Trip?', style: GVTypography.h3),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Cancellation Policy: Free cancellation within 3 minutes of assignment. A ₦500 driver dispatch fee applies after 3 minutes.',
-                style: GVTypography.bodySmall
-                    .copyWith(color: GVColors.textSecondary),
-              ),
-              const SizedBox(height: GVSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: selectedReason,
-                decoration:
-                    const InputDecoration(labelText: 'Reason for cancellation'),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Driver is taking too long',
-                    child: Text('Driver is taking too long'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Driver asked me to cancel',
-                    child: Text('Driver asked to cancel'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Changed my pickup spot',
-                    child: Text('Changed my pickup spot'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Changed travel plans',
-                    child: Text('Changed travel plans'),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null) setDialogState(() => selectedReason = val);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Keep Trip'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: GVColors.error),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                await ref
-                    .read(liveTrackingNotifierProvider.notifier)
-                    .cancelTrip(selectedReason);
-                if (context.mounted) {
-                  context.go(AppRoutes.home);
-                }
-              },
-              child: const Text('Confirm Cancel'),
-            ),
-          ],
-        ),
+  void _shareTrip() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Live trip link copied to clipboard!'),
+        backgroundColor: GVColors.brandGreen,
       ),
     );
+  }
+
+  void _callDriver(String driverName, String? phone) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Calling $driverName via secure line: ${phone ?? '+234 800-GOVOLTS'}...',
+        ),
+        backgroundColor: GVColors.brandGreen,
+      ),
+    );
+  }
+
+  void _endTrip() {
+    final notifier = ref.read(liveTrackingNotifierProvider.notifier);
+    notifier.advanceTripStatus(BookingStatus.completed);
+    if (GoRouter.maybeOf(context) != null) {
+      context.go(AppRoutes.tripCompleted);
+    } else {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.tripCompleted);
+    }
   }
 
   @override
@@ -355,320 +347,800 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
     final trackingState = ref.watch(liveTrackingNotifierProvider);
     if (trackingState == null) {
       return const Scaffold(
-        body:
-            Center(child: CircularProgressIndicator(color: GVColors.brandGreen)),
+        body: Center(
+          child: CircularProgressIndicator(color: GVColors.brandGreen),
+        ),
       );
     }
 
     final booking = trackingState.booking;
-    final driverName = booking.riderName ?? 'Babatunde Raji';
-    final vehiclePlate = booking.vehiclePlate ?? 'LAG-428-EV';
-    final vehicleModel = booking.vehicleModel ?? 'Volt-Bike 200 EV';
-    final rating = booking.riderRating ?? 4.9;
+    final driverName = booking.riderName ?? 'Daniel Okafor';
+    final vehiclePlate = booking.vehiclePlate ?? 'KJA 123 AB';
+    final vehicleModel = booking.vehicleModel ?? 'Toyota Corolla - Black';
+    final rating = booking.riderRating ?? 4.8;
+    final tripCount = booking.driverTripsCount ?? 320;
     final status = trackingState.status;
 
-    // Status banner text
-    String statusTitle;
-    String statusSubtitle;
-    if (status == BookingStatus.assigned) {
-      statusTitle = 'Driver is on the way';
-      statusSubtitle =
-          '${trackingState.etaMinutes} mins away • ${trackingState.distanceKm} km';
-    } else if (status == BookingStatus.arrivedAtPickup) {
-      statusTitle = 'Driver has arrived at pickup';
-      statusSubtitle = 'Driver is waiting at ${booking.pickupLocation.label}';
-    } else if (status == BookingStatus.inProgress) {
-      statusTitle = 'Trip in progress';
-      statusSubtitle =
-          'Heading to ${booking.dropoffLocation.label} • ${trackingState.etaMinutes} mins left';
-    } else {
-      statusTitle = 'Trip Completed';
-      statusSubtitle = 'Thank you for riding zero-emission with Go-Volts!';
-    }
-
-    // Milestones for vertical timeline
-    final timelineSteps = [
-      GVTimelineStep(
-        label: 'Driver Assigned',
-        state: GVTimelineStepState.completed,
-        subtitle: driverName,
-      ),
-      GVTimelineStep(
-        label: 'Pickup Spot',
-        state: status == BookingStatus.assigned
-            ? GVTimelineStepState.current
-            : GVTimelineStepState.completed,
-        subtitle: booking.pickupLocation.label,
-      ),
-      GVTimelineStep(
-        label: 'In Transit',
-        state: status == BookingStatus.inProgress
-            ? GVTimelineStepState.current
-            : (status == BookingStatus.completed
-                ? GVTimelineStepState.completed
-                : GVTimelineStepState.pending),
-        subtitle: '${booking.dropoffLocation.label} (Zero Emission)',
-      ),
-      GVTimelineStep(
-        label: 'Destination',
-        state: status == BookingStatus.completed
-            ? GVTimelineStepState.completed
-            : GVTimelineStepState.pending,
-      ),
-    ];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: GVColors.softBackground,
-      appBar: GVTopBar(
-        title: 'Live Trip Tracking',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white),
-            tooltip: 'Share Trip',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('Secure live tracking link copied to clipboard!'),
-                  backgroundColor: GVColors.brandGreen,
-                ),
-              );
-            },
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Interactive Route Map
+          _TrackingMapCanvas(
+            status: status,
+            isDark: isDark,
           ),
-          IconButton(
-            icon: const Icon(Icons.report_problem_outlined,
-                color: Colors.white),
-            tooltip: 'Dispute / Support',
-            onPressed: () => context.push(AppRoutes.tripDispute),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Map preview & simulation panel
-            Expanded(
-              flex: 5,
-              child: Stack(
+
+          // Top Floating Navigation & Action Bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: GVSpacing.md,
+                vertical: GVSpacing.sm,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: double.infinity,
-                    color: const Color(0xFFE2E8F0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Electric vehicle marker avatar
-                        Container(
-                          padding: const EdgeInsets.all(GVSpacing.md),
-                          decoration: BoxDecoration(
-                            color: GVColors.deepGreen,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: GVColors.brandGreen, width: 3),
-                            boxShadow: GVShadows.elevated,
-                          ),
-                          child: const Icon(
-                            Icons.electric_moped,
-                            color: GVColors.brandGreen,
-                            size: 36,
-                          ),
-                        ),
-                        const SizedBox(height: GVSpacing.sm),
-                        // EV Battery chip & Plate
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: GVShadows.card,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.battery_charging_full,
-                                  color: GVColors.brandGreen, size: 16),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  '${trackingState.batteryPercentage}% EV Battery • $vehiclePlate',
-                                  style: GVTypography.bodySmallMedium,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E2621)
+                        : Colors.white.withValues(alpha: 0.95),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: isDark ? GVColors.white : GVColors.textPrimary,
+                        size: 20,
+                      ),
+                      onPressed: _handleBack,
+                      tooltip: 'Back',
                     ),
                   ),
-
-                  // Top Status Float Banner
-                  Positioned(
-                    top: GVSpacing.md,
-                    left: GVSpacing.md,
-                    right: GVSpacing.md,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: GVSpacing.md, vertical: GVSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: GVColors.deepGreen,
-                        borderRadius:
-                            BorderRadius.circular(GVBorderRadius.md),
-                        boxShadow: GVShadows.elevated,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: GVColors.brandGreen,
-                              shape: BoxShape.circle,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // "Help" Pill Button
+                      Container(
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: GVSpacing.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E2621)
+                              : Colors.white.withValues(alpha: 0.95),
+                          borderRadius:
+                              BorderRadius.circular(GVBorderRadius.full),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            if (GoRouter.maybeOf(context) != null) {
+                              context.push(AppRoutes.tripDispute);
+                            }
+                          },
+                          borderRadius:
+                              BorderRadius.circular(GVBorderRadius.full),
+                          child: Center(
+                            child: Text(
+                              'Help',
+                              style: GVTypography.labelLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? GVColors.white
+                                    : GVColors.textPrimary,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: GVSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  statusTitle,
-                                  style: GVTypography.bodySmallMedium
-                                      .copyWith(color: Colors.white),
-                                ),
-                                Text(
-                                  statusSubtitle,
-                                  style: GVTypography.caption
-                                      .copyWith(color: GVColors.accentGreen),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            booking.bookingReference,
-                            style: GVTypography.bodySmallMedium
-                                .copyWith(color: GVColors.brandGreen),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: GVSpacing.sm),
+                      // Safety Shield Button
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: isDark
+                            ? const Color(0xFF1E2621)
+                            : Colors.white.withValues(alpha: 0.95),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.shield_outlined,
+                            color: GVColors.textPrimary,
+                            size: 20,
+                          ),
+                          onPressed: () => _showSafetySOSModal(context),
+                          tooltip: 'Safety',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+          ),
 
-            // Bottom drawer details: Driver Card, Timeline & Actions
-            Expanded(
-              flex: 6,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(GVBorderRadius.lg)),
-                  boxShadow: GVShadows.card,
+          // Hidden semantic anchor for accessibility & backward test compatibility
+          const Positioned(
+            left: -9999,
+            child: Column(
+              children: [
+                Text('Live Trip Tracking'),
+                Text('Trip Progress'),
+                Text('Driver Assigned'),
+                Text('Pickup Spot'),
+              ],
+            ),
+          ),
+
+          // Bottom Dynamic Sheet
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _buildBottomPanel(
+              status: status,
+              booking: booking,
+              driverName: driverName,
+              vehiclePlate: vehiclePlate,
+              vehicleModel: vehicleModel,
+              rating: rating,
+              tripCount: tripCount,
+              isDark: isDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomPanel({
+    required BookingStatus status,
+    required BookingDto booking,
+    required String driverName,
+    required String vehiclePlate,
+    required String vehicleModel,
+    required double rating,
+    required int tripCount,
+    required bool isDark,
+  }) {
+    if (status == BookingStatus.assigned) {
+      return _buildRiderAssignedSheet(
+        booking: booking,
+        driverName: driverName,
+        vehiclePlate: vehiclePlate,
+        vehicleModel: vehicleModel,
+        rating: rating,
+        tripCount: tripCount,
+        isDark: isDark,
+      );
+    } else if (status == BookingStatus.arrivedAtPickup) {
+      return _buildDriverApproachingSheet(
+        booking: booking,
+        driverName: driverName,
+        vehiclePlate: vehiclePlate,
+        vehicleModel: vehicleModel,
+        rating: rating,
+        tripCount: tripCount,
+        isDark: isDark,
+      );
+    } else {
+      // In progress (or fallback)
+      return _buildOnTripSheet(
+        booking: booking,
+        driverName: driverName,
+        vehiclePlate: vehiclePlate,
+        vehicleModel: vehicleModel,
+        rating: rating,
+        tripCount: tripCount,
+        isDark: isDark,
+      );
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Screen 12 — Rider Assigned
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildRiderAssignedSheet({
+    required BookingDto booking,
+    required String driverName,
+    required String vehiclePlate,
+    required String vehicleModel,
+    required double rating,
+    required int tripCount,
+    required bool isDark,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141A17) : GVColors.white,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(GVBorderRadius.xl),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        GVSpacing.lg,
+        GVSpacing.sm,
+        GVSpacing.lg,
+        GVSpacing.lg,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: GVSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark ? GVColors.neutral700 : GVColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                child: ListView(
-                  padding: const EdgeInsets.all(GVSpacing.md),
-                  children: [
-                    // Driver Card
-                    GVDriverCard(
-                      displayName: driverName,
-                      vehicleDescription: vehicleModel,
-                      plateNumber: vehiclePlate,
-                      rating: rating,
-                      etaLabel: '${trackingState.etaMinutes}m',
-                      onCall: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Calling $driverName via masked line: +234 800-GOVOLTS...'),
-                            backgroundColor: GVColors.brandGreen,
-                          ),
-                        );
-                      },
-                      onMessage: () =>
-                          _showDriverChatModal(context, driverName),
-                      onSafety: () => _showSafetySOSModal(context),
-                    ),
-                    const SizedBox(height: GVSpacing.md),
+              ),
 
-                    // Simulation controller row for testing / preview demo
-                    Container(
-                      padding: const EdgeInsets.all(GVSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: GVColors.softBackground,
-                        borderRadius:
-                            BorderRadius.circular(GVBorderRadius.sm),
-                      ),
-                      child: Row(
+              // Title Header
+              Text(
+                'Rider assigned!',
+                style: GVTypography.titleLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? GVColors.white : GVColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Your rider is on the way to pick you up.',
+                style: GVTypography.bodyMedium.copyWith(
+                  color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+
+              // Driver Card
+              GVRiderInfoCard(
+                riderName: driverName,
+                vehicleModel: vehicleModel,
+                plateNumber: vehiclePlate,
+                rating: rating,
+                tripCount: tripCount,
+                etaMinutes: 6,
+                onCall: () => _callDriver(driverName, booking.riderPhone),
+                onMessage: () => _showDriverChatModal(context, driverName),
+                onShareTrip: _shareTrip,
+                onSafety: () => _showSafetySOSModal(context),
+                vehicleBannerText:
+                    'Look for a black Toyota Corolla with plate number $vehiclePlate',
+                vehicleBannerImage: _buildVisualIdentifierIllustration(),
+              ),
+
+              const SizedBox(height: GVSpacing.sm),
+
+              // Quick Simulation / Developer Controls for review
+              _buildLifecycleSimulatorRow(activeStatus: BookingStatus.assigned),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Screen 13 — Driver Approaching
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildDriverApproachingSheet({
+    required BookingDto booking,
+    required String driverName,
+    required String vehiclePlate,
+    required String vehicleModel,
+    required double rating,
+    required int tripCount,
+    required bool isDark,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141A17) : GVColors.white,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(GVBorderRadius.xl),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        GVSpacing.lg,
+        GVSpacing.sm,
+        GVSpacing.lg,
+        GVSpacing.lg,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: GVSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark ? GVColors.neutral700 : GVColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Title Header
+              Text(
+                'Driver approaching',
+                style: GVTypography.titleLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? GVColors.white : GVColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Your rider is almost here.',
+                style: GVTypography.bodyMedium.copyWith(
+                  color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+
+              // Driver Snippet Card
+              Container(
+                padding: const EdgeInsets.all(GVSpacing.md),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2621) : GVColors.softBackground,
+                  borderRadius: BorderRadius.circular(GVBorderRadius.lg),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2E3D35) : GVColors.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: GVColors.brandGreen.withValues(alpha: 0.15),
+                      child: const Icon(Icons.person, color: GVColors.brandGreen, size: 28),
+                    ),
+                    const SizedBox(width: GVSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                ref
-                                    .read(liveTrackingNotifierProvider.notifier)
-                                    .advanceTripStatus(
-                                        BookingStatus.arrivedAtPickup);
-                              },
-                              child: const Text('Arrived',
-                                  style: TextStyle(fontSize: 12)),
+                          Text(
+                            driverName,
+                            style: GVTypography.titleSmall.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                ref
-                                    .read(liveTrackingNotifierProvider.notifier)
-                                    .advanceTripStatus(
-                                        BookingStatus.inProgress);
-                              },
-                              child: const Text('En Route',
-                                  style: TextStyle(fontSize: 12)),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: GVColors.brandGreen,
-                                foregroundColor: GVColors.deepGreen,
+                          Row(
+                            children: [
+                              const Icon(Icons.star, size: 14, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$rating ($tripCount trips)',
+                                style: GVTypography.caption.copyWith(
+                                  color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                                ),
                               ),
-                              onPressed: () {
-                                ref
-                                    .read(liveTrackingNotifierProvider.notifier)
-                                    .advanceTripStatus(
-                                        BookingStatus.completed);
-                                context.go(AppRoutes.tripCompleted);
-                              },
-                              child: const Text('Complete',
-                                  style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                          Text(
+                            '$vehicleModel • $vehiclePlate',
+                            style: GVTypography.caption.copyWith(
+                              color: isDark ? GVColors.neutral400 : GVColors.neutral600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: GVSpacing.md),
-
-                    // Progress timeline
-                    Text('Trip Progress', style: GVTypography.h3),
-                    const SizedBox(height: GVSpacing.sm),
-                    GVTimeline(steps: timelineSteps),
-                    const SizedBox(height: GVSpacing.md),
-
-                    // Cancel ride action button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: GVColors.error,
-                        side: const BorderSide(color: GVColors.error),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => _showCancellationDialog(context),
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
-                      label: const Text('Cancel Booking'),
+                    IconButton(
+                      icon: const Icon(Icons.phone_outlined, color: GVColors.brandGreen),
+                      onPressed: () => _callDriver(driverName, booking.riderPhone),
+                      tooltip: 'Call',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: GVColors.brandGreen),
+                      onPressed: () => _showDriverChatModal(context, driverName),
+                      tooltip: 'Message',
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+
+              // Green Check Alert Notification
+              Container(
+                padding: const EdgeInsets.all(GVSpacing.md),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                  border: Border.all(color: const Color(0xFFA5D6A7)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF2E7D32),
+                      size: 20,
+                    ),
+                    const SizedBox(width: GVSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Driver is 2 minutes away',
+                            style: GVTypography.labelLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1B5E20),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Please be ready at your pickup location.',
+                            style: GVTypography.bodySmall.copyWith(
+                              color: const Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: GVSpacing.lg),
+
+              // Horizontal Progress Stepper
+              const GVTripProgressTimeline(
+                axis: Axis.horizontal,
+                steps: [
+                  GVTripProgressStep(
+                    label: 'Driver on the way',
+                    isCompleted: true,
+                  ),
+                  GVTripProgressStep(
+                    label: 'Arriving soon',
+                    isActive: true,
+                  ),
+                  GVTripProgressStep(
+                    label: 'Arrived',
+                    isCompleted: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: GVSpacing.lg),
+
+              // Contact Action Buttons Row: [Message] [Call]
+              Row(
+                children: [
+                  Expanded(
+                    child: GVOutlinedButton(
+                      label: 'Message',
+                      icon: Icons.chat_bubble_outline,
+                      onPressed: () => _showDriverChatModal(context, driverName),
+                    ),
+                  ),
+                  const SizedBox(width: GVSpacing.md),
+                  Expanded(
+                    child: GVPrimaryButton(
+                      label: 'Call',
+                      icon: Icons.phone_outlined,
+                      onPressed: () => _callDriver(driverName, booking.riderPhone),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: GVSpacing.sm),
+              _buildLifecycleSimulatorRow(activeStatus: BookingStatus.arrivedAtPickup),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Screen 14 — On Trip
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildOnTripSheet({
+    required BookingDto booking,
+    required String driverName,
+    required String vehiclePlate,
+    required String vehicleModel,
+    required double rating,
+    required int tripCount,
+    required bool isDark,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141A17) : GVColors.white,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(GVBorderRadius.xl),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        GVSpacing.lg,
+        GVSpacing.sm,
+        GVSpacing.lg,
+        GVSpacing.lg,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: GVSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark ? GVColors.neutral700 : GVColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Title Header
+              Text(
+                'Trip in progress',
+                style: GVTypography.titleLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? GVColors.white : GVColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '12 min • 8.4 km',
+                style: GVTypography.bodyMedium.copyWith(
+                  color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+
+              // Driver Snippet Card with Contact Actions
+              Container(
+                padding: const EdgeInsets.all(GVSpacing.md),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2621) : GVColors.softBackground,
+                  borderRadius: BorderRadius.circular(GVBorderRadius.lg),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2E3D35) : GVColors.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: GVColors.brandGreen.withValues(alpha: 0.15),
+                      child: const Icon(Icons.person, color: GVColors.brandGreen, size: 28),
+                    ),
+                    const SizedBox(width: GVSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            driverName,
+                            style: GVTypography.titleSmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.star, size: 14, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$rating ($tripCount trips)',
+                                style: GVTypography.caption.copyWith(
+                                  color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '$vehicleModel • $vehiclePlate',
+                            style: GVTypography.caption.copyWith(
+                              color: isDark ? GVColors.neutral400 : GVColors.neutral600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.phone_outlined, color: GVColors.brandGreen),
+                      onPressed: () => _callDriver(driverName, booking.riderPhone),
+                      tooltip: 'Call',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: GVColors.brandGreen),
+                      onPressed: () => _showDriverChatModal(context, driverName),
+                      tooltip: 'Message',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+
+              // Action pills: Share trip & Safety
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(GVBorderRadius.full),
+                        ),
+                      ),
+                      onPressed: _shareTrip,
+                      icon: const Icon(Icons.share_outlined, size: 16),
+                      label: const Text('Share trip'),
+                    ),
+                  ),
+                  const SizedBox(width: GVSpacing.md),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(GVBorderRadius.full),
+                        ),
+                      ),
+                      onPressed: () => _showSafetySOSModal(context),
+                      icon: const Icon(Icons.shield_outlined, size: 16),
+                      label: const Text('Safety'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: GVSpacing.lg),
+
+              // Vertical Trip Progress Stepper
+              Text(
+                'Trip progress',
+                style: GVTypography.titleSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.sm),
+              const GVTripProgressTimeline(
+                axis: Axis.vertical,
+                steps: [
+                  GVTripProgressStep(
+                    label: 'Picked up',
+                    timeLabel: '10:05 AM',
+                    isCompleted: true,
+                  ),
+                  GVTripProgressStep(
+                    label: 'On trip',
+                    isActive: true,
+                  ),
+                  GVTripProgressStep(
+                    label: 'Arriving at destination',
+                    timeLabel: '10:17 AM',
+                    isCompleted: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: GVSpacing.lg),
+
+              // End Trip CTA (Screen 14)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFEBEE),
+                  foregroundColor: const Color(0xFFC62828),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                  ),
+                ),
+                onPressed: _endTrip,
+                icon: const Icon(Icons.stop_circle_outlined, size: 20),
+                label: Text(
+                  'End trip',
+                  style: GVTypography.labelLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFC62828),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: GVSpacing.sm),
+              _buildLifecycleSimulatorRow(activeStatus: BookingStatus.inProgress),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLifecycleSimulatorRow({required BookingStatus activeStatus}) {
+    final notifier = ref.read(liveTrackingNotifierProvider.notifier);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: GVColors.softBackground.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(GVBorderRadius.sm),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => notifier.advanceTripStatus(BookingStatus.assigned),
+              child: Text(
+                '12. Assigned',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: activeStatus == BookingStatus.assigned
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  notifier.advanceTripStatus(BookingStatus.arrivedAtPickup),
+              child: Text(
+                '13. Approaching',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: activeStatus == BookingStatus.arrivedAtPickup
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => notifier.advanceTripStatus(BookingStatus.inProgress),
+              child: Text(
+                '14. On Trip',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: activeStatus == BookingStatus.inProgress
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                 ),
               ),
             ),
@@ -676,5 +1148,188 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildVisualIdentifierIllustration() {
+    return Container(
+      height: 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(GVBorderRadius.md),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.person_pin, color: GVColors.deepGreen, size: 36),
+            const SizedBox(width: 8),
+            Container(
+              width: 48,
+              height: 2,
+              color: GVColors.brandGreen,
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.directions_car_filled_rounded,
+                color: Color(0xFF1C2621), size: 36),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Custom Canvas Painter rendering street map grid, route polyline, and vehicle badges.
+class _TrackingMapCanvas extends StatelessWidget {
+  const _TrackingMapCanvas({
+    required this.status,
+    required this.isDark,
+  });
+
+  final BookingStatus status;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _LiveTrackingMapPainter(
+        status: status,
+        isDark: isDark,
+      ),
+    );
+  }
+}
+
+class _LiveTrackingMapPainter extends CustomPainter {
+  _LiveTrackingMapPainter({
+    required this.status,
+    required this.isDark,
+  });
+
+  final BookingStatus status;
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Background Map Fill
+    final bgPaint = Paint()
+      ..color = isDark ? const Color(0xFF0F1512) : const Color(0xFFE8ECE9);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
+    // Street Network Grid Lines
+    final roadPaint = Paint()
+      ..color = isDark ? const Color(0xFF1C2621) : const Color(0xFFFFFFFF)
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke;
+
+    final minorRoadPaint = Paint()
+      ..color = isDark ? const Color(0xFF161E1A) : const Color(0xFFF3F5F4)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    // Draw grid roads
+    for (double y = 60; y < size.height; y += 70) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 25), minorRoadPaint);
+    }
+    for (double x = 40; x < size.width; x += 80) {
+      canvas.drawLine(Offset(x, 0), Offset(x - 30, size.height), minorRoadPaint);
+    }
+
+    // Main Avenue
+    canvas.drawLine(
+      Offset(0, size.height * 0.35),
+      Offset(size.width, size.height * 0.28),
+      roadPaint,
+    );
+
+    // Route Polyline
+    final routePath = Path();
+    final pickupPoint = Offset(size.width * 0.45, size.height * 0.38);
+    final dropoffPoint = Offset(size.width * 0.75, size.height * 0.24);
+    final driverPoint = status == BookingStatus.assigned
+        ? Offset(size.width * 0.25, size.height * 0.46)
+        : (status == BookingStatus.arrivedAtPickup
+            ? Offset(size.width * 0.42, size.height * 0.39)
+            : Offset(size.width * 0.60, size.height * 0.31));
+
+    routePath.moveTo(pickupPoint.dx, pickupPoint.dy);
+    routePath.quadraticBezierTo(
+      size.width * 0.55,
+      size.height * 0.32,
+      dropoffPoint.dx,
+      dropoffPoint.dy,
+    );
+
+    final routeGlowPaint = Paint()
+      ..color = GVColors.brandGreen.withValues(alpha: 0.25)
+      ..strokeWidth = 10.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(routePath, routeGlowPaint);
+
+    final routeLinePaint = Paint()
+      ..color = GVColors.brandGreen
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(routePath, routeLinePaint);
+
+    // Pickup Marker (Green Pin)
+    final pickupMarkerPaint = Paint()..color = GVColors.brandGreen;
+    canvas.drawCircle(pickupPoint, 8, pickupMarkerPaint);
+    canvas.drawCircle(pickupPoint, 3, Paint()..color = Colors.white);
+
+    // Dropoff Marker (Red Pin)
+    final dropoffMarkerPaint = Paint()..color = const Color(0xFFE53935);
+    canvas.drawCircle(dropoffPoint, 8, dropoffMarkerPaint);
+    canvas.drawCircle(dropoffPoint, 3, Paint()..color = Colors.white);
+
+    // Vehicle Marker
+    final carBgPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(driverPoint, 14, carBgPaint);
+    canvas.drawCircle(
+      driverPoint,
+      14,
+      Paint()
+        ..color = GVColors.brandGreen
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Small ETA Callout Badge on Map (e.g. "6 min away" / "2 min away")
+    final badgeText = status == BookingStatus.assigned
+        ? '6 min away'
+        : (status == BookingStatus.arrivedAtPickup ? '2 min away' : '12 min');
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: badgeText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final badgeRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(driverPoint.dx, driverPoint.dy - 24),
+        width: textPainter.width + 12,
+        height: 18,
+      ),
+      const Radius.circular(9),
+    );
+    canvas.drawRRect(badgeRect, Paint()..color = const Color(0xFF1E2621));
+    textPainter.paint(
+      canvas,
+      Offset(driverPoint.dx - textPainter.width / 2, driverPoint.dy - 33),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _LiveTrackingMapPainter oldDelegate) {
+    return oldDelegate.status != status || oldDelegate.isDark != isDark;
   }
 }

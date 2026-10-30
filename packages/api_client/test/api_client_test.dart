@@ -1,7 +1,7 @@
 import 'package:api_client/api_client.dart';
 import 'package:app_config/app_config.dart';
 import 'package:app_models/app_models.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ApiResponse & ApiError', () {

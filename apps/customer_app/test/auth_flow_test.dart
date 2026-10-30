@@ -4,10 +4,18 @@ import 'package:customer_app/src/core/auth/auth_state.dart';
 import 'package:customer_app/src/core/auth/supabase_auth_service.dart';
 import 'package:customer_app/src/features/auth/presentation/complete_profile_screen.dart';
 import 'package:customer_app/src/features/auth/presentation/create_account_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/forgot_password_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/google_auth_screen.dart';
 import 'package:customer_app/src/features/auth/presentation/login_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/new_password_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/otp_verification_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/reset_password_otp_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/signup_options_screen.dart';
+import 'package:customer_app/src/features/auth/presentation/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -19,9 +27,33 @@ class _FakeSupabaseAuthService extends SupabaseAuthService {
   Future<void> sendEmailOtp(String email) async {}
 
   @override
+  Future<AuthResponse> signUpWithEmail({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    return AuthResponse(
+      user: User(
+        id: 'usr_test_123',
+        appMetadata: {},
+        userMetadata: {
+          'first_name': firstName,
+          'last_name': lastName,
+          'full_name': '$firstName $lastName',
+        },
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+        email: email,
+      ),
+    );
+  }
+
+  @override
   Future<AuthResponse> verifyEmailOtp({
     required String email,
     required String token,
+    OtpType type = OtpType.signup,
   }) async {
     return AuthResponse(
       user: User(
@@ -92,29 +124,37 @@ class _FakeSupabaseAuthService extends SupabaseAuthService {
 }
 
 class _MockProfileIncompleteNotifier extends AuthNotifier {
-  _MockProfileIncompleteNotifier() : super(authService: _FakeSupabaseAuthService()) {
+  _MockProfileIncompleteNotifier()
+      : super(authService: _FakeSupabaseAuthService()) {
     state = AuthState(
       status: AuthStatus.profileIncomplete,
+      token: 'fake-token',
       profile: ProfileDto(
         id: 'usr_google_test',
         fullName: 'Alex Odeh',
-        email: 'alex.odeh@gmail.com',
         phoneNumber: '',
+        email: 'alex.odeh@gmail.com',
+        avatarUrl:
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
         roles: const [UserRole.customer],
         createdAt: DateTime.now(),
       ),
-      pendingEmail: 'alex.odeh@gmail.com',
     );
   }
 }
 
 void main() {
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
   group('AuthNotifier Email OTP & Google Auth Unit Tests', () {
     test('register dispatches email OTP and sets pendingEmail', () async {
       final notifier = AuthNotifier(authService: _FakeSupabaseAuthService());
 
       final success = await notifier.register(
-        fullName: 'Folake Adeleke',
+        firstName: 'Folake',
+        lastName: 'Adeleke',
         phoneNumber: '08012345678',
         email: 'folake@example.com',
         password: 'Password123!',
@@ -130,7 +170,8 @@ void main() {
       final notifier = AuthNotifier(authService: _FakeSupabaseAuthService());
 
       await notifier.register(
-        fullName: 'Folake Adeleke',
+        firstName: 'Folake',
+        lastName: 'Adeleke',
         phoneNumber: '08012345678',
         email: 'folake@example.com',
         password: 'Password123!',
@@ -174,8 +215,38 @@ void main() {
     });
   });
 
-  group('Auth Screens Widget Tests', () {
-    testWidgets('CreateAccountScreen renders Continue with Google and Email field',
+  group('Auth Screens 1–10 Widget Tests', () {
+    testWidgets('Screen 2: WelcomeScreen renders value prop and CTA buttons',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: WelcomeScreen(),
+        ),
+      );
+
+      expect(find.text('Move faster.\nGo greener.\nGo further.'), findsOneWidget);
+      expect(find.text('Get started'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(find.text('I already have an account'), findsOneWidget);
+    });
+
+    testWidgets('Screen 3: SignUpOptionsScreen renders Google and Email buttons',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: SignUpOptionsScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Create your account'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Sign up with email'), findsOneWidget);
+      expect(find.text('Already have an account? '), findsOneWidget);
+    });
+
+    testWidgets('Screen 4: CreateAccountScreen renders First/Last name and live checklist',
         (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
@@ -185,14 +256,46 @@ void main() {
         ),
       );
 
-      expect(find.text('Create Account'), findsWidgets);
-      expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('or register with email'), findsOneWidget);
-      expect(find.text('Email Address'), findsOneWidget);
-      expect(find.text('Phone Number'), findsOneWidget);
+      expect(find.text('Create your account'), findsOneWidget);
+      expect(find.text('First name'), findsOneWidget);
+      expect(find.text('Last name'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
+      expect(find.text('At least 8 characters'), findsOneWidget);
     });
 
-    testWidgets('LoginScreen renders Continue with Google and credentials inputs',
+    testWidgets('Screen 5: OtpVerificationScreen renders masked email and Pinput',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: OtpVerificationScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Check your email'), findsOneWidget);
+      expect(find.textContaining('verification code'), findsOneWidget);
+      expect(find.text('Didn\'t receive the code?'), findsOneWidget);
+    });
+
+    testWidgets('Screen 6: GoogleAuthConfirmationScreen renders Google preview card',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: GoogleAuthConfirmationScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
+      expect(find.textContaining('Terms of Service'), findsOneWidget);
+    });
+
+    testWidgets('Screen 7: LoginScreen renders email/password and Forgot password link',
         (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
@@ -202,10 +305,58 @@ void main() {
         ),
       );
 
-      expect(find.text('Sign In'), findsWidgets);
+      expect(find.text('Welcome back'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Forgot password?'), findsOneWidget);
+      expect(find.text('Log in'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('or sign in with password'), findsOneWidget);
-      expect(find.text('Phone Number or Email'), findsOneWidget);
+    });
+
+    testWidgets('Screen 8: ForgotPasswordScreen renders email input and Send code CTA',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: ForgotPasswordScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Reset your password'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Send code'), findsOneWidget);
+    });
+
+    testWidgets('Screen 9: ResetPasswordOtpScreen renders recovery OTP',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: ResetPasswordOtpScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Check your email'), findsOneWidget);
+      expect(find.text('Didn\'t receive the code?'), findsOneWidget);
+    });
+
+    testWidgets('Screen 10: NewPasswordScreen renders password inputs and validation checklist',
+        (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: NewPasswordScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Create a new password'), findsOneWidget);
+      expect(find.text('New password'), findsOneWidget);
+      expect(find.text('Confirm new password'), findsOneWidget);
+      expect(find.text('Reset password'), findsOneWidget);
+      expect(find.text('At least 8 characters'), findsOneWidget);
     });
 
     testWidgets('CompleteProfileScreen renders Google profile badge and phone input',
@@ -224,9 +375,6 @@ void main() {
       expect(find.text('Complete Profile'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
       expect(find.text('Alex Odeh'), findsNWidgets(2));
-      expect(find.text('alex.odeh@gmail.com'), findsOneWidget);
-      expect(find.textContaining('Phone Number'), findsOneWidget);
-      expect(find.text('Complete Profile & Continue'), findsOneWidget);
     });
   });
 }

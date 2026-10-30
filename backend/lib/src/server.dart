@@ -13,6 +13,7 @@ import 'routes/plans_route.dart';
 import 'routes/quotes_route.dart';
 import 'routes/rider_route.dart';
 import 'routes/partner_route.dart';
+import 'routes/deliveries_route.dart';
 
 import 'shared/partner_database.dart';
 
@@ -39,6 +40,8 @@ Handler createServerHandler({
   v1Router.mount('/devices', devicesRouter().call);
   v1Router.mount('/plans', plansRouter().call);
   v1Router.mount('/rider', riderRouter().call);
+  v1Router.mount('/delivery', deliveriesRouter().call);
+  v1Router.mount('/deliveries', deliveriesRouter().call);
 
   router.mount('/api/v1', v1Router.call);
 

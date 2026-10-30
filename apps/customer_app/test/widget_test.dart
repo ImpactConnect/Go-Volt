@@ -12,9 +12,8 @@ void main() {
     );
 
     // Initial frame displays Splash
-    expect(find.text('Go-Volts'), findsOneWidget);
-    expect(find.text('Cleaner Cities. Brighter Future.'), findsOneWidget);
-    expect(find.text('v1.0.0 • 100% Electric Ecosystem'), findsOneWidget);
+    expect(find.text('GO-VOLTS'), findsOneWidget);
+    expect(find.text('Rides. Deliveries. A Greener Tomorrow.'), findsOneWidget);
 
     // Drain pending splash screen delay timer & settle transitions
     await tester.pump(const Duration(seconds: 4));

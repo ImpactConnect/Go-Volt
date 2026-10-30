@@ -90,21 +90,213 @@ class ApiClient {
   Future<ApiResponse<BookingDto>> createBooking({
     required String quoteId,
     required PaymentMethod paymentMethod,
+    String? rideCategoryId,
+    String? couponCode,
+    int? walletCreditAppliedKobo,
     String? instructions,
     String? recipientName,
     String? recipientPhone,
+    String? idempotencyKey,
   }) async {
+    final key = idempotencyKey ??
+        'idem_${DateTime.now().microsecondsSinceEpoch}_${quoteId.hashCode.abs()}';
+
     return _send<BookingDto>(
       method: 'POST',
       path: '/bookings',
+      headers: {'Idempotency-Key': key},
       data: {
         'quote_id': quoteId,
         'payment_method': paymentMethod.code,
+        'ride_category_id': ?rideCategoryId,
+        'coupon_code': ?couponCode,
+        'wallet_credit_applied_kobo': ?walletCreditAppliedKobo,
         'instructions': ?instructions,
         'recipient_name': ?recipientName,
         'recipient_phone': ?recipientPhone,
       },
       parser: (data) => BookingDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Fetches published ride categories for an area (v1.3 §5.4 & §6.8.1).
+  Future<ApiResponse<List<RideCategoryDto>>> getRideCategories({
+    double? latitude,
+    double? longitude,
+    String? serviceAreaId,
+  }) async {
+    return _send<List<RideCategoryDto>>(
+      method: 'GET',
+      path: '/catalogue/ride-categories',
+      queryParameters: {
+        'lat': ?latitude,
+        'lng': ?longitude,
+        'service_area_id': ?serviceAreaId,
+      },
+      parser: (data) {
+        if (data is List) {
+          return data
+              .map((e) => RideCategoryDto.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+        return <RideCategoryDto>[];
+      },
+    );
+  }
+
+  /// Advisory validation of a coupon against a quote (v1.3 §6.4 & §8.7).
+  Future<ApiResponse<CouponValidationDto>> validateCoupon({
+    required String code,
+    required int quoteAmountKobo,
+    String? serviceCode,
+  }) async {
+    return _send<CouponValidationDto>(
+      method: 'POST',
+      path: '/coupons/validate',
+      data: {
+        'code': code.trim().toUpperCase(),
+        'quote_amount_kobo': quoteAmountKobo,
+        'service_code': ?serviceCode,
+      },
+      parser: (data) =>
+          CouponValidationDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Fetches itemized digital trip receipt (Screen 16: RIDE-12).
+  Future<ApiResponse<TripReceiptDto>> getTripReceipt(String bookingId) async {
+    return _send<TripReceiptDto>(
+      method: 'GET',
+      path: '/bookings/$bookingId/receipt',
+      parser: (data) =>
+          TripReceiptDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Submits post-trip customer rating and feedback (Screen 17: RIDE-13).
+  Future<ApiResponse<bool>> submitTripRating(TripRatingDto rating) async {
+    return _send<bool>(
+      method: 'POST',
+      path: '/bookings/${rating.bookingId}/rating',
+      data: rating.toJson(),
+      parser: (data) => true,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // PARCEL DELIVERY (GO-VOLTS SEND — v1.4 §6.4 & §22)
+  // ---------------------------------------------------------------------------
+
+  /// Fetches active parcel options and policy notices (v1.4 §6.4 & §22.3).
+  Future<ApiResponse<ParcelCatalogueDto>> getDeliveryCatalogue({
+    double? latitude,
+    double? longitude,
+  }) async {
+    return _send<ParcelCatalogueDto>(
+      method: 'GET',
+      path: '/delivery/catalogue',
+      queryParameters: {
+        'lat': ?latitude,
+        'lng': ?longitude,
+      },
+      parser: (data) =>
+          ParcelCatalogueDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Calculates authoritative parcel fare quote (v1.4 §6.4 & §22.4).
+  Future<ApiResponse<ParcelPriceBreakdownDto>> requestParcelQuote({
+    required LocationDto pickup,
+    required LocationDto dropoff,
+    required DeliveryOptionDto deliveryOption,
+    required ParcelCategoryDto category,
+    required double weightKg,
+    required ParcelSizeBandDto sizeBand,
+    List<SpecialHandlingOptionDto> handlingOptions = const [],
+    String? couponCode,
+  }) async {
+    return _send<ParcelPriceBreakdownDto>(
+      method: 'POST',
+      path: '/deliveries/quotes',
+      data: {
+        'pickup': pickup.toJson(),
+        'dropoff': dropoff.toJson(),
+        'delivery_option': deliveryOption.toJson(),
+        'package_category': category.toJson(),
+        'weight_kg': weightKg,
+        'size_band': sizeBand.toJson(),
+        'handling_options': handlingOptions.map((e) => e.toJson()).toList(),
+        if (couponCode != null) 'coupon_code': couponCode,
+      },
+      parser: (data) =>
+          ParcelPriceBreakdownDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Creates a parcel booking from quote and policy acknowledgement (v1.4 §6.4 & §22.5).
+  Future<ApiResponse<ParcelDeliveryDto>> createParcelDelivery({
+    required DeliveryOptionDto deliveryOption,
+    required LocationDto pickupLocation,
+    required LocationDto destinationLocation,
+    required RecipientDetailsDto recipient,
+    required ParcelDetailsDto packageDetails,
+    required ParcelPriceBreakdownDto priceBreakdown,
+    required PaymentMethod paymentMethod,
+    String? couponCode,
+    String? idempotencyKey,
+  }) async {
+    final key = idempotencyKey ??
+        'idem_del_${DateTime.now().microsecondsSinceEpoch}';
+
+    return _send<ParcelDeliveryDto>(
+      method: 'POST',
+      path: '/deliveries',
+      headers: {'Idempotency-Key': key},
+      data: {
+        'delivery_option': deliveryOption.toJson(),
+        'pickup': pickupLocation.toJson(),
+        'dropoff': destinationLocation.toJson(),
+        'recipient': recipient.toJson(),
+        'package_details': packageDetails.toJson(),
+        'price_breakdown': priceBreakdown.toJson(),
+        'payment_method': paymentMethod.code,
+        if (couponCode != null) 'coupon_code': couponCode,
+      },
+      parser: (data) =>
+          ParcelDeliveryDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Retrieves own parcel delivery status (v1.4 §6.4).
+  Future<ApiResponse<ParcelDeliveryDto>> getParcelDelivery(String id) async {
+    return _send<ParcelDeliveryDto>(
+      method: 'GET',
+      path: '/deliveries/$id',
+      parser: (data) =>
+          ParcelDeliveryDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Cancels an active parcel delivery (v1.4 §6.4 & §22.10).
+  Future<ApiResponse<bool>> cancelParcelDelivery(
+    String id, {
+    required String reason,
+  }) async {
+    return _send<bool>(
+      method: 'POST',
+      path: '/deliveries/$id/cancel',
+      data: {'reason': reason},
+      parser: (data) => true,
+    );
+  }
+
+  /// Submits post-delivery courier rating and feedback (Screen 17 & v1.4 §22.2).
+  Future<ApiResponse<bool>> submitParcelRating(ParcelRatingDto rating) async {
+    return _send<bool>(
+      method: 'POST',
+      path: '/deliveries/${rating.trackingNumber}/rating',
+      data: rating.toJson(),
+      parser: (data) => true,
     );
   }
 
@@ -327,6 +519,7 @@ class ApiClient {
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
     required T Function(dynamic data) parser,
   }) async {
     try {
@@ -334,7 +527,7 @@ class ApiClient {
         path,
         data: data,
         queryParameters: queryParameters,
-        options: Options(method: method),
+        options: Options(method: method, headers: headers),
       );
 
       final statusCode = response.statusCode ?? 200;

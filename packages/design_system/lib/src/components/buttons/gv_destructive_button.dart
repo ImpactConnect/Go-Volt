@@ -45,7 +45,11 @@ class GVDestructiveButton extends StatelessWidget {
                   color: GVColors.white,
                 ),
               )
-            : Text(label, style: GVTypography.buttonLarge),
+            : Text(
+                label,
+                style: GVTypography.buttonLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
       ),
     );
   }

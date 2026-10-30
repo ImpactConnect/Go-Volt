@@ -81,6 +81,47 @@ class BookingRepository {
     }
     return [];
   }
+
+  /// Fetches available server-managed ride categories (v1.3 §5.4).
+  Future<List<RideCategoryDto>> getRideCategories() async {
+    final response = await _client.getRideCategories();
+    if (response.isSuccess && response.data != null) {
+      return response.data!;
+    }
+    return [];
+  }
+
+  /// Validates a promotional coupon code.
+  Future<CouponValidationDto> validateCoupon({
+    required String code,
+    required int quoteAmountKobo,
+    String? serviceCode,
+  }) async {
+    final response = await _client.validateCoupon(
+      code: code,
+      quoteAmountKobo: quoteAmountKobo,
+      serviceCode: serviceCode,
+    );
+    if (response.isSuccess && response.data != null) {
+      return response.data!;
+    }
+    throw Exception(response.error?.message ?? 'Invalid promo code');
+  }
+
+  /// Retrieves finalized digital trip receipt.
+  Future<TripReceiptDto> getTripReceipt(String bookingId) async {
+    final response = await _client.getTripReceipt(bookingId);
+    if (response.isSuccess && response.data != null) {
+      return response.data!;
+    }
+    throw Exception(response.error?.message ?? 'Trip receipt not found');
+  }
+
+  /// Submits post-trip rating and feedback.
+  Future<bool> submitTripRating(TripRatingDto rating) async {
+    final response = await _client.submitTripRating(rating);
+    return response.isSuccess;
+  }
 }
 
 /// Provider for [BookingRepository].

@@ -66,6 +66,7 @@ enum PaymentMethod {
 enum VehicleType {
   electricBike('EV_BIKE', 'Electric Bike', 1, 15.0),
   electricTricycle('EV_TRIKE', 'Electric Trike', 3, 100.0),
+  electricCar('EV_CAR', 'Electric Car', 4, 250.0),
   electricVan('EV_VAN', 'Electric Van', 1, 500.0);
 
   const VehicleType(this.code, this.displayName, this.maxPassengers, this.maxPayloadKg);
@@ -123,6 +124,64 @@ enum UserRole {
     return UserRole.values.firstWhere(
       (r) => r.code == raw || r.name == raw,
       orElse: () => UserRole.customer,
+    );
+  }
+}
+
+/// Category type for customer saved places.
+enum SavedPlaceType {
+  home('HOME', 'Home'),
+  work('WORK', 'Work'),
+  custom('CUSTOM', 'Custom');
+
+  const SavedPlaceType(this.code, this.displayName);
+
+  final String code;
+  final String displayName;
+
+  static SavedPlaceType fromString(String raw) {
+    return SavedPlaceType.values.firstWhere(
+      (t) => t.code == raw.toUpperCase() || t.name == raw,
+      orElse: () => SavedPlaceType.custom,
+    );
+  }
+}
+
+/// Operational status for municipal service areas.
+enum ServiceAreaStatus {
+  fullySupported('FULLY_SUPPORTED', 'Fully supported'),
+  limited('LIMITED', 'Limited services'),
+  unavailable('UNAVAILABLE', 'Currently unavailable');
+
+  const ServiceAreaStatus(this.code, this.displayName);
+
+  final String code;
+  final String displayName;
+
+  static ServiceAreaStatus fromString(String raw) {
+    return ServiceAreaStatus.values.firstWhere(
+      (s) => s.code == raw.toUpperCase() || s.name == raw,
+      orElse: () => ServiceAreaStatus.fullySupported,
+    );
+  }
+}
+
+/// Notification categories for the customer notification center.
+enum NotificationCategory {
+  all('ALL', 'All'),
+  bookings('BOOKINGS', 'Bookings'),
+  promotions('PROMOTIONS', 'Promotions'),
+  account('ACCOUNT', 'Account');
+
+  const NotificationCategory(this.code, this.displayName);
+
+  final String code;
+  final String displayName;
+
+  static NotificationCategory fromString(String raw) {
+    return NotificationCategory.values.firstWhere(
+      (c) => c.code == raw.toUpperCase() || c.name == raw,
+      orElse: () => NotificationCategory.all,
     );
   }
 }

@@ -41,7 +41,13 @@ class GVOutlinedButton extends StatelessWidget {
               Icon(icon, size: 18),
               const SizedBox(width: 8),
             ],
-            Text(label, style: GVTypography.buttonLarge),
+            Flexible(
+              child: Text(
+                label,
+                style: GVTypography.buttonLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

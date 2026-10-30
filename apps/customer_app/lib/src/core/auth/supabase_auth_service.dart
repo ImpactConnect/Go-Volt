@@ -57,6 +57,81 @@ class SupabaseAuthService {
     );
   }
 
+  /// Registers user with Email and Password and triggers email verification.
+  Future<AuthResponse> signUpWithEmail({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    final sb = client;
+    if (sb == null) {
+      return AuthResponse(
+        user: User(
+          id: 'usr_reg_${DateTime.now().millisecondsSinceEpoch}',
+          appMetadata: const {},
+          userMetadata: {
+            'first_name': firstName.trim(),
+            'last_name': lastName.trim(),
+            'full_name': '${firstName.trim()} ${lastName.trim()}',
+          },
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+          email: email.trim(),
+        ),
+      );
+    }
+
+    return await sb.auth.signUp(
+      email: email.trim(),
+      password: password,
+      data: {
+        'first_name': firstName.trim(),
+        'last_name': lastName.trim(),
+        'full_name': '${firstName.trim()} ${lastName.trim()}',
+      },
+    );
+  }
+
+  /// Sends a password reset verification code to user email.
+  Future<void> sendPasswordResetEmail(String email) async {
+    final sb = client;
+    if (sb == null) {
+      throw const AuthException('Supabase is not initialized.');
+    }
+
+    await sb.auth.resetPasswordForEmail(email.trim());
+  }
+
+  /// Verifies recovery OTP code for password reset.
+  Future<AuthResponse> verifyRecoveryOtp({
+    required String email,
+    required String token,
+  }) async {
+    final sb = client;
+    if (sb == null) {
+      throw const AuthException('Supabase is not initialized.');
+    }
+
+    return await sb.auth.verifyOTP(
+      email: email.trim(),
+      token: token.trim(),
+      type: OtpType.recovery,
+    );
+  }
+
+  /// Updates current user password.
+  Future<UserResponse> updatePassword(String newPassword) async {
+    final sb = client;
+    if (sb == null) {
+      throw const AuthException('Supabase is not initialized.');
+    }
+
+    return await sb.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
+
   /// Updates user credentials and profile metadata after registration.
   Future<UserResponse?> updateUserCredentials({
     String? password,
@@ -80,10 +155,11 @@ class SupabaseAuthService {
     );
   }
 
-  /// Verifies a 6-digit Email OTP code.
+  /// Verifies a 6-digit Email OTP code with automatic fallback between signup and email OTP types.
   Future<AuthResponse> verifyEmailOtp({
     required String email,
     required String token,
+    OtpType type = OtpType.signup,
   }) async {
     final sb = client;
     if (sb == null) {
@@ -92,11 +168,23 @@ class SupabaseAuthService {
       );
     }
 
-    return await sb.auth.verifyOTP(
-      email: email.trim(),
-      token: token.trim(),
-      type: OtpType.email,
-    );
+    try {
+      return await sb.auth.verifyOTP(
+        email: email.trim(),
+        token: token.trim(),
+        type: type,
+      );
+    } catch (e) {
+      // Fallback: If signup verification fails, attempt email OTP type
+      if (type == OtpType.signup) {
+        return await sb.auth.verifyOTP(
+          email: email.trim(),
+          token: token.trim(),
+          type: OtpType.email,
+        );
+      }
+      rethrow;
+    }
   }
 
   /// Initiates native in-app Google Sign-In displaying the device account picker popup.

@@ -36,7 +36,7 @@ melos:
       description: Run Flutter tests
     test:backend:
       exec:
-        command: dart test
+        command: flutter test
         concurrency: 1
       packageFilters:
         scope: backend

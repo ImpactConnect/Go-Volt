@@ -380,63 +380,66 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                         borderRadius: BorderRadius.circular(GVBorderRadius.md),
                         boxShadow: GVShadows.card,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Manage Subscription', style: GVTypography.h3),
-                          const SizedBox(height: GVSpacing.sm),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(
-                              selectedPlan.isPaused
-                                  ? Icons.play_arrow
-                                  : Icons.pause_circle_outline,
-                              color: GVColors.deepGreen,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Manage Subscription', style: GVTypography.h3),
+                            const SizedBox(height: GVSpacing.sm),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                selectedPlan.isPaused
+                                    ? Icons.play_arrow
+                                    : Icons.pause_circle_outline,
+                                color: GVColors.deepGreen,
+                              ),
+                              title: Text(
+                                selectedPlan.isPaused
+                                    ? 'Resume Plan'
+                                    : 'Pause Plan',
+                                style: GVTypography.bodyMedium,
+                              ),
+                              subtitle:
+                                  const Text('Temporarily halt scheduled pickups'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                ref
+                                    .read(scheduledNotifierProvider.notifier)
+                                    .togglePlanPause(selectedPlan);
+                              },
                             ),
-                            title: Text(
-                              selectedPlan.isPaused
-                                  ? 'Resume Plan'
-                                  : 'Pause Plan',
-                              style: GVTypography.bodyMedium,
+                            const Divider(),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.edit_calendar_outlined,
+                                  color: GVColors.deepGreen),
+                              title: Text('Change Schedule or Route',
+                                  style: GVTypography.bodyMedium),
+                              subtitle:
+                                  const Text('Modify pickup timing or destination address'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => context.push(AppRoutes.planModify),
                             ),
-                            subtitle:
-                                const Text('Temporarily halt scheduled pickups'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              ref
-                                  .read(scheduledNotifierProvider.notifier)
-                                  .togglePlanPause(selectedPlan);
-                            },
-                          ),
-                          const Divider(),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.edit_calendar_outlined,
-                                color: GVColors.deepGreen),
-                            title: Text('Change Schedule or Route',
-                                style: GVTypography.bodyMedium),
-                            subtitle:
-                                const Text('Modify pickup timing or destination address'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => context.push(AppRoutes.planModify),
-                          ),
-                          const Divider(),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.cancel_outlined,
-                                color: GVColors.error),
-                            title: Text(
-                              'Cancel Subscription',
-                              style: GVTypography.bodyMedium
-                                  .copyWith(color: GVColors.error),
+                            const Divider(),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.cancel_outlined,
+                                  color: GVColors.error),
+                              title: Text(
+                                'Cancel Subscription',
+                                style: GVTypography.bodyMedium
+                                    .copyWith(color: GVColors.error),
+                              ),
+                              subtitle:
+                                  const Text('Calculate pro-rata refund & terms'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => _showCancellationPolicyDialog(
+                                  context, selectedPlan),
                             ),
-                            subtitle:
-                                const Text('Calculate pro-rata refund & terms'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => _showCancellationPolicyDialog(
-                                context, selectedPlan),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],

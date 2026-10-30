@@ -27,7 +27,7 @@ scripts:
     description: Run Flutter tests
 
   test:backend:
-    run: dart test
+    run: flutter test
     exec:
       concurrency: 1
     packageFilters:

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:backend/src/routes/partner_route.dart';
 import 'package:backend/src/server.dart';
 import 'package:shelf/shelf.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();

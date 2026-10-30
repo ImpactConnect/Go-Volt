@@ -5,7 +5,7 @@ import 'package:backend/src/shared/partner_database.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shelf/shelf.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('E-Commerce Sandbox End-to-End Simulation', () {

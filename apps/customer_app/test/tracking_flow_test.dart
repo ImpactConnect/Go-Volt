@@ -119,6 +119,12 @@ void main() {
             appConfigProvider.overrideWithValue(testConfig),
             apiClientProvider.overrideWithValue(testApiClient),
             trackingRepositoryProvider.overrideWithValue(testTrackingRepo),
+            liveTrackingNotifierProvider.overrideWith(
+              (ref) => LiveTrackingNotifier(
+                repository: testTrackingRepo,
+                initialBooking: testBooking,
+              ),
+            ),
           ],
           child: const MaterialApp(
             home: LiveTrackingScreen(),
@@ -151,6 +157,12 @@ void main() {
             appConfigProvider.overrideWithValue(testConfig),
             apiClientProvider.overrideWithValue(testApiClient),
             trackingRepositoryProvider.overrideWithValue(testTrackingRepo),
+            liveTrackingNotifierProvider.overrideWith(
+              (ref) => LiveTrackingNotifier(
+                repository: testTrackingRepo,
+                initialBooking: testBooking,
+              ),
+            ),
           ],
           child: const MaterialApp(
             home: TripCompletedScreen(),
@@ -181,6 +193,12 @@ void main() {
             appConfigProvider.overrideWithValue(testConfig),
             apiClientProvider.overrideWithValue(testApiClient),
             trackingRepositoryProvider.overrideWithValue(testTrackingRepo),
+            liveTrackingNotifierProvider.overrideWith(
+              (ref) => LiveTrackingNotifier(
+                repository: testTrackingRepo,
+                initialBooking: testBooking,
+              ),
+            ),
           ],
           child: const MaterialApp(
             home: TripDisputeScreen(),

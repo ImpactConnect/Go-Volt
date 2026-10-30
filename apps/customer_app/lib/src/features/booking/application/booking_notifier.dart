@@ -41,6 +41,90 @@ class BookingNotifier extends StateNotifier<BookingFlowState> {
     }
   }
 
+  void swapLocations() {
+    if (state.pickupLocation == null && state.dropoffLocation == null) return;
+    final tempPickup = state.pickupLocation;
+    state = state.copyWith(
+      pickupLocation: state.dropoffLocation,
+      dropoffLocation: tempPickup,
+      clearQuote: true,
+      clearError: true,
+    );
+    if (state.hasValidRoute) {
+      fetchQuote();
+    }
+  }
+
+  void clearPickupLocation() {
+    state = state.copyWith(
+      pickupLocation: null,
+      clearQuote: true,
+      clearError: true,
+    );
+  }
+
+  void clearDropoffLocation() {
+    state = state.copyWith(
+      dropoffLocation: null,
+      clearQuote: true,
+      clearError: true,
+    );
+  }
+
+  Future<void> fetchRideCategories() async {
+    try {
+      final categories = await _repository.getRideCategories();
+      state = state.copyWith(rideCategories: categories);
+    } catch (_) {
+      // Fallback or keep current
+    }
+  }
+
+  void selectRideCategory(String categoryId) {
+    state = state.copyWith(selectedRideCategoryId: categoryId);
+  }
+
+  Future<bool> applyCoupon(String code) async {
+    final trimmed = code.trim().toUpperCase();
+    if (trimmed.isEmpty) return false;
+
+    state = state.copyWith(
+      isApplyingCoupon: true,
+      clearCouponError: true,
+    );
+
+    try {
+      final quoteAmount =
+          state.quote?.priceBreakdown.totalAmountKobo ?? 280000;
+
+      final validation = await _repository.validateCoupon(
+        code: trimmed,
+        quoteAmountKobo: quoteAmount,
+        serviceCode: state.serviceCode.code,
+      );
+
+      state = state.copyWith(
+        appliedCoupon: validation,
+        isApplyingCoupon: false,
+        clearCouponError: true,
+      );
+      return validation.isValid;
+    } catch (e) {
+      state = state.copyWith(
+        isApplyingCoupon: false,
+        couponError: e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  void removeCoupon() {
+    state = state.copyWith(
+      clearCoupon: true,
+      clearCouponError: true,
+    );
+  }
+
   void selectVehicleType(VehicleType vehicleType) {
     state = state.copyWith(selectedVehicleType: vehicleType);
   }

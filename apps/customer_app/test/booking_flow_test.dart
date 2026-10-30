@@ -46,6 +46,65 @@ class _FakeBookingRepository implements BookingRepository {
   Future<List<BookingDto>> listBookings({String? status, int limit = 20}) async {
     return [TestFixtures.booking];
   }
+
+  @override
+  Future<List<RideCategoryDto>> getRideCategories() async {
+    return const [
+      RideCategoryDto(
+        id: 'goride_standard',
+        name: 'GoRide Standard',
+        code: 'standard',
+        description: 'Affordable and reliable',
+        passengerCapacity: 4,
+        baseFareKobo: 280000,
+        features: ['AC', '3 Seats', 'Trusted riders'],
+      ),
+    ];
+  }
+
+  @override
+  Future<CouponValidationDto> validateCoupon({
+    required String code,
+    required int quoteAmountKobo,
+    String? serviceCode,
+  }) async {
+    return const CouponValidationDto(
+      isValid: true,
+      discountAmountKobo: 30000,
+      code: 'GO20',
+    );
+  }
+
+  @override
+  Future<TripReceiptDto> getTripReceipt(String bookingId) async {
+    return TripReceiptDto(
+      bookingId: 'TRP123456789',
+      receiptReference: 'GV-TEST-01',
+      serviceType: 'GoRide Standard',
+      driverName: 'Daniel Okafor',
+      vehicleModel: 'Toyota Corolla - Black',
+      vehiclePlate: 'KJA 123 AB',
+      pickupAddress: 'Eko Hotel and Suites',
+      pickupTime: DateTime(2026, 10, 29, 10, 5),
+      dropoffAddress: 'Palms Mall',
+      dropoffTime: DateTime(2026, 10, 29, 10, 17),
+      distanceKm: 8.4,
+      durationMinutes: 12,
+      priceBreakdown: const PriceBreakdownDto(
+        baseAmountKobo: 150000,
+        distanceAmountKobo: 110000,
+        timeAmountKobo: 30000,
+        serviceFeeKobo: 20000,
+        totalAmountKobo: 310000,
+      ),
+      totalPaidKobo: 320000,
+    );
+  }
+
+  @override
+  Future<bool> submitTripRating(TripRatingDto rating) async {
+    return true;
+  }
 }
 
 void main() {
@@ -88,6 +147,10 @@ void main() {
   group('Phase 1B Widget Tests', () {
     testWidgets('LocationPickerScreen displays pickup, dropoff and Lagos destinations',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final fakeRepo = _FakeBookingRepository();
 
       await tester.pumpWidget(
@@ -100,21 +163,25 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
-      // Verify UI elements
-      expect(find.text('Where to?'), findsOneWidget);
-      expect(find.text('PICKUP'), findsOneWidget);
-      expect(find.text('DESTINATION'), findsOneWidget);
-      expect(find.text('Search address or landmark'), findsOneWidget);
-      expect(find.text('Home'), findsWidgets);
-      expect(find.text('Work'), findsWidgets);
-      expect(find.text('School'), findsOneWidget);
-      expect(find.text('Victoria Island Financial District'), findsOneWidget);
-      expect(find.text('Lekki Phase 1'), findsOneWidget);
+      // Verify Screen 2 Specification UI elements
+      expect(find.text('Enter your locations'), findsOneWidget);
+      expect(find.text('Pickup location'), findsOneWidget);
+      expect(find.text('Destination'), findsOneWidget);
+      expect(find.text('Use current location'), findsOneWidget);
+      expect(find.text('Saved places'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Work'), findsOneWidget);
+      expect(find.text('Add new location'), findsOneWidget);
     });
 
     testWidgets('RideBookingScreen displays electric vehicle classes and price breakdown',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final fakeRepo = _FakeBookingRepository();
 
       await tester.pumpWidget(
@@ -130,13 +197,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Ride Electric'), findsOneWidget);
-      expect(find.text('Select Electric Class'), findsOneWidget);
-      expect(find.text('Volt Bike'), findsOneWidget);
-      expect(find.text('Volt Trike (Comfort)'), findsOneWidget);
-      expect(find.text('Volt Cargo / Executive'), findsOneWidget);
-      expect(find.text('Payment Method'), findsOneWidget);
-      expect(find.text('Confirm Electric Ride'), findsOneWidget);
+      // Screen 7 Route Preview
+      expect(find.text('Trip overview'), findsOneWidget);
+      expect(find.text('See ride options'), findsOneWidget);
+
+      // Advance to Screen 8 Choose a ride
+      await tester.tap(find.text('See ride options'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose a ride'), findsOneWidget);
+      expect(find.text('GoRide Standard'), findsOneWidget);
+      expect(find.text('Continue to fare details'), findsOneWidget);
     });
 
     testWidgets('ScheduledBookingScreen displays commute plans and frequency selector',

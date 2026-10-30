@@ -83,31 +83,34 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 border: Border.all(color: const Color(0xFF2A3630)),
               ),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.download, color: GVColors.brandGreen),
-                    title: const Text('Export My Account Data', style: TextStyle(color: Colors.white, fontSize: 14)),
-                    subtitle: const Text('Receive a full JSON/CSV export of your trips and receipts.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12)),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Data export request submitted. File will be sent to your email.'),
-                          backgroundColor: GVColors.deepGreen,
-                        ),
-                      );
-                    },
-                  ),
-                  const Divider(color: Colors.white24, height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                    title: const Text('Delete Account', style: TextStyle(color: Colors.redAccent, fontSize: 14)),
-                    subtitle: const Text('Permanently erase account with a 30-day recovery window.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12)),
-                    onTap: _showDeleteAccountDialog,
-                  ),
-                ],
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.download, color: GVColors.brandGreen),
+                      title: const Text('Export My Account Data', style: TextStyle(color: Colors.white, fontSize: 14)),
+                      subtitle: const Text('Receive a full JSON/CSV export of your trips and receipts.',
+                          style: TextStyle(color: Colors.white60, fontSize: 12)),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Data export request submitted. File will be sent to your email.'),
+                            backgroundColor: GVColors.deepGreen,
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(color: Colors.white24, height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                      title: const Text('Delete Account', style: TextStyle(color: Colors.redAccent, fontSize: 14)),
+                      subtitle: const Text('Permanently erase account with a 30-day recovery window.',
+                          style: TextStyle(color: Colors.white60, fontSize: 12)),
+                      onTap: _showDeleteAccountDialog,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -6,6 +6,9 @@ enum AuthStatus {
   unauthenticated,
   authenticating,
   otpSent,
+  recoveryOtpSent,
+  recoveryOtpVerified,
+  passwordResetSuccess,
   profileIncomplete,
   authenticated,
   error,
@@ -15,6 +18,8 @@ class AuthState extends Equatable {
   const AuthState({
     this.status = AuthStatus.initial,
     this.profile,
+    this.pendingFirstName,
+    this.pendingLastName,
     this.pendingEmail,
     this.pendingPhoneNumber,
     this.pendingPassword,
@@ -24,6 +29,8 @@ class AuthState extends Equatable {
 
   final AuthStatus status;
   final ProfileDto? profile;
+  final String? pendingFirstName;
+  final String? pendingLastName;
   final String? pendingEmail;
   final String? pendingPhoneNumber;
   final String? pendingPassword;
@@ -37,6 +44,8 @@ class AuthState extends Equatable {
   AuthState copyWith({
     AuthStatus? status,
     ProfileDto? profile,
+    String? pendingFirstName,
+    String? pendingLastName,
     String? pendingEmail,
     String? pendingPhoneNumber,
     String? pendingPassword,
@@ -46,6 +55,8 @@ class AuthState extends Equatable {
     return AuthState(
       status: status ?? this.status,
       profile: profile ?? this.profile,
+      pendingFirstName: pendingFirstName ?? this.pendingFirstName,
+      pendingLastName: pendingLastName ?? this.pendingLastName,
       pendingEmail: pendingEmail ?? this.pendingEmail,
       pendingPhoneNumber: pendingPhoneNumber ?? this.pendingPhoneNumber,
       pendingPassword: pendingPassword ?? this.pendingPassword,
@@ -58,6 +69,8 @@ class AuthState extends Equatable {
   List<Object?> get props => [
         status,
         profile,
+        pendingFirstName,
+        pendingLastName,
         pendingEmail,
         pendingPhoneNumber,
         pendingPassword,

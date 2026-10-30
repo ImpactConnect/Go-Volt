@@ -18,7 +18,7 @@ START_TIME=$(date +%s)
 # 1. Backend REST API and E2E Integration Tests
 echo ""
 echo "▶ [1/6] Running Backend Tests (Contracts, State Machines & E2E Simulation)..."
-(cd backend && dart test)
+(cd backend && flutter test)
 echo "✔ Backend tests passed."
 
 # 2. Design System Tokens & Components
@@ -30,7 +30,7 @@ echo "✔ Design system tests passed."
 # 3. Domain Models Serialization & Enums
 echo ""
 echo "▶ [3/6] Running App Models Domain Tests..."
-(cd packages/app_models && dart test)
+(cd packages/app_models && flutter test)
 echo "✔ App models tests passed."
 
 # 4. Merchant Web Portal & Partner API

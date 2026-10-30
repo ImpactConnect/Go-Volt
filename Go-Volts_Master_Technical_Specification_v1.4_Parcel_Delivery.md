@@ -2,8 +2,8 @@
 ## Technical Specification and Implementation Blueprint
 
 **Document status:** Engineering baseline for implementation  
-**Version:** 1.2  
-**Date:** 23 October 2026  
+**Version:** 1.4  
+**Date:** 30 October 2026  
 **Companion document:** Go-Volts Developer Concept Note  
 **Audience:** Software developers, technical leads, QA engineers, DevOps engineers, product owner, and AI coding agents
 
@@ -11,7 +11,7 @@
 
 ## 1. Purpose and scope
 
-This document translates the Go-Volts product concept into an implementable software architecture. It defines the application stack, repository layout, service boundaries, database model, API contracts, booking and dispatch state machines, payment and wallet invariants, access controls, integrations, testing requirements, and delivery plan.
+This document translates the Go-Volts product concept into an implementable software architecture. It defines the application stack, repository layout, service boundaries, database model, API contracts, booking and dispatch state machines, payment and wallet invariants, access controls, integrations, testing requirements, and delivery plan. Version 1.4 adds the complete Go-Volts Send parcel-delivery technical module, including admin configuration, parcel-specific data, APIs, lifecycle, proof of delivery, exception handling, and test requirements.
 
 The platform supports four product surfaces:
 
@@ -127,6 +127,8 @@ flowchart TB
 12. **Notifications:** push, in-app notifications, templates, delivery attempts.
 13. **Support and safety:** support tickets, incident records, emergency escalation settings.
 14. **Reporting and audit:** admin actions, financial reports, operational metrics, exports.
+15. **Ride configuration:** ride categories, vehicle eligibility, category availability, ride-specific rules, and the controlled publication of configuration to customer and rider apps.
+16. **Parcel delivery:** customer parcel declarations, recipient details, package eligibility, delivery options, quote/payment integration, rider dispatch, verification, proof of delivery, returns and parcel-specific operational configuration.
 
 ### 3.2 Domain boundaries
 
@@ -393,7 +395,37 @@ Enforce that a role assignment's scope is valid for that role. Privileged role c
 
 **`service_area_service_types`**: `service_area_id`, `service_type_id`, `enabled`, `effective_from`, `effective_to`.
 
-**`package_categories`**: `id`, `name`, `enabled`, `restricted_reason`, `max_weight_grams`, `max_dimension_mm jsonb`.
+**`ride_categories`**: `id`, `code` unique, `name`, `description`, `display_order`, `icon_key`, `passenger_capacity`, `status` (`draft`, `active`, `inactive`, `archived`), `created_by`, `updated_by`, `created_at`, `updated_at`. Categories are admin-managed catalogue records, not client constants.
+
+**`ride_category_service_areas`**: `ride_category_id`, `service_area_id`, `enabled`, `effective_from`, `effective_to`; unique active category/area assignment.
+
+**`ride_category_vehicle_requirements`**: `id`, `ride_category_id`, `vehicle_type`, `minimum_capacity`, `required_vehicle_attributes jsonb`, `created_at`. Use controlled vehicle-type values and validate them against approved rider vehicle records.
+
+**`ride_category_rules`**: `id`, `ride_category_id`, `version`, `status` (`draft`, `published`, `retired`), `minimum_passengers`, `maximum_passengers`, `minimum_trip_distance_meters nullable`, `maximum_trip_distance_meters nullable`, `booking_lead_time_seconds nullable`, `advance_booking_limit_seconds nullable`, `effective_from`, `effective_to`, `created_by`, `approved_by nullable`, `created_at`. Only explicitly approved fields belong here; do not use arbitrary JSON as a substitute for typed business rules.
+
+**`ride_configuration_audit`**: `id`, `actor_user_id`, `entity_type`, `entity_id`, `action`, `before_snapshot jsonb`, `after_snapshot jsonb`, `reason`, `request_id`, `created_at`. Append-only record of configuration changes.
+
+Ride categories must reference applicable service areas and pricing rules. A category cannot be published unless it has valid vehicle requirements, an active service-area assignment, and an applicable published pricing rule. Historical bookings retain their category and pricing snapshots even if an administrator later changes or deactivates the category.
+
+**`package_categories`**: `id`, `code unique`, `name`, `description`, `icon_key`, `display_order`, `status` (`draft`, `active`, `inactive`, `archived`), `restricted_reason nullable`, `requires_declaration boolean`, `requires_declared_value boolean`, `created_by`, `updated_by`, `created_at`, `updated_at`. Package categories are admin-managed catalogue records and must not be hardcoded in Flutter apps.
+
+**`package_category_rules`**: `id`, `package_category_id`, `version`, `status` (`draft`, `published`, `retired`), `minimum_weight_grams nullable`, `maximum_weight_grams nullable`, `maximum_length_mm nullable`, `maximum_width_mm nullable`, `maximum_height_mm nullable`, `maximum_declared_value_kobo nullable`, `requires_special_handling boolean`, `effective_from`, `effective_to`, `created_by`, `approved_by nullable`, `created_at`. Published rule versions are immutable.
+
+**`package_category_service_areas`**: `package_category_id`, `service_area_id`, `enabled`, `effective_from`, `effective_to`; unique active category/area assignment.
+
+**`delivery_options`**: `id`, `code unique`, `name`, `description`, `service_level_label`, `status` (`draft`, `active`, `inactive`, `archived`), `display_order`, `created_at`, `updated_at`.
+
+**`delivery_option_rules`**: `id`, `delivery_option_id`, `version`, `status`, `minimum_lead_time_seconds nullable`, `maximum_lead_time_seconds nullable`, `target_delivery_window_seconds nullable`, `cutoff_time_local nullable`, `created_by`, `approved_by nullable`, `effective_from`, `effective_to`, `created_at`. Service-level promises must be operationally approved before publication.
+
+**`delivery_option_service_areas`**: `delivery_option_id`, `service_area_id`, `enabled`, `effective_from`, `effective_to`.
+
+**`delivery_handling_options`**: `id`, `code unique`, `name`, `description`, `status`, `requires_operations_approval`, `created_at`, `updated_at`.
+
+**`package_category_handling_options`**: `package_category_id`, `handling_option_id`, `enabled`; defines which handling requests are valid for each category.
+
+**`delivery_policy_versions`**: `id`, `policy_type` (`prohibited_items`, `restricted_items`, `declared_value`, `cancellation`, `failed_delivery`, `returns`, `proof_of_delivery`, `privacy_retention`), `version`, `content`, `status` (`draft`, `published`, `retired`), `effective_from`, `effective_to`, `created_by`, `approved_by nullable`, `created_at`. Store customer acknowledgement against the exact published policy version.
+
+**`parcel_delivery_configuration_audit`**: `id`, `actor_user_id`, `entity_type`, `entity_id`, `action`, `before_snapshot jsonb`, `after_snapshot jsonb`, `reason`, `request_id`, `created_at`. Append-only.
 
 Do not hard-code all operating rules into the client. The server determines which services are enabled in a location and which package categories are allowed.
 
@@ -436,7 +468,25 @@ Constraints: amounts must be non-negative; wallet credit applied cannot exceed q
 
 **`ride_details`**: `booking_id primary key references bookings(id)`, `passenger_count`, `ride_category`, `rider_note`, `pickup_pin_hash nullable`, `dropoff_pin_hash nullable`, `scheduled_for nullable`. Passenger rides must not be enabled in an area until required legal and safety approvals are configured.
 
-**`delivery_details`**: `booking_id primary key references bookings(id)`, `package_category_id`, `package_description`, `weight_grams nullable`, `length_mm nullable`, `width_mm nullable`, `height_mm nullable`, `declared_value_kobo nullable`, `proof_of_delivery_required boolean`, `recipient_otp_hash nullable`, `delivery_instructions`, `merchant_order_reference nullable`.
+**`delivery_details`**: `booking_id primary key references bookings(id)`, `package_category_id`, `package_category_rule_version_id`, `delivery_option_id nullable`, `delivery_option_rule_version_id nullable`, `package_description`, `weight_grams nullable`, `length_mm nullable`, `width_mm nullable`, `height_mm nullable`, `declared_value_kobo nullable`, `proof_of_delivery_required boolean`, `recipient_otp_hash nullable`, `delivery_instructions`, `merchant_order_reference nullable`, `policy_version_id`, `customer_policy_acknowledged_at nullable`, `created_at`.
+
+**`delivery_recipients`**: `id`, `booking_id`, `recipient_type` (`individual`, `business`), `name`, `business_name nullable`, `phone_e164`, `address_id nullable`, `address_text`, `landmark nullable`, `latitude`, `longitude`, `additional_instructions nullable`, `created_at`. Access must be scoped to the booking and minimized in customer/rider responses.
+
+**`delivery_handling_selections`**: `id`, `booking_id`, `handling_option_id`, `handling_note nullable`, `created_at`. Only options allowed by the published package/category rules may be selected.
+
+**`delivery_quotes`**: `id`, `booking_id nullable`, `pricing_quote_id`, `delivery_option_id`, `delivery_option_rule_version_id`, `package_category_rule_version_id`, `policy_version_id`, `input_snapshot jsonb`, `price_breakdown jsonb`, `currency`, `total_amount_kobo`, `expires_at`, `created_at`. Store a snapshot of all price-affecting inputs and configuration versions.
+
+**`delivery_verifications`**: `id`, `booking_id`, `verification_stage` (`pickup`, `delivery`), `method` (`otp`, `pin`, `recipient_confirmation`, `photo`, `authorized_exception`), `challenge_hash nullable`, `result` (`pending`, `verified`, `failed`, `expired`, `waived_by_authorized_operator`), `attempt_count`, `verified_by nullable`, `verified_at nullable`, `expires_at nullable`, `metadata_redacted jsonb`, `created_at`. Never store raw OTP/PIN values.
+
+**`proof_of_delivery_records`**: `id`, `booking_id`, `verification_id nullable`, `proof_type` (`otp`, `recipient_confirmation`, `photo`, `signature`, `authorized_handover`, `other_approved`), `evidence_storage_path nullable`, `recipient_name_snapshot nullable`, `captured_by`, `captured_at`, `latitude nullable`, `longitude nullable`, `retention_policy_version_id`, `created_at`. Evidence is private, access-audited and retained only under an approved retention policy.
+
+**`delivery_exceptions`**: `id`, `booking_id`, `exception_type` (`no_rider_available`, `pickup_failed`, `recipient_unavailable`, `recipient_refused`, `address_not_found`, `payment_issue`, `damaged_package`, `other_approved`), `reason_code`, `description_redacted nullable`, `reported_by`, `status`, `resolution_type nullable`, `resolved_by nullable`, `resolved_at nullable`, `created_at`. Use structured reason codes and avoid unnecessary personal information.
+
+**`delivery_attempts`**: `id`, `booking_id`, `attempt_number`, `attempt_type` (`pickup`, `delivery`, `return`), `rider_id nullable`, `outcome`, `reason_code nullable`, `started_at`, `completed_at nullable`, `created_at`. Preserve attempt history; do not overwrite previous attempts.
+
+**`delivery_returns`**: `id`, `booking_id`, `return_status`, `return_reason_code`, `return_quote_id nullable`, `return_amount_kobo nullable`, `authorized_by nullable`, `created_at`, `completed_at nullable`. Use only when return-to-sender operations and pricing have been approved.
+
+**`delivery_policy_acknowledgements`**: `id`, `booking_id`, `policy_version_id`, `acknowledged_by`, `acknowledged_at`, `client_version nullable`, `created_at`. Store acknowledgement against the exact published policy version.
 
 **`booking_status_events`**: `id`, `booking_id`, `from_status`, `to_status`, `actor_user_id nullable`, `actor_type`, `reason_code`, `metadata jsonb`, `created_at`. Append-only; status changes must be recorded in the same transaction as the booking update.
 
@@ -462,7 +512,7 @@ Constraints: amounts must be non-negative; wallet credit applied cannot exceed q
 
 **`pricing_quotes`**: `id`, `quote_reference`, `service_type_id`, `service_area_id`, `pricing_rule_id`, `distance_meters`, `duration_seconds`, `base_amount_kobo`, `distance_amount_kobo`, `time_amount_kobo`, `surcharge_amount_kobo`, `discountable_subtotal_kobo`, `total_amount_kobo`, `currency`, `expires_at`, `input_snapshot jsonb`, `created_at`.
 
-A booking references a quote and snapshots the final amount so later pricing changes do not alter existing bookings. If actual route distance changes materially, any fare adjustment must follow a transparent, approved rule and be visible to the customer before charge where possible.
+A booking references a quote and snapshots the final amount so later pricing changes do not alter existing bookings. Ride quotes must also reference the selected `ride_category_id` and the exact published category/rule and pricing-rule versions used. The quote response must return the category display data needed by the customer app. A later admin edit must never silently alter an existing quote or confirmed booking. If actual route distance changes materially, any fare adjustment must follow a transparent, approved rule and be visible to the customer before charge where possible.
 
 ### 5.8 Payments and financial ledger tables
 
@@ -614,6 +664,27 @@ Never return stack traces, SQL messages, provider secrets, or sensitive data in 
 | `POST /api/v1/devices` | Register push token | User JWT |
 | `POST /api/v1/support/tickets` | Create support ticket | User JWT |
 
+### 6.4.1 Parcel delivery customer endpoints
+
+The following parcel-specific routes are proposed contracts and must be reflected in OpenAPI before implementation. They reuse the shared booking, pricing, payment, dispatch and support services.
+
+| Method and path | Purpose | Auth / idempotency |
+|---|---|---|
+| `GET /api/v1/delivery/catalogue?lat=&lng=` | Return active delivery options, package categories, size/weight bands, handling options and policy notices available at the supplied location | Customer JWT; location/service-area validation |
+| `GET /api/v1/delivery/policies/current` | Return current customer-facing restricted-item and declared-value policy versions | Customer JWT |
+| `POST /api/v1/deliveries/quotes` | Validate pickup, destination, package declaration and delivery option; return authoritative quote | Customer JWT; rate-limited |
+| `POST /api/v1/deliveries` | Create parcel booking from valid quote and policy acknowledgement | Customer JWT; `Idempotency-Key` |
+| `GET /api/v1/deliveries/{id}` | Retrieve own delivery and current state | Owner or scoped operator |
+| `GET /api/v1/deliveries/{id}/tracking` | Retrieve authorized milestones, rider/ETA data and proof status | Owner or scoped tracking token |
+| `POST /api/v1/deliveries/{id}/cancel` | Request cancellation subject to current state and policy | Owner; idempotent |
+| `POST /api/v1/deliveries/{id}/pickup-verifications` | Start or verify configured pickup challenge | Authorized sender/rider flow; rate-limited |
+| `POST /api/v1/deliveries/{id}/delivery-verifications` | Verify recipient OTP/PIN or approved alternative | Authorized rider/recipient flow; rate-limited |
+| `POST /api/v1/deliveries/{id}/proof-of-delivery` | Register approved evidence metadata and private file reference | Authorized rider; idempotent |
+| `POST /api/v1/deliveries/{id}/delivery-attempts` | Record a failed attempt with structured reason | Authorized rider; idempotent |
+| `GET /api/v1/deliveries/{id}/receipt` | Retrieve finalized receipt | Owner or authorized finance scope |
+
+A booking create request must include the valid `quote_id`, pickup and recipient references/details, package declaration, selected delivery option, policy version acknowledgements and an idempotency key. Client-submitted totals are ignored. Backend validation must re-check quote expiry, serviceability, configuration versions, package eligibility and payment requirements.
+
 ### 6.5 Booking create request example
 
 ```json
@@ -692,6 +763,16 @@ A rider cannot update another rider's assignment or complete a booking not assig
 ### 6.8 Admin endpoints
 
 - `GET /api/v1/admin/operations/overview`
+- `GET /api/v1/admin/ride-categories` list categories with status, area and pagination filters
+- `POST /api/v1/admin/ride-categories` create a draft ride category
+- `GET /api/v1/admin/ride-categories/{id}` retrieve category, rules, vehicle requirements and area assignments
+- `PATCH /api/v1/admin/ride-categories/{id}` update an editable draft; published changes create a new version rather than mutating history
+- `POST /api/v1/admin/ride-categories/{id}/publish` validate and publish a category/configuration version
+- `POST /api/v1/admin/ride-categories/{id}/deactivate` deactivate for new quotes/bookings while preserving historical records
+- `PUT /api/v1/admin/ride-categories/{id}/service-areas` set permitted service-area availability
+- `PUT /api/v1/admin/ride-categories/{id}/vehicle-requirements` manage eligible vehicle requirements
+- `PUT /api/v1/admin/ride-categories/{id}/rules` create/update draft ride rules
+- `GET /api/v1/admin/ride-configuration/audit-logs` review configuration history
 - `GET /api/v1/admin/bookings` with filters and cursor pagination
 - `POST /api/v1/admin/bookings/{id}/reassign`
 - `POST /api/v1/admin/bookings/{id}/cancel`
@@ -707,6 +788,108 @@ A rider cannot update another rider's assignment or complete a booking not assig
 - `GET /api/v1/admin/audit-logs`
 
 Every admin mutation must verify role and scope on the server, validate the target resource, require a reason for sensitive adjustments, and create an audit log entry. Finance adjustments should require maker-checker approval above a configurable threshold.
+
+### 6.8.1 Ride Configuration module (Admin Web App)
+
+The Admin Web App MUST provide a dedicated **Ride Configuration** module. It is the control surface for configuring which ride options customers can see and book. Ride category names, descriptions, icons, display order, passenger capacity, vehicle requirements, area availability and approved booking constraints MUST be managed as backend data, not hardcoded in Flutter customer or rider apps.
+
+**Admin capabilities**
+
+1. Create a ride category as a draft, edit its display information and set its display order.
+2. Define the eligible vehicle types, minimum vehicle capacity and any approved vehicle attributes.
+3. Assign the category to one or more enabled service areas.
+4. Configure approved category-specific booking constraints, such as passenger limits and permitted advance-booking windows.
+5. Link the category to a published pricing rule for the relevant service area. Pricing values remain managed through the Pricing module, with a clear link from Ride Configuration.
+6. Preview how the category will appear in the customer Ride Options screen.
+7. Publish, deactivate or archive a category, subject to validation and permission checks.
+8. Review the change history, actor, timestamp, reason and before/after values.
+
+**Publication and runtime behaviour**
+
+- Draft changes are not visible to customers or used for new quotes.
+- Publishing validates required fields, active service areas, vehicle requirements, applicable pricing and any required operational/legal approvals.
+- Deactivation prevents the category from being offered for new quotes/bookings. It MUST NOT cancel, reprice or alter existing quoted or confirmed bookings.
+- Customer app catalogue/quote APIs return only categories eligible for the pickup area, route, time and current operating conditions. The backend is authoritative; hiding a category in the UI is not an authorization or booking control.
+- The rider dispatch engine must check the assigned category's vehicle and rider eligibility requirements.
+- Every quote and booking stores immutable category and pricing version snapshots for audit and dispute handling.
+- High-impact changes, including fare-related changes, require the configured approval workflow. The creator must not approve their own change where maker-checker policy applies.
+
+**Suggested Admin UI sections**
+
+- Ride Categories: searchable table, status, category name, assigned areas, active pricing version, last updated.
+- Category Details: customer-facing name/description/icon/order and passenger capacity.
+- Vehicle Eligibility: allowed vehicle types and capacity/attribute requirements.
+- Service Area Availability: enable/disable per service area and effective dates.
+- Ride Rules: approved passenger and scheduling constraints.
+- Pricing Link: read-only summary of the active pricing rule with a link to Pricing Management.
+- Preview: customer-facing category card preview.
+- History: version timeline, approver, reason and audit details.
+
+**Permissions**
+
+Use separate permissions such as `ride_config.view`, `ride_config.create`, `ride_config.edit`, `ride_config.publish`, `ride_config.deactivate` and `ride_config.approve`. Operations may view configuration; authorized product/operations administrators may draft and edit; only designated approvers may publish sensitive changes. Super-admin access does not remove audit requirements.
+
+**API response contract**
+
+The customer-facing ride catalogue must return only eligible published categories and include stable category ID/code, display name, description, icon key, passenger capacity, availability, and the applicable quote inputs or quote reference. Do not expose internal approval notes, draft values or admin-only metadata. Exact customer display values are controlled by the published category configuration.
+
+
+### 6.8.2 Parcel Delivery Configuration module (Admin Web App)
+
+The Admin Web App MUST provide a dedicated **Parcel Delivery Configuration** module. It controls the delivery options and package rules available to customers and riders. These values are backend-managed catalogue data, not Flutter constants.
+
+**Admin capabilities**
+
+1. Create, edit, preview, publish, deactivate and archive delivery options.
+2. Configure option availability by service area and effective dates.
+3. Create and manage package categories, descriptions, icons and display order.
+4. Configure package weight, dimension and declared-value bands using typed fields.
+5. Publish versioned prohibited/restricted-item notices and declared-value policy text.
+6. Configure supported handling options and category compatibility.
+7. Link delivery options to published pricing rules and service-level rules.
+8. Configure pickup and delivery verification methods, retry limits and expiry periods after operational approval.
+9. Configure proof-of-delivery requirements and evidence retention policy after legal/privacy approval.
+10. Configure cancellation, failed-delivery, retry and return-to-sender rules only after Operations and Finance approval.
+11. Preview the customer-facing catalogue and review version history.
+12. Review append-only audit records, including actor, reason and before/after snapshots.
+
+**Publication rules**
+
+- Draft configuration is never returned by customer catalogue or quote APIs.
+- Publishing validates service area, package limits, pricing link, policy version and required approvals.
+- Deactivation affects new quotes/bookings only; it must not silently change existing quotes or confirmed bookings.
+- Every quote and booking snapshots the exact published delivery option, package rule, pricing rule and policy versions used.
+- The creator must not self-approve high-impact changes where maker-checker policy applies.
+
+**Suggested permissions**
+
+`parcel_config.view`, `parcel_config.create`, `parcel_config.edit`, `parcel_config.publish`, `parcel_config.deactivate`, `parcel_config.approve`, `parcel_policy.manage`, `parcel_pricing.link`, `parcel_evidence.view`.
+
+**Admin endpoints**
+
+- `GET /api/v1/admin/delivery-options`
+- `POST /api/v1/admin/delivery-options`
+- `GET /api/v1/admin/delivery-options/{id}`
+- `PATCH /api/v1/admin/delivery-options/{id}`
+- `POST /api/v1/admin/delivery-options/{id}/publish`
+- `POST /api/v1/admin/delivery-options/{id}/deactivate`
+- `PUT /api/v1/admin/delivery-options/{id}/service-areas`
+- `GET /api/v1/admin/package-categories`
+- `POST /api/v1/admin/package-categories`
+- `PATCH /api/v1/admin/package-categories/{id}`
+- `PUT /api/v1/admin/package-categories/{id}/rules`
+- `POST /api/v1/admin/package-categories/{id}/publish`
+- `POST /api/v1/admin/package-categories/{id}/deactivate`
+- `GET /api/v1/admin/delivery-policies`
+- `POST /api/v1/admin/delivery-policies`
+- `POST /api/v1/admin/delivery-policies/{id}/publish`
+- `GET /api/v1/admin/delivery-configuration/audit-logs`
+- `GET /api/v1/admin/deliveries` with filters and cursor pagination
+- `POST /api/v1/admin/deliveries/{id}/reassign`
+- `POST /api/v1/admin/deliveries/{id}/resolve-exception`
+- `POST /api/v1/admin/deliveries/{id}/authorize-return`
+
+Every mutation must validate server-side role and scope, require a reason for sensitive changes, and write an audit record. Return authorization must be unavailable unless the return policy and operations workflow are active.
 
 ### 6.9 Merchant portal endpoints
 
@@ -982,6 +1165,8 @@ Use role-based access control combined with resource ownership and scope checks.
 - Promotions manager: campaigns and redemption metrics, not raw payment secrets or sensitive safety reports.
 - Safety officer: assigned incidents and limited booking context.
 - Admin: explicitly granted operational scopes.
+- Ride configuration editor: only categories, vehicle requirements, service-area assignments and draft ride rules within assigned scope.
+- Ride configuration approver: may publish/deactivate approved configuration versions within assigned scope; approval separation applies to high-impact changes.
 - Super admin: high-privilege controls protected by MFA, short sessions where practical, audit trails, and least-privilege assignment.
 
 ### 10.2 Supabase Row Level Security
@@ -1109,6 +1294,37 @@ Run tests against PostgreSQL, not SQLite substitutes, for transaction-sensitive 
 - reward processing from repeated completion events;
 - simultaneous admin refund approvals.
 
+### 14.2.1 Ride configuration tests
+
+- A draft category is not returned by customer catalogue or quote endpoints.
+- A category cannot be published without an eligible service area, valid vehicle requirements and an applicable published pricing rule.
+- Only authorized roles can create, edit, publish, deactivate or approve category changes.
+- Maker-checker rules prevent self-approval where required.
+- Deactivation removes a category from new customer quotes while existing quotes/bookings retain their snapshots.
+- Customer catalogue results are filtered by service area and operational eligibility.
+- Dispatch rejects riders/vehicles that do not satisfy the selected category requirements.
+- Every configuration mutation creates an append-only audit record.
+- Concurrent edits/publications cannot overwrite a newer configuration version silently.
+
+### 14.2.2 Parcel delivery configuration and lifecycle tests
+
+- Draft delivery options, package categories and policy versions are never returned to customer catalogue or quote APIs.
+- A delivery option cannot be published without an enabled service area, approved service-level rule and applicable published pricing rule.
+- Package categories enforce configured weight, dimensions, declared-value and handling constraints on the backend.
+- Restricted-item policy acknowledgement is recorded against the exact published policy version.
+- Changes to any price-affecting input invalidate the prior quote.
+- Expired quotes cannot create bookings.
+- Repeated create/payment requests with the same idempotency key do not create duplicate bookings or charges.
+- Booking and payment states remain separate; dispatch begins only after the required payment/credit condition is verified.
+- Recipient data and tracking access are scoped to the correct delivery.
+- Raw OTP/PIN values are never stored; attempts are rate-limited and verification is auditable.
+- Delivery cannot transition to `delivered` until configured proof-of-delivery requirements are satisfied.
+- Private proof files require authorized access and short-lived signed URLs.
+- Failed delivery records a structured exception and cannot be presented as a successful completion.
+- Return-to-sender endpoints and UI remain unavailable unless the return workflow is approved and enabled.
+- Admin configuration mutations require permission, audit history and maker-checker approval where configured.
+- Deactivation affects new quotes/bookings only; historical quotes and bookings retain configuration snapshots.
+
 ### 14.3 API contract tests
 
 Validate implementation against `docs/api/openapi.yaml`. Test success, validation failure, unauthorized, forbidden, conflict, rate-limited, and provider-error responses. Verify partner callbacks against a mock receiver and verify signature generation.
@@ -1120,7 +1336,12 @@ For each app, test navigation guards, loading/error/empty states, offline recove
 ### 14.5 End-to-end acceptance scenarios
 
 1. Customer creates a parcel booking, pays successfully, rider accepts, pickup is confirmed, recipient OTP is validated, booking completes, receipt is visible.
-2. Retail Ai submits the same order twice with the same idempotency key; only one booking exists.
+2. Customer attempts to book a prohibited or out-of-limit package; backend rejects it with a clear policy error.
+3. Customer changes destination or package weight after quoting; prior quote is invalidated and a new quote is required.
+4. Payment request times out; client checks authoritative payment/booking status before retrying.
+5. Recipient is unavailable; rider records a failed attempt and the approved next action is shown.
+6. Delivery proof is missing or invalid; booking cannot be marked delivered.
+7. Retail Ai submits the same order twice with the same idempotency key; only one booking exists.
 3. Merchant staff cannot read or cancel another merchant's booking.
 4. Customer redeems points to ride-wallet credit, applies eligible credit to a ride, and sees correct balances and ledger history.
 5. Two simultaneous wallet spends cannot overdraw the wallet.
@@ -1192,17 +1413,21 @@ Build in vertical slices, with a working deployable path at the end of each phas
 - Admin login and RBAC.
 - Merchant organizations, branches, and memberships.
 - Service catalogue, service areas, address model.
+- Parcel Delivery Configuration admin module: delivery options, package categories, package bands, policy versions, handling options, proof-of-delivery and exception policies, with draft/publish/deactivate workflow, permissions and audit trail.
+- Ride Configuration admin module: category CRUD, vehicle requirements, service-area assignments, draft/publish/deactivate workflow, permissions and audit trail.
 - Audit log and request tracing foundations.
 
-**Exit criteria:** users can authenticate; each role can access only authorized resources; admin can configure enabled service areas.
+**Exit criteria:** users can authenticate; each role can access only authorized resources; admin can configure enabled service areas and publish validated ride categories with appropriate permissions and audit history.
 
 ### Phase 2: Booking and dispatch MVP
 
 - Versioned pricing rules and quote API.
-- Customer parcel/store delivery booking flow.
+- Go-Volts Send parcel booking flow, including package eligibility, recipient details, delivery option, quote, payment handoff, rider dispatch, tracking and delivery verification.
+- Customer store-delivery booking flow.
 - Rider onboarding, document review, availability, offers, accept/decline.
 - Dispatch worker, assignment locking, location updates, tracking.
-- Booking state machine and status history.
+- Shared booking state machine and status history, with explicit parcel delivery milestones and exception states.
+- Proof-of-delivery evidence storage and access controls.
 - Merchant portal delivery creation and tracking.
 - Notifications and operational dashboard.
 
@@ -1262,7 +1487,8 @@ These items must be recorded as explicit decisions. Developers should use featur
 
 1. Launch city/areas and which services are active in each.
 2. Passenger ride legal/insurance and operational approval.
-3. Supported package categories, weight/dimension limits, prohibited items, declared-value and insurance rules.
+3. Parcel delivery options and service-level promises at launch (Standard, Express, Scheduled or other approved options).
+4. Supported package categories, weight/dimension limits, prohibited items, declared-value and insurance rules.
 4. Pricing formula, waiting fees, surge policy, minimum fares, rounding, and quote expiry.
 5. Customer payment timing for ordinary bookings. For Scheduled Pickup subscriptions, full upfront payment is confirmed. For one-off future Scheduled Pickup trips, use the existing approved ride checkout policy and explicitly confirm the timing before launch; do not invent a new payment rule.
 6. Cancellation fees and refund matrix by booking state and actor.
@@ -1275,11 +1501,12 @@ These items must be recorded as explicit decisions. Developers should use featur
 13. Rider earnings/commission formula, payout frequency, and payout approval flow.
 14. Merchant billing model, invoice schedule, credit limits, and failed-payment behavior.
 15. Dispatch radius, offer expiry, retry count, ranking weights, multi-job policy, and operations escalation thresholds.
-16. Required pickup/delivery OTP, signature/photo proof, and retention periods.
-17. Emergency response and safety incident escalation ownership.
-18. Data retention/deletion periods for location, identity documents, delivery proof, and audit logs.
-19. Finance chart of accounts, revenue recognition, taxes, provider fees, rider payables, and merchant-funded discounts.
-20. Support hours, SLA, service outage messaging, and escalation process.
+16. Required parcel pickup/delivery OTP, signature/photo proof, fallback verification, and evidence retention periods.
+17. Parcel cancellation windows/fees, failed-delivery retry rules, rider search timeout, return-to-sender availability, return charges and custody process.
+18. Emergency response and safety incident escalation ownership.
+19. Data retention/deletion periods for location, identity documents, delivery proof, and audit logs.
+20. Finance chart of accounts, revenue recognition, taxes, provider fees, rider payables, and merchant-funded discounts.
+21. Support hours, SLA, service outage messaging, and escalation process.
 
 ---
 
@@ -1986,3 +2213,276 @@ Do not launch a school-run service in a region solely because the screens and AP
 ---
 
 **End of technical specification, version 1.2.**
+
+---
+
+## 22. Go-Volts Send: Parcel Delivery Technical Design
+
+This section is the authoritative technical implementation reference for customer-originated Go-Volts Send parcel bookings. It supplements the shared booking, pricing, payment, dispatch, storage, notification and support modules defined earlier. It does not replace the existing Ride, Scheduled Pickup, merchant delivery or partner integration designs.
+
+### 22.1 Module boundary
+
+Parcel Delivery owns:
+- parcel-specific booking details and recipient information;
+- package declarations and selected handling instructions;
+- delivery option and package-policy configuration;
+- parcel quote snapshots and policy acknowledgements;
+- pickup/delivery verification records;
+- proof-of-delivery records;
+- parcel delivery attempts, exceptions and return records.
+
+Shared platform modules continue to own:
+- identity and authorization;
+- common booking references and booking state history;
+- service areas and geospatial serviceability;
+- pricing rules and quote calculation engine;
+- payment intents, provider events, refunds and financial ledger;
+- rider eligibility, dispatch offers and assignments;
+- notifications, support tickets, audit logs and outbox processing.
+
+Do not create a separate payment ledger, rider identity system or dispatch engine for parcels.
+
+### 22.2 Customer workflow and screen mapping
+
+The customer-facing flow contains these nine functional stages:
+
+| Stage | Customer screen responsibility | Backend responsibility |
+|---|---|---|
+| 1. Pickup details | Select pickup address, saved address or map pin; provide sender contact/instructions | Geocode, validate service area, validate pickup contact |
+| 2. Recipient details | Select individual/business; capture recipient name, phone and delivery address | Validate contact/address and minimize exposed recipient data |
+| 3. Package details | Select configured category, size/weight, dimensions where required, description, declared value where required and supported handling options | Validate package rules and policy acknowledgement |
+| 4. Quote and review | Review route, delivery option, package summary, itemized price and quote expiry | Generate authoritative quote and store input/configuration snapshot |
+| 5. Payment and booking submission | Select eligible payment method, apply eligible coupon/wallet credit and confirm | Create payment intent, verify provider state and create booking idempotently |
+| 6. Rider search and assignment | See confirmed booking and matching status | Dispatch eligible rider, manage offer expiry/reassignment and no-rider escalation |
+| 7. Delivery tracking | See authorized milestones, rider identity/location and ETA when available | Publish booking events and authorized location updates |
+| 8. Delivery confirmation | See verified outcome and evidence status | Verify OTP/PIN or approved alternative; commit delivered state only after proof requirements |
+| 9. Receipt | View/download/share receipt and raise support issue | Return finalized receipt based on booking, payment and ledger records |
+
+The 17-panel visual storyboard is a UI reference, not a backend screen-count requirement. Search, map selection, recipient selection and status states may be separate visual states within the nine functional stages.
+
+### 22.3 Configuration source of truth
+
+Customer and rider apps MUST fetch parcel options from published backend configuration.
+
+The catalogue response should include:
+- delivery option ID/code, display name, description and service-level wording;
+- package category ID/code, description and icon key;
+- active size/weight/dimension bands;
+- allowed handling options per package category;
+- whether declared value is required and the published limits, if any;
+- customer-facing restricted/prohibited-item policy notice and version;
+- available payment methods for the customer, service and area;
+- effective availability by service area and current operating conditions.
+
+Do not return draft configuration, internal policy notes, admin-only reason fields or unapproved service-level promises.
+
+Configuration is versioned. A quote snapshots the versions used. A booking snapshots the quote and policy acknowledgement. Admin changes affect new quotes only unless an explicit, legally reviewed operational process says otherwise.
+
+### 22.4 Quote calculation and repricing
+
+The quote service receives:
+- pickup and destination coordinates and address references;
+- service area and selected delivery option;
+- package category, weight, dimensions, declared value where required;
+- supported handling selections;
+- applicable customer/merchant/partner channel;
+- eligible coupon and wallet-credit request, if supported.
+
+The server validates serviceability and package eligibility before calculating price.
+
+The quote response MUST contain:
+- `quote_id` and public quote reference;
+- currency;
+- route distance and ETA where available;
+- itemized base, distance, time, handling, service-level, surcharge and discount components as applicable;
+- total amount and customer payable amount;
+- pricing-rule version and delivery/package configuration versions;
+- `created_at` and `expires_at`.
+
+The names and applicability of price components are configurable and require Finance approval. No sample price in a generated design is a production price.
+
+Any change to a price-affecting field invalidates the prior quote. A booking must reference a valid quote and the backend must re-check quote expiry, configuration eligibility and payment state during booking creation.
+
+### 22.5 Booking and payment transaction
+
+Recommended sequence:
+
+1. Customer requests a quote.
+2. Backend validates pickup, recipient, package, delivery option and policy versions.
+3. Backend returns a time-limited quote.
+4. Customer selects an eligible payment method and submits with an idempotency key.
+5. Backend creates the booking/payment intent according to the approved payment orchestration.
+6. Payment provider confirmation is verified server-side.
+7. Booking transitions to `confirmed`/`ready_for_dispatch` only when required payment or an approved merchant-credit rule is satisfied.
+8. Outbox event starts dispatch.
+9. Customer receives booking confirmation and tracking reference.
+
+A timeout is an unknown outcome, not an automatic failure. The client must query payment and booking state before offering a retry. Idempotency must prevent duplicate booking creation or duplicate payment attempts.
+
+### 22.6 Parcel lifecycle and allowed transitions
+
+Recommended parcel-specific customer-visible lifecycle:
+
+`draft` → `quoted` → `awaiting_payment` (when required) → `confirmed` → `searching_rider` → `rider_assigned` → `approaching_pickup` → `arrived_at_pickup` → `parcel_collected` → `in_transit` → `approaching_destination` → `delivery_verification_pending` → `delivered`
+
+Exception states:
+- `quote_expired`
+- `payment_failed`
+- `booking_cancelled`
+- `no_rider_available`
+- `rider_reassigned`
+- `pickup_failed`
+- `delivery_attempt_failed`
+- `return_in_progress` (feature-gated pending approval)
+- `delivery_disputed`
+
+Payment status remains a separate state machine. Every transition must be validated in the backend, recorded in `booking_status_events`, and emitted through the transactional outbox. Clients cannot set status directly.
+
+### 22.7 Pickup and delivery verification
+
+Verification configuration is service- and policy-dependent.
+
+**Pickup**
+- The rider sees only the pickup information needed for the assigned job.
+- The handover milestone is recorded with actor and timestamp.
+- A booking reference or pickup PIN/OTP may be required according to risk policy.
+- Do not expose a raw reusable code in logs, analytics or push notifications.
+
+**Delivery**
+- Recipient OTP/PIN is the proposed primary verification method where feasible, subject to Operations approval.
+- The code must be generated server-side, stored as a secure hash, time-limited, attempt-limited and scoped to one booking and one verification stage.
+- A recipient who cannot receive a code must follow an approved exception process. A rider must not be able to self-approve delivery completion.
+- Photo, signature or authorized handover evidence is captured only where policy requires it.
+- The booking cannot become `delivered` until all configured proof requirements are satisfied.
+
+### 22.8 Proof-of-delivery evidence and privacy
+
+- Use a private storage bucket for evidence.
+- Validate MIME type, file size and file signature server-side.
+- Use short-lived signed URLs after authorization.
+- Record evidence type, actor, timestamp, booking, verification result and retention-policy version.
+- Restrict evidence access to the customer, authorized support/operations and other approved roles.
+- Do not include recipient phone numbers, OTP values or full address details in notification payloads.
+- Define retention and deletion periods with Legal/Compliance before production.
+- Keep a tamper-evident audit trail for evidence access and administrative overrides.
+
+### 22.9 Failed delivery, retries and returns
+
+The rider must select a structured failure reason such as recipient unavailable, recipient refused, address not found, unsafe handover condition or other approved reason. Free-text notes should be optional and redacted where necessary.
+
+The backend records each attempt and exposes the approved next step:
+- retry within an approved time window;
+- customer/support contact;
+- operations review;
+- return-to-sender, only when enabled.
+
+Return-to-sender is not assumed to be a launch feature. Before enabling it, Product and Operations must define custody, rider workflow, return destination, customer consent, charges, proof of return and dispute handling. Finance must approve any return quote/refund/charge rules.
+
+### 22.10 Cancellation and refunds
+
+Cancellation eligibility depends on booking state, actor, dispatch status and the approved cancellation policy. The app must show any applicable fee before the customer confirms cancellation.
+
+Cancellation and refund are separate processes:
+- cancellation changes the booking state;
+- refund creates a financial workflow and ledger/provider records;
+- refund completion is confirmed by provider/backend reconciliation;
+- cancellation does not imply that a refund has already completed.
+
+Use reason codes, authorization and audit logs. Never mutate posted ledger entries; create reversal/refund transactions.
+
+### 22.11 Admin operational views
+
+Admin operations should be able to:
+- search/filter parcel deliveries by reference, customer, rider, service area, status and date;
+- inspect the status timeline, assignment attempts and payment state;
+- view recipient/package information only within role permissions;
+- resolve no-rider and failed-delivery exceptions;
+- reassign riders subject to dispatch controls;
+- authorize an exception only with a reason and permission;
+- inspect proof-of-delivery status and access evidence through audited actions;
+- create support/refund workflows without directly editing financial records.
+
+Configuration management is defined in Section 6.8.2. Operational handling of individual bookings must be separated from configuration changes.
+
+### 22.12 Security and authorization
+
+- Customer can access only their own delivery and authorized recipient/tracking views.
+- Rider can access only assigned active jobs and the minimum contact/location data required.
+- Admin access is permission- and service-area-scoped.
+- Finance can view payment/receipt/refund data but does not automatically receive access to private proof images.
+- Support access to recipient details and evidence is reason-coded and audited.
+- OTP/PIN endpoints are rate-limited and protected against brute force.
+- Tracking links, if enabled, are random, expiring, revocable and scoped to one delivery.
+- Do not trust client-submitted status, rider identity, payment state, quote total or verification result.
+
+### 22.13 Events and notifications
+
+Recommended internal domain events:
+- `delivery.quote_created`
+- `delivery.booking_confirmed`
+- `delivery.rider_search_started`
+- `delivery.rider_assigned`
+- `delivery.rider_reassigned`
+- `delivery.rider_approaching_pickup`
+- `delivery.pickup_completed`
+- `delivery.in_transit`
+- `delivery.approaching_destination`
+- `delivery.verification_required`
+- `delivery.completed`
+- `delivery.attempt_failed`
+- `delivery.cancelled`
+- `delivery.return_started`
+- `delivery.return_completed`
+- `delivery.disputed`
+
+Events are emitted through the transactional outbox. Push notification delivery is best-effort; clients refresh authoritative state from the API. Partner webhooks use signed payloads, retries and receiver-side deduplication as specified in the partner integration section.
+
+### 22.14 Parcel-specific metrics
+
+Track:
+- quote-to-booking conversion;
+- quote expiry and requote rate;
+- payment success/failure/pending rate;
+- rider assignment time and no-rider rate;
+- pickup punctuality;
+- pickup-to-delivery duration;
+- first-attempt delivery success;
+- failed delivery reason distribution;
+- proof-of-delivery verification failure rate;
+- cancellation and refund rates;
+- return-to-sender volume, only if enabled;
+- support contacts and disputes per completed delivery.
+
+Do not expose raw OTPs, recipient personal data or private evidence in analytics.
+
+### 22.15 Acceptance and release gates
+
+Parcel Delivery is ready for production only when:
+1. Product approves the nine-stage journey and required customer data.
+2. Operations approves delivery options, package handling, limits, rider workflow and proof-of-delivery policy.
+3. Finance approves quote components, payment methods, cancellations, refunds and return charges.
+4. Legal/Compliance approves prohibited/restricted items, declared-value wording, coverage claims, privacy and evidence retention.
+5. Engineering reviews schema, API contracts, state transitions, idempotency and authorization.
+6. QA passes normal, boundary, failure, retry, concurrency and dispute scenarios.
+7. Admin configuration is audited, versioned and tested for draft/publish/deactivate behaviour.
+8. Support and operations have runbooks for no-rider, payment pending, failed pickup, failed delivery, evidence dispute and service outage.
+
+### 22.16 Pending business decisions
+
+The following are deliberately not fixed in this technical specification:
+- delivery types and promised service levels at launch;
+- exact package categories and maximum weight/dimensions;
+- prohibited/restricted item lists;
+- declared-value rules and whether coverage/insurance is offered;
+- payment methods, cash and merchant-credit availability;
+- exact pricing formula and quote expiry;
+- pickup and delivery verification methods and fallback;
+- photo/signature evidence requirements and retention period;
+- cancellation windows, fees and refund matrix;
+- rider search timeout and reassignment thresholds;
+- failed-delivery retry policy;
+- return-to-sender availability, custody, charges and responsibility;
+- recipient tracking-link policy.
+
+Until approved, these values must remain unpublished or feature-disabled. Do not substitute illustrative values from design mockups.
+

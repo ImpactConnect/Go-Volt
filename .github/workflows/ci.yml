@@ -33,7 +33,7 @@ jobs:
 
       - name: Workspace Bootstrap
         run: |
-          dart pub get
+          flutter pub get
           melos bootstrap
 
       - name: Verify Code Formatting
@@ -69,13 +69,13 @@ jobs:
 
       - name: Workspace Bootstrap
         run: |
-          dart pub get
+          flutter pub get
           melos bootstrap
 
       - name: Run Backend Unit & Integration Tests
         run: |
           cd backend
-          dart test
+          flutter test
 
       - name: Run Design System Tests
         run: |
@@ -85,7 +85,7 @@ jobs:
       - name: Run App Models Tests
         run: |
           cd packages/app_models
-          dart test
+          flutter test
 
   # ----------------------------------------------------------------------------
   # Job 3: Flutter Client Applications Test Suite
@@ -109,7 +109,7 @@ jobs:
 
       - name: Workspace Bootstrap
         run: |
-          dart pub get
+          flutter pub get
           melos bootstrap
 
       - name: Run Merchant Portal Widget Tests
@@ -143,12 +143,18 @@ jobs:
         with:
           sdk: stable
 
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
       - name: Activate Melos
         run: dart pub global activate melos 8.9.0
 
       - name: Workspace Bootstrap
         run: |
-          dart pub get
+          flutter pub get
           melos bootstrap
 
       - name: Execute Multi-Surface Live Simulation

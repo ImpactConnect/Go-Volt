@@ -6,10 +6,22 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../application/booking_notifier.dart';
+import 'map_picker_screen.dart';
 
-/// H03 & R01 — Location Picker & Address Search Screen
+enum _PickerMode {
+  dualEntry, // Screen 2
+  searchPickup, // Screen 3
+  searchDestination, // Screen 5
+}
+
+/// Screen 2, Screen 3 & Screen 5 — Location Picker & Dual Route Entry
 class LocationPickerScreen extends ConsumerStatefulWidget {
-  const LocationPickerScreen({super.key});
+  const LocationPickerScreen({
+    super.key,
+    this.initialMode,
+  });
+
+  final String? initialMode;
 
   @override
   ConsumerState<LocationPickerScreen> createState() =>
@@ -17,59 +29,114 @@ class LocationPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
-  final _searchController = TextEditingController();
-  bool _isSelectingPickup = false; // default is selecting destination
+  late _PickerMode _mode;
+  final TextEditingController _searchController = TextEditingController();
 
-  // Lagos preset locations with coordinates
-  static const List<LocationDto> _popularDestinations = [
+  static const LocationDto _defaultCurrentLocation = LocationDto(
+    latitude: 6.4253,
+    longitude: 3.4283,
+    address: 'Adetokunbo Ademola St, Victoria Island, Lagos',
+    label: 'Eko Hotel and Suites',
+  );
+
+  static const List<LocationDto> _pickupSuggestions = [
     LocationDto(
-      latitude: 6.4281,
-      longitude: 3.4219,
+      latitude: 6.4253,
+      longitude: 3.4283,
+      label: 'Eko Hotel and Suites',
+      address: 'Adetokunbo Ademola St, Victoria Island, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4261,
+      longitude: 3.4290,
+      label: 'Eko Hotel Roundabout',
       address: 'Victoria Island, Lagos',
-      label: 'Victoria Island Financial District',
     ),
     LocationDto(
-      latitude: 6.4474,
-      longitude: 3.4723,
-      address: 'Admiralty Way, Lekki Phase 1',
-      label: 'Lekki Phase 1',
+      latitude: 6.4248,
+      longitude: 3.4278,
+      label: 'Eko Hotel Car Park',
+      address: 'Victoria Island, Lagos',
     ),
     LocationDto(
-      latitude: 6.6018,
-      longitude: 3.3515,
-      address: 'Alausa, Ikeja, Lagos',
-      label: 'Ikeja City Mall & Secretariat',
+      latitude: 6.4265,
+      longitude: 3.4295,
+      label: 'Eko Hotel Bus Stop',
+      address: 'Victoria Island, Lagos',
     ),
     LocationDto(
-      latitude: 6.5168,
-      longitude: 3.3768,
-      address: 'Commercial Avenue, Yaba',
-      label: 'Yaba Tech Corridor',
+      latitude: 6.4270,
+      longitude: 3.4300,
+      label: 'Eko Hotel Road',
+      address: 'Victoria Island, Lagos',
     ),
     LocationDto(
-      latitude: 6.5244,
-      longitude: 3.3792,
-      address: 'Marina, Lagos Island',
-      label: 'Marina Ferry & CMS Terminal',
+      latitude: 6.4250,
+      longitude: 3.4285,
+      label: 'Eko Signature Apartment',
+      address: 'Victoria Island, Lagos',
+    ),
+  ];
+
+  static const List<LocationDto> _destinationSuggestions = [
+    LocationDto(
+      latitude: 6.4358,
+      longitude: 3.4682,
+      label: 'Palms Mall',
+      address: 'Lekki, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4362,
+      longitude: 3.4690,
+      label: 'Palms Mall Annex',
+      address: 'Lekki, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4678,
+      longitude: 3.5650,
+      label: 'Palms Shopping Complex',
+      address: 'Ajah, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4355,
+      longitude: 3.4675,
+      label: 'Palms Mall Car Park',
+      address: 'Lekki, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4360,
+      longitude: 3.4688,
+      label: 'Palms Mall (East Gate)',
+      address: 'Lekki, Lagos',
+    ),
+    LocationDto(
+      latitude: 6.4365,
+      longitude: 3.4700,
+      label: 'Palms Mall Bus Stop',
+      address: 'Lekki, Lagos',
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Default pickup location to Marina if not set
+    if (widget.initialMode == 'pickup') {
+      _mode = _PickerMode.searchPickup;
+      _searchController.text = 'Eko Hotel';
+    } else if (widget.initialMode == 'destination') {
+      _mode = _PickerMode.searchDestination;
+      _searchController.text = 'Palms Mall';
+    } else {
+      _mode = _PickerMode.dualEntry;
+    }
+
+    // Default pickup to current location if unset
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
       final booking = ref.read(bookingNotifierProvider);
       if (booking.pickupLocation == null) {
-        ref.read(bookingNotifierProvider.notifier).setPickupLocation(
-              const LocationDto(
-                latitude: 6.5244,
-                longitude: 3.3792,
-                address: '14 Marina Street, Lagos Island',
-                label: 'Current Location',
-              ),
-            );
+        ref
+            .read(bookingNotifierProvider.notifier)
+            .setPickupLocation(_defaultCurrentLocation);
       }
     });
   }
@@ -80,209 +147,807 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     super.dispose();
   }
 
-  void _onSelectLocation(LocationDto location) {
-    final notifier = ref.read(bookingNotifierProvider.notifier);
-    if (_isSelectingPickup) {
-      notifier.setPickupLocation(location);
-      setState(() => _isSelectingPickup = false);
-    } else {
-      notifier.setDropoffLocation(location);
-      _proceedToServiceFlow();
-    }
+  void _onSelectPickup(LocationDto location) {
+    ref.read(bookingNotifierProvider.notifier).setPickupLocation(location);
+    setState(() {
+      _mode = _PickerMode.dualEntry;
+      _searchController.clear();
+    });
   }
 
-  void _proceedToServiceFlow() {
-    final bookingState = ref.read(bookingNotifierProvider);
-    switch (bookingState.serviceCode) {
-      case ServiceCode.instantRide:
-        context.push(AppRoutes.rideBooking);
-        break;
-      case ServiceCode.instantDelivery:
-        context.push(AppRoutes.packageDetails);
-        break;
-      case ServiceCode.scheduledRide:
-      case ServiceCode.scheduledPickup:
-        context.push(AppRoutes.scheduledBooking);
-        break;
+  void _onSelectDestination(LocationDto location) {
+    ref.read(bookingNotifierProvider.notifier).setDropoffLocation(location);
+    setState(() {
+      _mode = _PickerMode.dualEntry;
+      _searchController.clear();
+    });
+  }
+
+  Future<void> _openMapPicker({required bool isPickup}) async {
+    final result = await Navigator.of(context).push<LocationDto>(
+      MaterialPageRoute(
+        builder: (context) => MapPickerScreen(isPickup: isPickup),
+      ),
+    );
+
+    if (result != null && mounted) {
+      if (isPickup) {
+        _onSelectPickup(result);
+      } else {
+        _onSelectDestination(result);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookingState = ref.watch(bookingNotifierProvider);
-    final pickup = bookingState.pickupLocation?.address ?? 'Current Location';
-    final dropoff = bookingState.dropoffLocation?.address;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    switch (_mode) {
+      case _PickerMode.searchPickup:
+        return _buildSearchScreen(
+          isDark: isDark,
+          isPickup: true,
+          suggestions: _pickupSuggestions,
+          onSelect: _onSelectPickup,
+        );
+      case _PickerMode.searchDestination:
+        return _buildSearchScreen(
+          isDark: isDark,
+          isPickup: false,
+          suggestions: _destinationSuggestions,
+          onSelect: _onSelectDestination,
+        );
+      case _PickerMode.dualEntry:
+        return _buildDualEntryScreen(isDark: isDark);
+    }
+  }
+
+  /// Screen 2 — Dual Entry (Pickup & Destination)
+  Widget _buildDualEntryScreen({required bool isDark}) {
+    final booking = ref.watch(bookingNotifierProvider);
+    final pickupLabel = booking.pickupLocation?.label ??
+        booking.pickupLocation?.address ??
+        'Pickup location';
+    final destinationLabel = booking.dropoffLocation?.label ??
+        booking.dropoffLocation?.address ??
+        'Where are you going?';
+
+    final hasDestination = booking.dropoffLocation != null;
+    final canContinue =
+        booking.pickupLocation != null && booking.dropoffLocation != null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: GVTopBar(
-        title: _isSelectingPickup ? 'Set Pickup Spot' : 'Where to?',
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Dual location card (Pickup & Destination)
-            Container(
-              margin: const EdgeInsets.all(GVSpacing.md),
-              padding: const EdgeInsets.all(GVSpacing.md),
-              decoration: BoxDecoration(
-                color: GVColors.softBackground,
-                borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                border: Border.all(color: GVColors.border),
-              ),
-              child: Column(
-                children: [
-                  // Pickup location row
-                  GVLocationField(
-                    label: 'PICKUP',
-                    value: pickup,
-                    isPickup: true,
-                    onTap: () => setState(() => _isSelectingPickup = true),
-                  ),
-                  const SizedBox(height: GVSpacing.sm),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Simulated Map Background (Screen 2 top half)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.40,
+            child: _MapHeaderPreview(isDark: isDark),
+          ),
 
-                  // Destination location row
-                  GVLocationField(
-                    label: 'DESTINATION',
-                    value: dropoff,
-                    hint: 'Enter dropoff address...',
-                    isPickup: false,
-                    onTap: () => setState(() => _isSelectingPickup = false),
-                  ),
-                ],
+          // Top Floating Navigation Bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: GVSpacing.md,
+                vertical: GVSpacing.sm,
               ),
-            ),
-
-            // Search filter field
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GVSpacing.md),
-              child: GVFormField(
-                label: 'Search address or landmark',
-                hint: 'e.g. Landmark Beach, Ikeja Mall...',
-                controller: _searchController,
-                prefix: const Icon(Icons.search_rounded),
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            const SizedBox(height: GVSpacing.md),
-
-            // Saved place shortcuts
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GVSpacing.md),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildQuickChip(
-                    icon: Icons.home_rounded,
-                    label: 'Home',
-                    location: const LocationDto(
-                      latitude: 6.5244,
-                      longitude: 3.3792,
-                      address: '14 Marina Street, Lagos Island',
-                      label: 'Home',
+                  _CircularIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Back',
+                    onTap: () => Navigator.of(context).maybePop(),
+                    isDark: isDark,
+                  ),
+                  _CircularIconButton(
+                    icon: Icons.my_location_rounded,
+                    tooltip: 'Current location',
+                    onTap: () {
+                      ref
+                          .read(bookingNotifierProvider.notifier)
+                          .setPickupLocation(_defaultCurrentLocation);
+                    },
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom Route Sheet
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            top: MediaQuery.of(context).size.height * 0.32,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF131A16) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: ListView(
+                  padding: const EdgeInsets.all(GVSpacing.lg),
+                  children: [
+                    // Sheet Title
+                    Text(
+                      'Enter your locations',
+                      style: GVTypography.titleLarge.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : GVColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: GVSpacing.md),
+
+                    // Dual Location Input Box
+                    Container(
+                      padding: const EdgeInsets.all(GVSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1A221E)
+                            : GVColors.softBackground,
+                        borderRadius: GVBorderRadius.cardRadius,
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF2E3D35)
+                              : GVColors.border,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          // Pickup Row
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _mode = _PickerMode.searchPickup;
+                                _searchController.text =
+                                    booking.pickupLocation?.label ?? 'Eko Hotel';
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: GVColors.brandGreen,
+                                  ),
+                                ),
+                                const SizedBox(width: GVSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Pickup location',
+                                        style: GVTypography.caption.copyWith(
+                                          color: isDark
+                                              ? GVColors.neutral400
+                                              : GVColors.textSecondary,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      Text(
+                                        pickupLabel,
+                                        style: GVTypography.bodyMedium.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? Colors.white
+                                              : GVColors.textPrimary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  color: isDark
+                                      ? GVColors.neutral400
+                                      : GVColors.neutral600,
+                                  onPressed: () {
+                                    ref
+                                        .read(bookingNotifierProvider.notifier)
+                                        .clearPickupLocation();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Vertical Connector
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 2,
+                                  height: 20,
+                                  color: isDark
+                                      ? GVColors.neutral600
+                                      : GVColors.neutral300,
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Divider(
+                                    color: isDark
+                                        ? const Color(0xFF2E3D35)
+                                        : GVColors.border,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Destination Row
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _mode = _PickerMode.searchDestination;
+                                _searchController.text =
+                                    booking.dropoffLocation?.label ?? 'Palms Mall';
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: GVColors.error,
+                                  ),
+                                ),
+                                const SizedBox(width: GVSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Destination',
+                                        style: GVTypography.caption.copyWith(
+                                          color: isDark
+                                              ? GVColors.neutral400
+                                              : GVColors.textSecondary,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      Text(
+                                        destinationLabel,
+                                        style: GVTypography.bodyMedium.copyWith(
+                                          fontWeight: hasDestination
+                                              ? FontWeight.w700
+                                              : FontWeight.normal,
+                                          color: hasDestination
+                                              ? (isDark
+                                                  ? Colors.white
+                                                  : GVColors.textPrimary)
+                                              : (isDark
+                                                  ? GVColors.neutral500
+                                                  : GVColors.neutral400),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.add,
+                                  size: 20,
+                                  color: isDark
+                                      ? GVColors.neutral400
+                                      : GVColors.neutral600,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: GVSpacing.md),
+
+                    // "Use current location" Quick Action
+                    InkWell(
+                      onTap: () {
+                        ref
+                            .read(bookingNotifierProvider.notifier)
+                            .setPickupLocation(_defaultCurrentLocation);
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color:
+                                    GVColors.brandGreen.withValues(alpha: 0.12),
+                              ),
+                              child: const Icon(
+                                Icons.near_me_rounded,
+                                color: GVColors.brandGreen,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: GVSpacing.md),
+                            Text(
+                              'Use current location',
+                              style: GVTypography.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: GVColors.brandGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(color: GVColors.divider),
+                    const SizedBox(height: GVSpacing.sm),
+
+                    // Saved places Header
+                    Text(
+                      'Saved places',
+                      style: GVTypography.labelLarge.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : GVColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: GVSpacing.sm),
+
+                    // Home Item
+                    _SavedPlaceTile(
+                      icon: Icons.home_rounded,
+                      title: 'Home',
+                      subtitle: 'Victoria Island, Lagos',
+                      onTap: () {
+                        _onSelectDestination(
+                          const LocationDto(
+                            latitude: 6.4281,
+                            longitude: 3.4219,
+                            address: 'Victoria Island, Lagos',
+                            label: 'Home',
+                          ),
+                        );
+                      },
+                      isDark: isDark,
+                    ),
+
+                    // Work Item
+                    _SavedPlaceTile(
+                      icon: Icons.work_rounded,
+                      title: 'Work',
+                      subtitle: 'Lekki Phase 1, Lagos',
+                      onTap: () {
+                        _onSelectDestination(
+                          const LocationDto(
+                            latitude: 6.4474,
+                            longitude: 3.4723,
+                            address: 'Lekki Phase 1, Lagos',
+                            label: 'Work',
+                          ),
+                        );
+                      },
+                      isDark: isDark,
+                    ),
+
+                    // Add new location
+                    InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: GVColors.brandGreen,
+                              size: 22,
+                            ),
+                            const SizedBox(width: GVSpacing.md),
+                            Text(
+                              'Add new location',
+                              style: GVTypography.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: GVColors.brandGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: GVSpacing.lg),
+
+                    // Continue Button
+                    GVPrimaryButton(
+                      label: 'Continue',
+                      onPressed: canContinue
+                          ? () => context.push(AppRoutes.rideBooking)
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Screen 3 & Screen 5 — Autocomplete Search Screen
+  Widget _buildSearchScreen({
+    required bool isDark,
+    required bool isPickup,
+    required List<LocationDto> suggestions,
+    required ValueChanged<LocationDto> onSelect,
+  }) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? suggestions
+        : suggestions.where((s) {
+            return (s.label?.toLowerCase().contains(query) ?? false) ||
+                s.address.toLowerCase().contains(query);
+          }).toList();
+
+    final pinColor = isPickup ? GVColors.brandGreen : GVColors.error;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF131A16) : Colors.white,
+      appBar: AppBar(
+        backgroundColor: isDark ? const Color(0xFF131A16) : Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : GVColors.textPrimary,
+          ),
+          onPressed: () {
+            setState(() => _mode = _PickerMode.dualEntry);
+          },
+        ),
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(right: GVSpacing.md),
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1A221E) : GVColors.softBackground,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? const Color(0xFF2E3D35) : GVColors.border,
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: GVTypography.bodyMedium.copyWith(
+                color: isDark ? Colors.white : GVColors.textPrimary,
+              ),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: isPickup
+                    ? 'Enter pickup location'
+                    : 'Where are you going?',
+                hintStyle: GVTypography.bodyMedium.copyWith(
+                  color: isDark ? GVColors.neutral500 : GVColors.textDisabled,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: GVSpacing.md,
+                  vertical: 10,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: GVSpacing.sm),
+        children: [
+          // "Set location on map" Action (Screens 4 & 6 Entrypoint)
+          ListTile(
+            leading: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: pinColor.withValues(alpha: 0.12),
+              ),
+              child: Icon(
+                Icons.map_outlined,
+                color: pinColor,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              'Set location on map',
+              style: GVTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: pinColor,
+              ),
+            ),
+            subtitle: Text(
+              'Pin point your exact spot on the map',
+              style: GVTypography.caption.copyWith(
+                color: isDark ? GVColors.neutral400 : GVColors.textSecondary,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => _openMapPicker(isPickup: isPickup),
+          ),
+          const Divider(color: GVColors.divider),
+
+          // Autocomplete suggestions
+          ...filtered.map((location) {
+            return ListTile(
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? const Color(0xFF243029)
+                      : GVColors.softBackground,
+                ),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  color: pinColor,
+                  size: 20,
+                ),
+              ),
+              title: Text(
+                location.label ?? location.address.split(',').first,
+                style: GVTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : GVColors.textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                location.address,
+                style: GVTypography.caption.copyWith(
+                  color: isDark ? GVColors.neutral400 : GVColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(
+                Icons.north_west_rounded,
+                size: 16,
+                color: GVColors.neutral400,
+              ),
+              onTap: () => onSelect(location),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _SavedPlaceTile extends StatelessWidget {
+  const _SavedPlaceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? const Color(0xFF243029) : const Color(0xFF1E2822),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: GVSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GVTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : GVColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: GVSpacing.sm),
-                  _buildQuickChip(
-                    icon: Icons.work_rounded,
-                    label: 'Work',
-                    location: const LocationDto(
-                      latitude: 6.4281,
-                      longitude: 3.4219,
-                      address: '25 Adeola Odeku, Victoria Island',
-                      label: 'Work',
-                    ),
-                  ),
-                  const SizedBox(width: GVSpacing.sm),
-                  _buildQuickChip(
-                    icon: Icons.school_rounded,
-                    label: 'School',
-                    location: const LocationDto(
-                      latitude: 6.5168,
-                      longitude: 3.3768,
-                      address: 'University of Lagos, Akoka',
-                      label: 'Campus',
+                  Text(
+                    subtitle,
+                    style: GVTypography.caption.copyWith(
+                      color:
+                          isDark ? GVColors.neutral400 : GVColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: GVSpacing.sm),
-            const Divider(),
-
-            // Suggestions List
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: GVSpacing.md),
-                itemCount: _filteredDestinations.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final loc = _filteredDestinations[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: GVColors.softBackground,
-                        borderRadius: BorderRadius.circular(GVBorderRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.electric_bolt_rounded,
-                        color: GVColors.brandGreen,
-                        size: 22,
-                      ),
-                    ),
-                    title: Text(
-                      loc.label ?? loc.address,
-                      style: GVTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      loc.address,
-                      style: GVTypography.caption.copyWith(
-                        color: GVColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 14,
-                      color: GVColors.textSecondary,
-                    ),
-                    onTap: () => _onSelectLocation(loc),
-                  );
-                },
-              ),
+            IconButton(
+              icon: const Icon(Icons.more_vert, size: 18),
+              color: isDark ? GVColors.neutral500 : GVColors.neutral400,
+              onPressed: () {},
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  List<LocationDto> get _filteredDestinations {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return _popularDestinations;
-    return _popularDestinations.where((loc) {
-      final label = loc.label?.toLowerCase() ?? '';
-      final address = loc.address.toLowerCase();
-      return label.contains(query) || address.contains(query);
-    }).toList();
-  }
+class _CircularIconButton extends StatelessWidget {
+  const _CircularIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    required this.isDark,
+  });
 
-  Widget _buildQuickChip({
-    required IconData icon,
-    required String label,
-    required LocationDto location,
-  }) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16, color: GVColors.brandGreen),
-      label: Text(label, style: GVTypography.caption),
-      backgroundColor: GVColors.softBackground,
-      side: const BorderSide(color: GVColors.border),
-      onPressed: () => _onSelectLocation(location),
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark ? const Color(0xFF1E2621) : Colors.white,
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 20),
+        tooltip: tooltip,
+        color: isDark ? Colors.white : GVColors.textPrimary,
+        onPressed: onTap,
+      ),
     );
   }
+}
+
+class _MapHeaderPreview extends StatelessWidget {
+  const _MapHeaderPreview({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size.infinite,
+            painter: _HeaderMapPainter(isDark: isDark),
+          ),
+          // Center pickup marker on map
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.withValues(alpha: 0.3),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.location_on_rounded,
+                size: 32,
+                color: GVColors.brandGreen,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderMapPainter extends CustomPainter {
+  const _HeaderMapPainter({required this.isDark});
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final streetColor =
+        isDark ? const Color(0xFF1E2822) : const Color(0xFFFCFDFD);
+    final streetPaint = Paint()
+      ..color = streetColor
+      ..strokeWidth = 8
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(0, size.height * 0.4),
+      Offset(size.width, size.height * 0.4),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.5, 0),
+      Offset(size.width * 0.5, size.height),
+      streetPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeaderMapPainter oldDelegate) => false;
 }

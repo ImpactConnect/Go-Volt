@@ -1,13 +1,33 @@
 /// Shared models, enums and DTOs across Go-Volts client apps and backend.
 library;
 
+export 'src/dto/active_booking_summary_dto.dart';
 export 'src/dto/booking_dto.dart';
+export 'src/dto/campaign_banner_dto.dart';
+export 'src/dto/coupon_validation_dto.dart';
+export 'src/dto/customer_notification_dto.dart';
+export 'src/dto/delivery_option_dto.dart';
 export 'src/dto/dispatch_offer_dto.dart';
 export 'src/dto/location_dto.dart';
+export 'src/dto/parcel_catalogue_dto.dart';
+export 'src/dto/parcel_category_dto.dart';
+export 'src/dto/parcel_delivery_dto.dart';
+export 'src/dto/parcel_details_dto.dart';
+export 'src/dto/parcel_price_breakdown_dto.dart';
+export 'src/dto/parcel_rating_dto.dart';
+export 'src/dto/parcel_size_band_dto.dart';
 export 'src/dto/price_quote_dto.dart';
 export 'src/dto/profile_dto.dart';
+export 'src/dto/proof_of_delivery_dto.dart';
+export 'src/dto/recipient_details_dto.dart';
+export 'src/dto/ride_category_dto.dart';
 export 'src/dto/rider_dto.dart';
+export 'src/dto/saved_place_dto.dart';
 export 'src/dto/scheduled_plan_dto.dart';
+export 'src/dto/service_area_dto.dart';
+export 'src/dto/special_handling_option_dto.dart';
+export 'src/dto/trip_rating_dto.dart';
+export 'src/dto/trip_receipt_dto.dart';
 export 'src/dto/wallet_dto.dart';
 export 'src/enums/booking_status.dart';
 export 'src/enums/domain_enums.dart';

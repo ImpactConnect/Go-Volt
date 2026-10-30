@@ -3,180 +3,220 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 
-/// A02 — Welcome / Value Proposition Screen
-class WelcomeScreen extends StatelessWidget {
+/// Screen 2: Welcome / Onboarding Screen (AUTH-01-WELCOME)
+/// Specification Section 3 & Design Board 1/2.
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  int _currentSlide = 0;
+
+  final List<_OnboardingSlide> _slides = const [
+    _OnboardingSlide(
+      title: 'Move faster.\nGo greener.\nGo further.',
+      subtitle: 'Reliable rides and deliveries powered by clean energy.',
+      icon: Icons.two_wheeler_rounded,
+    ),
+    _OnboardingSlide(
+      title: 'Smart, silent\nurban commutes.',
+      subtitle: 'Book verified electric motorcycle rides across Lagos Island with upfront fares.',
+      icon: Icons.electric_bolt_rounded,
+    ),
+    _OnboardingSlide(
+      title: 'Doorstep deliveries\nwith zero emissions.',
+      subtitle: 'Send parcels and track riders in real time while reducing your carbon footprint.',
+      icon: Icons.local_shipping_rounded,
+    ),
+  ];
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF131A16) : Colors.white;
+    final textColor = isDark ? Colors.white : GVColors.textPrimary;
+    final subtextColor = isDark ? GVColors.neutral300 : GVColors.textSecondary;
+    final slide = _slides[_currentSlide];
+
     return Scaffold(
-      backgroundColor: GVColors.nearBlack,
+      backgroundColor: bgColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: GVSpacing.xl),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: GVSpacing.sm,
-                            vertical: GVSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: GVColors.deepGreen,
-                            borderRadius: BorderRadius.circular(GVBorderRadius.full),
-                            border: Border.all(
-                              color: GVColors.brandGreen.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.bolt_rounded,
-                                size: 16,
-                                color: GVColors.limeHighlight,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'GO-VOLTS NIGERIA',
-                                style: GVTypography.caption.copyWith(
-                                  color: GVColors.white,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: GVSpacing.lg),
-                    Text(
-                      'Zero-Emission\nMobility &\nFast Logistics.',
-                      style: GVTypography.h1.copyWith(
-                        color: GVColors.white,
-                        height: 1.15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: GVSpacing.md),
-                    Text(
-                      'Experience clean, affordable electric rides, same-day delivery, and scheduled pickups across your city.',
-                      style: GVTypography.body.copyWith(
-                        color: GVColors.white.withValues(alpha: 0.75),
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: GVSpacing.xl),
-                    _buildFeatureCard(
-                      icon: Icons.electric_scooter_rounded,
-                      title: 'Instant Electric Rides',
-                      subtitle: 'Silent, eco-friendly commutes with verified drivers.',
-                    ),
-                    const SizedBox(height: GVSpacing.sm),
-                    _buildFeatureCard(
-                      icon: Icons.local_shipping_rounded,
-                      title: 'Same-Day Parcel Delivery',
-                      subtitle: 'Swift doorstep logistics with digital proof of delivery.',
-                    ),
-                    const SizedBox(height: GVSpacing.sm),
-                    _buildFeatureCard(
-                      icon: Icons.calendar_month_rounded,
-                      title: 'Scheduled Pickups',
-                      subtitle: 'Book one-off or recurring collections at your convenience.',
-                    ),
-                    const SizedBox(height: GVSpacing.lg),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(GVSpacing.lg),
-              decoration: BoxDecoration(
-                color: GVColors.deepGreen.withValues(alpha: 0.4),
-                border: Border(
-                  top: BorderSide(
-                    color: GVColors.white.withValues(alpha: 0.08),
-                  ),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Bar: Skip Action
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  GVPrimaryButton(
-                    label: 'Get Started',
-                    onPressed: () => context.push(AppRoutes.createAccount),
-                  ),
-                  const SizedBox(height: GVSpacing.sm),
-                  GVOutlinedButton(
-                    label: 'I Already Have an Account',
+                  TextButton(
                     onPressed: () => context.push(AppRoutes.login),
+                    style: TextButton.styleFrom(
+                      foregroundColor: isDark ? GVColors.neutral300 : GVColors.textSecondary,
+                    ),
+                    child: Text(
+                      'Skip',
+                      style: GVTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              const SizedBox(height: GVSpacing.md),
 
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(GVSpacing.md),
-      decoration: BoxDecoration(
-        color: GVColors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(GVBorderRadius.md),
-        border: Border.all(
-          color: GVColors.white.withValues(alpha: 0.1),
+              // Title Headline
+              Text(
+                slide.title,
+                style: GVTypography.h1.copyWith(
+                  color: textColor,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.sm),
+
+              // Subtitle
+              Text(
+                slide.subtitle,
+                style: GVTypography.bodyMedium.copyWith(
+                  color: subtextColor,
+                  fontSize: 15,
+                  height: 1.45,
+                ),
+              ),
+
+              // Center Hero Illustration Graphic
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isDark
+                                ? const Color(0xFF1C2621)
+                                : GVColors.brandGreen.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: GVColors.brandGreen.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              slide.icon,
+                              size: 90,
+                              color: GVColors.brandGreen,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: GVSpacing.md),
+
+                        // 3-Dot Pagination Carousel Indicator
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(_slides.length, (index) {
+                            final isActive = index == _currentSlide;
+                            return GestureDetector(
+                              onTap: () => setState(() => _currentSlide = index),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: isActive ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? GVColors.brandGreen
+                                      : (isDark ? GVColors.neutral700 : GVColors.neutral300),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Bottom Actions
+              Column(
+                children: [
+                  // Primary Button: "Get started ->"
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () => context.push(AppRoutes.signupOptions),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GVColors.brandGreen,
+                        foregroundColor: GVColors.nearBlack,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(GVBorderRadius.full),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Get started',
+                            style: GVTypography.buttonLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: GVColors.nearBlack,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, size: 20, color: GVColors.nearBlack),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: GVSpacing.sm),
+
+                  // Secondary Button: "I already have an account / Log in"
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.login),
+                    style: TextButton.styleFrom(
+                      foregroundColor: isDark ? Colors.white : GVColors.textPrimary,
+                    ),
+                    child: Text(
+                      'I already have an account',
+                      style: GVTypography.buttonMedium.copyWith(
+                        color: isDark ? GVColors.neutral300 : GVColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: GVSpacing.md),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(GVSpacing.sm),
-            decoration: BoxDecoration(
-              color: GVColors.brandGreen.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(GVBorderRadius.sm),
-            ),
-            child: Icon(icon, color: GVColors.limeHighlight, size: 24),
-          ),
-          const SizedBox(width: GVSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GVTypography.h3.copyWith(
-                    color: GVColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GVTypography.bodySmall.copyWith(
-                    color: GVColors.white.withValues(alpha: 0.65),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
+}
+
+class _OnboardingSlide {
+  const _OnboardingSlide({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }

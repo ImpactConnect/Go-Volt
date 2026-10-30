@@ -3,7 +3,7 @@
 # ==============================================================================
 
 # Stage 1: Build & Compile AOT Native Executable
-FROM dart:stable AS build
+FROM ghcr.io/cirruslabs/flutter:stable AS build
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY apps/merchant_portal/pubspec.yaml apps/merchant_portal/
 
 # Activate melos and bootstrap dependencies
 RUN dart pub global activate melos 8.9.0
-RUN dart pub get
+RUN flutter pub get
 RUN melos bootstrap
 
 # Copy full backend and dependent shared packages source

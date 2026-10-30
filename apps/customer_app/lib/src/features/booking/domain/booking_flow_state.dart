@@ -21,6 +21,12 @@ class BookingFlowState extends Equatable {
     this.isLoadingQuote = false,
     this.isCreatingBooking = false,
     this.errorMessage,
+    this.rideCategories = const [],
+    this.selectedRideCategoryId,
+    this.appliedCoupon,
+    this.walletCreditAppliedKobo = 0,
+    this.isApplyingCoupon = false,
+    this.couponError,
   });
 
   final ServiceCode serviceCode;
@@ -41,7 +47,24 @@ class BookingFlowState extends Equatable {
   final bool isCreatingBooking;
   final String? errorMessage;
 
+  // Phase 3 & v1.3 Additions
+  final List<RideCategoryDto> rideCategories;
+  final String? selectedRideCategoryId;
+  final CouponValidationDto? appliedCoupon;
+  final int walletCreditAppliedKobo;
+  final bool isApplyingCoupon;
+  final String? couponError;
+
   bool get hasValidRoute => pickupLocation != null && dropoffLocation != null;
+
+  RideCategoryDto? get selectedRideCategory {
+    if (rideCategories.isEmpty) return null;
+    if (selectedRideCategoryId == null) return rideCategories.first;
+    return rideCategories.firstWhere(
+      (c) => c.id == selectedRideCategoryId,
+      orElse: () => rideCategories.first,
+    );
+  }
 
   BookingFlowState copyWith({
     ServiceCode? serviceCode,
@@ -61,8 +84,16 @@ class BookingFlowState extends Equatable {
     bool? isLoadingQuote,
     bool? isCreatingBooking,
     String? errorMessage,
+    List<RideCategoryDto>? rideCategories,
+    String? selectedRideCategoryId,
+    CouponValidationDto? appliedCoupon,
+    int? walletCreditAppliedKobo,
+    bool? isApplyingCoupon,
+    String? couponError,
     bool clearQuote = false,
     bool clearError = false,
+    bool clearCoupon = false,
+    bool clearCouponError = false,
   }) {
     return BookingFlowState(
       serviceCode: serviceCode ?? this.serviceCode,
@@ -82,6 +113,15 @@ class BookingFlowState extends Equatable {
       isLoadingQuote: isLoadingQuote ?? this.isLoadingQuote,
       isCreatingBooking: isCreatingBooking ?? this.isCreatingBooking,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      rideCategories: rideCategories ?? this.rideCategories,
+      selectedRideCategoryId:
+          selectedRideCategoryId ?? this.selectedRideCategoryId,
+      appliedCoupon: clearCoupon ? null : (appliedCoupon ?? this.appliedCoupon),
+      walletCreditAppliedKobo:
+          walletCreditAppliedKobo ?? this.walletCreditAppliedKobo,
+      isApplyingCoupon: isApplyingCoupon ?? this.isApplyingCoupon,
+      couponError:
+          clearCouponError ? null : (couponError ?? this.couponError),
     );
   }
 
@@ -104,5 +144,11 @@ class BookingFlowState extends Equatable {
         isLoadingQuote,
         isCreatingBooking,
         errorMessage,
+        rideCategories,
+        selectedRideCategoryId,
+        appliedCoupon,
+        walletCreditAppliedKobo,
+        isApplyingCoupon,
+        couponError,
       ];
 }

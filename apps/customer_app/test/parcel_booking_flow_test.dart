@@ -26,9 +26,9 @@ void main() {
       expect(state.weightKg, 1.5);
       expect(state.selectedSizeBand.code, 'SMALL');
       expect(state.isFragile, isTrue);
-      expect(state.pickupLocation?.label, 'Eko Hotel and Suites');
+      expect(state.pickupLocation?.label, 'Shaganu Central');
       expect(state.recipient?.fullName, 'John Doe');
-      expect(state.destinationLocation?.label, 'Palms Mall');
+      expect(state.destinationLocation?.label, 'Shaganu Main Market');
       expect(state.quote?.totalAmountKobo, 250000); // ₦2,500
       expect(state.quote?.formattedTotalFare, '₦2,500');
     });

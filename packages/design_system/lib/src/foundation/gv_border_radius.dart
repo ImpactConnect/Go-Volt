@@ -10,6 +10,9 @@ abstract final class GVBorderRadius {
   static const double xxl = 24.0;
   static const double full = 9999.0;
 
+  static const double card = md;
+  static const double button = md;
+
   static const BorderRadius cardRadius = BorderRadius.all(Radius.circular(md));
   static const BorderRadius buttonRadius =
       BorderRadius.all(Radius.circular(md));

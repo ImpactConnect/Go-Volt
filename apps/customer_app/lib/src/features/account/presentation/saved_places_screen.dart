@@ -21,48 +21,53 @@ class SavedPlaceItem {
 
 /// Screen H05: Saved Places Manager with Dependent Plan Deletion Guard.
 class SavedPlacesScreen extends StatefulWidget {
-  const SavedPlacesScreen({super.key});
+  final List<SavedPlaceItem>? initialPlaces;
+  const SavedPlacesScreen({super.key, this.initialPlaces});
 
   @override
   State<SavedPlacesScreen> createState() => _SavedPlacesScreenState();
 }
 
 class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
+  static const List<SavedPlaceItem> defaultPlaces = [
+    SavedPlaceItem(
+      id: 'place_1',
+      name: 'Home',
+      address: '14 Admiralty Way, Lekki Phase 1, Lagos',
+      type: PlaceType.home,
+      isUsedInActivePlan: true,
+    ),
+    SavedPlaceItem(
+      id: 'place_2',
+      name: 'Work',
+      address: '18 Adeola Odeku St, Victoria Island, Lagos',
+      type: PlaceType.work,
+      isUsedInActivePlan: true,
+    ),
+    SavedPlaceItem(
+      id: 'place_3',
+      name: 'Corona School Victoria Island',
+      address: '6 Waziri Ibrahim Cres, Victoria Island',
+      type: PlaceType.school,
+      isUsedInActivePlan: true,
+    ),
+    SavedPlaceItem(
+      id: 'place_4',
+      name: 'Gym & Fitness Hub',
+      address: 'Plot 12 Lekki-Epe Expressway, Lagos',
+      type: PlaceType.custom,
+      isUsedInActivePlan: false,
+    ),
+  ];
+
   late List<SavedPlaceItem> _places;
 
   @override
   void initState() {
     super.initState();
-    _places = [
-      const SavedPlaceItem(
-        id: 'place_1',
-        name: 'Home',
-        address: '14 Admiralty Way, Lekki Phase 1, Lagos',
-        type: PlaceType.home,
-        isUsedInActivePlan: true, // Used in School-Run & Commute Plan
-      ),
-      const SavedPlaceItem(
-        id: 'place_2',
-        name: 'Work',
-        address: '18 Adeola Odeku St, Victoria Island, Lagos',
-        type: PlaceType.work,
-        isUsedInActivePlan: true,
-      ),
-      const SavedPlaceItem(
-        id: 'place_3',
-        name: 'Corona School Victoria Island',
-        address: '6 Waziri Ibrahim Cres, Victoria Island',
-        type: PlaceType.school,
-        isUsedInActivePlan: true, // Critical for School-Run
-      ),
-      const SavedPlaceItem(
-        id: 'place_4',
-        name: 'Gym & Fitness Hub',
-        address: 'Plot 12 Lekki-Epe Expressway, Lagos',
-        type: PlaceType.custom,
-        isUsedInActivePlan: false,
-      ),
-    ];
+    _places = widget.initialPlaces != null
+        ? List<SavedPlaceItem>.from(widget.initialPlaces!)
+        : List<SavedPlaceItem>.from(defaultPlaces);
   }
 
   void _addNewPlace() {
@@ -277,6 +282,35 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
                       onPressed: () => _confirmDelete(place),
                     ),
                   ],
+                ),
+              ),
+            if (_places.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: GVSpacing.xxl),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(GVSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: GVColors.brandGreen.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.place_outlined,
+                            size: 48, color: GVColors.brandGreen),
+                      ),
+                      const SizedBox(height: GVSpacing.md),
+                      Text('No saved places yet',
+                          style: GVTypography.h3.copyWith(color: Colors.white)),
+                      const SizedBox(height: GVSpacing.xs),
+                      Text(
+                        'Save your frequent destinations like Home, Work, or School for quick 1-tap bookings.',
+                        textAlign: TextAlign.center,
+                        style: GVTypography.caption
+                            .copyWith(color: Colors.white60),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             const SizedBox(height: GVSpacing.lg),

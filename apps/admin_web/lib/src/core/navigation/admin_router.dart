@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/audit/presentation/audit_screen.dart';
 import '../../features/bookings/presentation/booking_management_screen.dart';
 import '../../features/finance/presentation/finance_management_screen.dart';
+import '../../features/finance/presentation/paystack_provisioning_screen.dart';
 import '../../features/integrations/presentation/integrations_screen.dart';
+import '../../features/locations/presentation/operating_locations_screen.dart';
 import '../../features/merchants/presentation/merchants_screen.dart';
 import '../../features/operations/presentation/operations_dashboard_screen.dart';
 import '../../features/pricing/presentation/pricing_management_screen.dart';
@@ -50,6 +52,12 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/locations',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: OperatingLocationsScreen(),
+            ),
+          ),
+          GoRoute(
             path: '/pricing',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: PricingManagementScreen(),
@@ -65,6 +73,12 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
             path: '/finance',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: FinanceManagementScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/paystack',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: PaystackProvisioningScreen(),
             ),
           ),
           GoRoute(

@@ -175,6 +175,138 @@ class _PromotionsManagementScreenState
     );
   }
 
+  void _showEditLoyaltyModal(BuildContext context) {
+    final current = ref.read(promotionsNotifierProvider).loyaltyConfig;
+    final earnRateController = TextEditingController(text: current.pointsPerHundredNairaSpent.toString());
+    final pointsReqController = TextEditingController(text: current.pointsRequired.toString());
+    final creditNairaController = TextEditingController(text: (current.creditAmountKobo / 100).toStringAsFixed(0));
+    final minThresholdController = TextEditingController(text: current.minRedemptionPoints.toString());
+    final maxCapController = TextEditingController(text: current.maxRedemptionPoints.toString());
+    final presetsController = TextEditingController(text: current.presetPoints.join(', '));
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return AdminModalDialog(
+          title: 'Configure Loyalty Economics & Thresholds',
+          icon: Icons.tune,
+          primaryActionLabel: 'Save Loyalty Rules',
+          onPrimaryAction: () {
+            final earnRate = int.tryParse(earnRateController.text) ?? 5;
+            final pointsReq = int.tryParse(pointsReqController.text) ?? 10;
+            final creditNaira = double.tryParse(creditNairaController.text) ?? 1.0;
+            final creditKobo = (creditNaira * 100).round();
+            final minPoints = int.tryParse(minThresholdController.text) ?? 200;
+            final maxPoints = int.tryParse(maxCapController.text) ?? 10000;
+            final parsedPresets = presetsController.text
+                .split(',')
+                .map((s) => int.tryParse(s.trim()))
+                .whereType<int>()
+                .toList();
+
+            ref.read(promotionsNotifierProvider.notifier).updateLoyaltyConfig(
+                  pointsPerHundredNairaSpent: earnRate,
+                  pointsRequired: pointsReq,
+                  creditAmountKobo: creditKobo,
+                  minRedemptionPoints: minPoints,
+                  maxRedemptionPoints: maxPoints,
+                  presetPoints: parsedPresets.isNotEmpty ? parsedPresets : [200, 500, 1000, 2500],
+                );
+
+            Navigator.pop(dialogCtx);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Loyalty point valuation & thresholds updated successfully.'),
+                backgroundColor: GVColors.brandGreen,
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: earnRateController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Points Earned per ₦100 Spent (pts)',
+                  filled: true,
+                  fillColor: Color(0xFF14241B),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: pointsReqController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Points Required (pts)',
+                        filled: true,
+                        fillColor: Color(0xFF14241B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: creditNairaController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Naira Credit Value (₦)',
+                        filled: true,
+                        fillColor: Color(0xFF14241B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minThresholdController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Min Redemption Threshold (pts)',
+                        filled: true,
+                        fillColor: Color(0xFF14241B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: maxCapController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Max Redemption Cap (pts)',
+                        filled: true,
+                        fillColor: Color(0xFF14241B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: presetsController,
+                decoration: const InputDecoration(
+                  labelText: 'Redemption Preset Options (comma separated)',
+                  hintText: 'e.g. 200, 500, 1000, 2500',
+                  filled: true,
+                  fillColor: Color(0xFF14241B),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final promoState = ref.watch(promotionsNotifierProvider);
@@ -438,16 +570,29 @@ class _PromotionsManagementScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.stars, color: Colors.amberAccent, size: 20),
-                          const SizedBox(width: 8),
-                          Text('Go-Volts Eco-Points Loyalty Program', style: GVTypography.h3.copyWith(color: Colors.white)),
+                          Row(
+                            children: [
+                              const Icon(Icons.stars, color: Colors.amberAccent, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Go-Volts Eco-Points Loyalty Program', style: GVTypography.h3.copyWith(color: Colors.white)),
+                            ],
+                          ),
+                          IconButton(
+                            key: const Key('edit_loyalty_config_button'),
+                            icon: const Icon(Icons.edit_note, color: GVColors.brandGreen),
+                            tooltip: 'Configure Loyalty Economics & Thresholds',
+                            onPressed: () => _showEditLoyaltyModal(context),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       _ruleRow('Points Earned per ₦100 Spent', '${promoState.loyaltyConfig.pointsPerHundredNairaSpent} pts'),
-                      _ruleRow('Redemption Conversion Rate', '100 pts = ₦${(promoState.loyaltyConfig.koboPerPointRedeemed * BigInt.from(100) / BigInt.from(100)).toStringAsFixed(0)}'),
+                      _ruleRow('Redemption Conversion Rate', promoState.loyaltyConfig.formattedRate),
                       _ruleRow('Minimum Redemption Threshold', '${promoState.loyaltyConfig.minRedemptionPoints} pts'),
+                      _ruleRow('Maximum Redemption Cap', '${promoState.loyaltyConfig.maxRedemptionPoints} pts'),
+                      _ruleRow('Redemption Presets', promoState.loyaltyConfig.formattedPresetChips),
                       _ruleRow('Eco-Miles Carbon Offset Equivalence', '1 pt ≈ 15g CO2 saved'),
                     ],
                   ),

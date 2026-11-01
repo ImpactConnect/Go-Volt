@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_notifier.dart';
+import '../../../core/auth/auth_state.dart';
 import '../../../core/router/app_router.dart';
 
 /// Screen 5: Email OTP Verification (AUTH-03-EMAIL-OTP)
@@ -68,6 +69,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated && mounted) {
+        context.go(AppRoutes.home);
+      } else if (next.status == AuthStatus.profileIncomplete && mounted) {
+        context.go(AppRoutes.completeProfile);
+      }
+    });
+
     final authState = ref.watch(authNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF131A16) : Colors.white;
@@ -202,6 +211,42 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ),
                   ),
                 ),
+
+              const SizedBox(height: GVSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(GVSpacing.md),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF1B2620)
+                      : GVColors.softBackground,
+                  borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF2E3D35)
+                        : GVColors.border,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.mark_email_read_outlined,
+                      size: 20,
+                      color: GVColors.brandGreen,
+                    ),
+                    const SizedBox(width: GVSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Tip: You can enter the 6-digit code or tap the confirmation link in your email to sign in automatically.',
+                        style: GVTypography.caption.copyWith(
+                          color: subtextColor,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: GVSpacing.xxl),
 

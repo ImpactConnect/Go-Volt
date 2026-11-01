@@ -134,12 +134,14 @@ class ApiClient {
         'service_area_id': ?serviceAreaId,
       },
       parser: (data) {
-        if (data is List) {
-          return data
-              .map((e) => RideCategoryDto.fromJson(e as Map<String, dynamic>))
-              .toList();
-        }
-        return <RideCategoryDto>[];
+        final list = (data is Map<String, dynamic> && data.containsKey('data'))
+            ? data['data'] as List<dynamic>? ?? []
+            : data is List
+                ? data
+                : <dynamic>[];
+        return list
+            .map((e) => RideCategoryDto.fromJson(e as Map<String, dynamic>))
+            .toList();
       },
     );
   }
@@ -226,7 +228,7 @@ class ApiClient {
         'weight_kg': weightKg,
         'size_band': sizeBand.toJson(),
         'handling_options': handlingOptions.map((e) => e.toJson()).toList(),
-        if (couponCode != null) 'coupon_code': couponCode,
+        'coupon_code': ?couponCode,
       },
       parser: (data) =>
           ParcelPriceBreakdownDto.fromJson(data as Map<String, dynamic>),
@@ -260,7 +262,7 @@ class ApiClient {
         'package_details': packageDetails.toJson(),
         'price_breakdown': priceBreakdown.toJson(),
         'payment_method': paymentMethod.code,
-        if (couponCode != null) 'coupon_code': couponCode,
+        'coupon_code': ?couponCode,
       },
       parser: (data) =>
           ParcelDeliveryDto.fromJson(data as Map<String, dynamic>),
@@ -464,7 +466,283 @@ class ApiClient {
   }
 
   // ---------------------------------------------------------------------------
-  // SCHEDULED PLANS (Commuter & School-Run)
+  // SCHEDULED PLANS & COMMUTE (v1.5 Section 21)
+  // ---------------------------------------------------------------------------
+
+  /// Calculates a deterministic quote for one-off or recurring scheduled pickup.
+  Future<ApiResponse<ScheduledQuoteDto>> getScheduledQuote({
+    required ScheduledBookingType bookingType,
+    required TripPurpose purpose,
+    required JourneyDirection journeyType,
+    required LocationDto pickupLocation,
+    required LocationDto destinationLocation,
+    LocationDto? returnPickupLocation,
+    LocationDto? returnDestinationLocation,
+    String? pickupTime,
+    String? returnPickupTime,
+    List<String> selectedDays = const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    PackageBillingModel billingModel = PackageBillingModel.payPerTrip,
+  }) async {
+    return _send<ScheduledQuoteDto>(
+      method: 'POST',
+      path: '/scheduled-quotes',
+      data: {
+        'booking_type': bookingType.value,
+        'purpose': purpose.value,
+        'journey_type': journeyType.value,
+        'pickup_location': pickupLocation.toJson(),
+        'destination_location': destinationLocation.toJson(),
+        'return_pickup_location': ?returnPickupLocation?.toJson(),
+        'return_destination_location': ?returnDestinationLocation?.toJson(),
+        'pickup_time': ?pickupTime,
+        'return_pickup_time': ?returnPickupTime,
+        'selected_days': selectedDays,
+        'billing_model': billingModel.value,
+      },
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledQuoteDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledQuoteDto');
+      },
+    );
+  }
+
+  /// Submits a recurring plan request to operations for review (status: pending_review).
+  Future<ApiResponse<ScheduledPlanDto>> submitScheduledPlan({
+    required ScheduledQuoteDto quote,
+    required String passengerName,
+    required String passengerPhone,
+    String? specialInstructions,
+    String? preferredDriverId,
+    String? preferredDriverName,
+    String? schoolName,
+  }) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans',
+      data: {
+        ...quote.toJson(),
+        'passenger_name': passengerName,
+        'passenger_phone': passengerPhone,
+        'notes': ?specialInstructions,
+        'preferred_driver_id': ?preferredDriverId,
+        'preferred_driver_name': ?preferredDriverName,
+        'school_name': ?schoolName,
+      },
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Fetches customer's scheduled plans.
+  Future<ApiResponse<List<ScheduledPlanDto>>> listScheduledPlans({String? status}) async {
+    return _send<List<ScheduledPlanDto>>(
+      method: 'GET',
+      path: '/scheduled-plans',
+      queryParameters: status != null ? {'status': status} : null,
+      parser: (data) {
+        final list = (data is Map<String, dynamic> && data.containsKey('data'))
+            ? data['data'] as List<dynamic>? ?? []
+            : data as List<dynamic>? ?? [];
+        return list
+            .map((item) => ScheduledPlanDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      },
+    );
+  }
+
+  /// Fetches a single scheduled plan by ID.
+  Future<ApiResponse<ScheduledPlanDto>> getScheduledPlan(String planId) async {
+    return _send<ScheduledPlanDto>(
+      method: 'GET',
+      path: '/scheduled-plans/$planId',
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Operations approves a pending plan, activating 48h payment window.
+  Future<ApiResponse<ScheduledPlanDto>> approveScheduledPlan(String planId) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans/$planId/approve',
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Pays for and activates an approved plan.
+  Future<ApiResponse<ScheduledPlanDto>> payScheduledPlan(
+    String planId, {
+    required String paymentMethod,
+  }) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans/$planId/pay',
+      data: {'payment_method': paymentMethod},
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Pauses an active plan from a specified date.
+  Future<ApiResponse<ScheduledPlanDto>> pauseScheduledPlan(
+    String planId, {
+    required DateTime effectiveDate,
+  }) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans/$planId/pause',
+      data: {'effective_date': effectiveDate.toIso8601String()},
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Resumes a paused plan.
+  Future<ApiResponse<ScheduledPlanDto>> resumeScheduledPlan(String planId) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans/$planId/resume',
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Cancels a scheduled plan.
+  Future<ApiResponse<ScheduledPlanDto>> cancelScheduledPlan(
+    String planId, {
+    String? reason,
+  }) async {
+    return _send<ScheduledPlanDto>(
+      method: 'POST',
+      path: '/scheduled-plans/$planId/cancel',
+      data: {'reason': ?reason},
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return ScheduledPlanDto.fromJson(payload);
+        }
+        throw const FormatException('Expected Map for ScheduledPlanDto');
+      },
+    );
+  }
+
+  /// Lists upcoming scheduled trips, optionally filtered by planId.
+  Future<ApiResponse<List<ScheduledTripDto>>> listScheduledTrips({String? planId}) async {
+    return _send<List<ScheduledTripDto>>(
+      method: 'GET',
+      path: '/scheduled-trips',
+      queryParameters: planId != null ? {'plan_id': planId} : null,
+      parser: (data) {
+        final list = (data is Map<String, dynamic> && data.containsKey('data'))
+            ? data['data'] as List<dynamic>? ?? []
+            : data as List<dynamic>? ?? [];
+        return list
+            .map((item) => ScheduledTripDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      },
+    );
+  }
+
+  /// Skips a trip, checking the 6-hour cutoff for entitlement preservation.
+  Future<ApiResponse<Map<String, dynamic>>> skipScheduledTrip(
+    String tripId, {
+    DateTime? tripTime,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/scheduled-trips/$tripId/skip',
+      data: tripTime != null ? {'trip_time': tripTime.toIso8601String()} : null,
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+        }
+        return {'status': 'skipped'};
+      },
+    );
+  }
+
+  /// Verifies school run 4-digit PIN handover.
+  Future<ApiResponse<Map<String, dynamic>>> verifyScheduledHandover(
+    String tripId, {
+    required String pin,
+    required String recipientName,
+    required String recipientRole,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/scheduled-trips/$tripId/verify-handover',
+      data: {
+        'pin': pin,
+        'recipient_name': recipientName,
+        'recipient_role': recipientRole,
+      },
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+        }
+        return {'verified': true};
+      },
+    );
+  }
+
+  /// Reports a safety or service incident for a scheduled trip.
+  Future<ApiResponse<Map<String, dynamic>>> reportScheduledTripIssue(
+    String tripId, {
+    required String issueType,
+    String? notes,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/scheduled-trips/$tripId/report-issue',
+      data: {
+        'issue_type': issueType,
+        'notes': ?notes,
+      },
+      parser: (data) {
+        if (data is Map<String, dynamic>) {
+          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+        }
+        return {'status': 'recorded'};
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // LEGACY PLANS (Commuter & School-Run)
   // ---------------------------------------------------------------------------
 
   Future<ApiResponse<List<Map<String, dynamic>>>> getScheduledPlans() async {

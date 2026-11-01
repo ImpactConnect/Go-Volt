@@ -1,8 +1,10 @@
 import 'package:app_models/app_models.dart';
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../auth/auth_notifier.dart';
+import '../../features/home/application/home_notifier.dart';
 
 import '../../features/auth/presentation/complete_profile_screen.dart';
 import '../../features/auth/presentation/create_account_screen.dart';
@@ -34,6 +36,7 @@ import '../../features/parcel/presentation/parcel_live_tracking_screen.dart';
 import '../../features/parcel/presentation/parcel_delivered_screen.dart';
 import '../../features/parcel/presentation/parcel_receipt_screen.dart';
 import '../../features/parcel/presentation/parcel_rating_screen.dart';
+import '../../features/home/presentation/current_location_map_screen.dart';
 import '../../features/home/presentation/home_dashboard_screen.dart';
 import '../../features/home/presentation/location_selector_modal.dart';
 import '../../features/home/presentation/main_shell_screen.dart';
@@ -45,6 +48,9 @@ import '../../features/tracking/presentation/trip_dispute_screen.dart';
 import '../../features/wallet/presentation/wallet_screen.dart';
 import '../../features/wallet/presentation/top_up_screen.dart';
 import '../../features/wallet/presentation/rewards_screen.dart';
+import '../../features/wallet/presentation/saved_payment_methods_screen.dart';
+import '../../features/wallet/presentation/coupons_screen.dart';
+import '../../features/activity/presentation/activity_hub_screen.dart';
 import '../../features/account/presentation/account_screen.dart';
 import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/account/presentation/preferences_screen.dart';
@@ -52,6 +58,7 @@ import '../../features/account/presentation/saved_places_screen.dart';
 import '../../features/account/presentation/support_screen.dart';
 import '../../features/home/presentation/notifications_screen.dart';
 import '../../features/scheduled/presentation/plan_modification_screen.dart';
+import '../../features/scheduled/presentation/screens/screens.dart';
 import '../../features/tracking/presentation/receipt_screen.dart';
 import '../../features/tracking/presentation/rate_trip_screen.dart';
 
@@ -70,6 +77,7 @@ abstract final class AppRoutes {
   static const locationPermission = '/location-permission';
 
   // Booking Flows
+  static const currentLocationMap = '/current-location-map';
   static const locationSelect = '/location-select';
   static const locationPicker = '/location-picker';
   static const mapPicker = '/map-picker';
@@ -99,9 +107,51 @@ abstract final class AppRoutes {
   static const scheduledPlans = '/scheduled-plans';
   static const schoolRunSafety = '/school-run-safety';
 
+  // Go-Volts Scheduled Pickup Flow (Screens 1 to 36)
+  static const scheduledLanding = '/scheduled';
+  static const scheduledBookingType = '/scheduled/booking-type';
+  static const scheduledChooseBookingType = scheduledBookingType;
+  static const scheduledTripPurpose = '/scheduled/purpose';
+  static const scheduledPickupLocation = '/scheduled/pickup-location';
+  static const scheduledDestination = '/scheduled/destination';
+  static const scheduledTripDetails = '/scheduled/trip-details';
+  static const scheduledCalendar = '/scheduled/calendar';
+  static const scheduledPassengerDetails = '/scheduled/passenger-details';
+  static const scheduledPreferredDriver = '/scheduled/preferred-driver';
+  static const scheduledPackagePricing = '/scheduled/package-pricing';
+  static const scheduledReviewQuote = '/scheduled/review-quote';
+  static const scheduledQuoteResult = '/scheduled/quote-result';
+  static const scheduledRequestSubmitted = '/scheduled/request-submitted';
+  static const scheduledApprovalStatus = '/scheduled/approval-status';
+  static const scheduledRequestApproved = '/scheduled/request-approved';
+  static const scheduledPayment = '/scheduled/payment';
+  static const scheduledPaymentSuccess = '/scheduled/payment-success';
+  static const scheduledMyPlans = '/scheduled/my-plans';
+  static const scheduledPlanDetails = '/scheduled/plan-details';
+  static const scheduledUpcomingTrips = '/scheduled/upcoming-trips';
+  static const scheduledManagePlan = '/scheduled/manage-plan';
+  static const scheduledSkipTrip = '/scheduled/skip-trip';
+  static const scheduledPausePlan = '/scheduled/pause-plan';
+  static const scheduledRenewPlan = '/scheduled/renew-plan';
+  static const scheduledUpcomingTab = '/scheduled/upcoming-tab';
+  static const scheduledDriverAssigned = '/scheduled/driver-assigned';
+  static const scheduledDriverApproaching = '/scheduled/driver-approaching';
+  static const scheduledArrivedPickup = '/scheduled/arrived-pickup';
+  static const scheduledArrivedAtPickup = scheduledArrivedPickup;
+  static const scheduledTripInProgress = '/scheduled/trip-in-progress';
+  static const scheduledArrivingDestination = '/scheduled/arriving-destination';
+  static const scheduledTripCompleted = '/scheduled/trip-completed-view';
+  static const scheduledSchoolRunStatus = '/scheduled/school-run-status';
+  static const scheduledHandoverVerification = '/scheduled/handover-verification';
+  static const scheduledHandoverConfirmed = '/scheduled/handover-confirmed';
+  static const scheduledReportIssue = '/scheduled/report-issue';
+  static const scheduledPaymentRefundDetails = '/scheduled/payment-refund-details';
+
   // Phase 1D: Wallet, Rewards, Support
   static const walletTopUp = '/wallet-top-up';
   static const walletRewards = '/rewards';
+  static const walletPaymentMethods = '/wallet-payment-methods';
+  static const walletCoupons = '/wallet-coupons';
   static const support = '/support';
 
   // Secondary & Settings Screens
@@ -115,6 +165,8 @@ abstract final class AppRoutes {
 
   // Bottom Nav Branches
   static const home = '/home';
+  static const send = '/send';
+  static const scheduled = '/scheduled';
   static const trips = '/trips';
   static const activity = '/trips';
   static const plans = '/plans';
@@ -188,6 +240,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final mode = state.uri.queryParameters['mode'];
           return LocationPickerScreen(initialMode: mode);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.currentLocationMap,
+        builder: (context, state) {
+          final initialLocation = state.extra as LocationDto?;
+          return CurrentLocationMapScreen(initialLocation: initialLocation);
         },
       ),
       GoRoute(
@@ -299,11 +358,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.savedPlaces,
-        builder: (context, state) => const SavedPlacesScreen(),
+        builder: (context, state) {
+          final savedPlaces = ProviderScope.containerOf(context, listen: false)
+              .read(homeNotifierProvider)
+              .savedPlaces;
+          final items = savedPlaces
+              .map((p) => SavedPlaceItem(
+                    id: p.id,
+                    name: p.label,
+                    address: p.address,
+                    type: p.isHome
+                        ? PlaceType.home
+                        : (p.isWork ? PlaceType.work : PlaceType.custom),
+                    isUsedInActivePlan: false,
+                  ))
+              .toList();
+          return SavedPlacesScreen(initialPlaces: items);
+        },
       ),
       GoRoute(
         path: AppRoutes.editProfile,
-        builder: (context, state) => const EditProfileScreen(),
+        builder: (context, state) {
+          final profile = ProviderScope.containerOf(context, listen: false)
+              .read(authNotifierProvider)
+              .profile;
+          return EditProfileScreen(
+            initialName: profile?.fullName,
+            initialEmail: profile?.email,
+            initialPhone: profile?.phoneNumber,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.receipt,
@@ -322,7 +406,165 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PlanModificationScreen(),
       ),
 
-      // Persistent 5-Tab Shell Navigation
+      // Go-Volts Scheduled Pickup (Screens 1 to 36)
+      GoRoute(
+        path: AppRoutes.scheduledBookingType,
+        builder: (context, state) => const ChooseBookingTypeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledTripPurpose,
+        builder: (context, state) => const SelectTripPurposeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPickupLocation,
+        builder: (context, state) => const ScheduledPickupLocationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledDestination,
+        builder: (context, state) => const ScheduledDestinationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledTripDetails,
+        builder: (context, state) => const ScheduledTripDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledCalendar,
+        builder: (context, state) => const ScheduleCalendarScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPassengerDetails,
+        builder: (context, state) => const PassengerDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPreferredDriver,
+        builder: (context, state) => const PreferredDriverScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPackagePricing,
+        builder: (context, state) => const PackagePricingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledReviewQuote,
+        builder: (context, state) => const ReviewQuoteScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledQuoteResult,
+        builder: (context, state) => const QuoteResultScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledRequestSubmitted,
+        builder: (context, state) => const RequestSubmittedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledApprovalStatus,
+        builder: (context, state) => const ApprovalStatusScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledRequestApproved,
+        builder: (context, state) => const RequestApprovedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPayment,
+        builder: (context, state) => const ScheduledPaymentScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPaymentSuccess,
+        builder: (context, state) => const PaymentSuccessScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledMyPlans,
+        builder: (context, state) => const MyScheduledPlansScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPlanDetails,
+        builder: (context, state) => const PlanDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledUpcomingTrips,
+        builder: (context, state) => const UpcomingTripsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledManagePlan,
+        builder: (context, state) => const ManagePlanScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledSkipTrip,
+        builder: (context, state) => const SkipTripScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPausePlan,
+        builder: (context, state) => const PausePlanScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledRenewPlan,
+        builder: (context, state) => const RenewPlanScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledUpcomingTab,
+        builder: (context, state) => const UpcomingTripTabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledDriverAssigned,
+        builder: (context, state) => const DriverAssignedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledDriverApproaching,
+        builder: (context, state) => const DriverApproachingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledArrivedPickup,
+        builder: (context, state) => const ArrivedAtPickupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledTripInProgress,
+        builder: (context, state) => const TripInProgressScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledArrivingDestination,
+        builder: (context, state) => const ArrivingDestinationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledTripCompleted,
+        builder: (context, state) => const ScheduledTripCompletedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledSchoolRunStatus,
+        builder: (context, state) => const SchoolRunStatusScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledHandoverVerification,
+        builder: (context, state) => const HandoverVerificationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledHandoverConfirmed,
+        builder: (context, state) => const HandoverConfirmedScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledReportIssue,
+        builder: (context, state) => const ReportIssueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.scheduledPaymentRefundDetails,
+        builder: (context, state) => const PaymentRefundDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.wallet,
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.rewards,
+        builder: (context, state) => const RewardsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.walletPaymentMethods,
+        builder: (context, state) => const SavedPaymentMethodsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.walletCoupons,
+        builder: (context, state) => const CouponsScreen(),
+      ),
+
+      // Persistent 5-Tab Shell Navigation (Home, Send, Scheduled, Activity, Profile)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShellScreen(navigationShell: navigationShell);
@@ -338,41 +580,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Branch 1: Trips
+          // Branch 1: Send (Parcel Delivery)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.send,
+                builder: (context, state) => const ParcelDeliveryTypeScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 2: Scheduled (Scheduled Pickup Landing)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.scheduledLanding,
+                builder: (context, state) => const ScheduledLandingScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 3: Activity / Trips (Unified Activity Hub)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.trips,
-                builder: (context, state) => const _SimpleScreen(
-                  title: 'Trips & Activity',
-                  icon: Icons.route_rounded,
-                  description: 'Track ongoing rides, delivery receipts, and history.',
-                ),
+                builder: (context, state) => const ActivityHubScreen(),
               ),
             ],
           ),
 
-          // Branch 2: Rewards
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.rewards,
-                builder: (context, state) => const RewardsScreen(),
-              ),
-            ],
-          ),
-
-          // Branch 3: Wallet
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.wallet,
-                builder: (context, state) => const WalletScreen(),
-              ),
-            ],
-          ),
-
-          // Branch 4: Account & Settings
+          // Branch 4: Profile / Account & Settings
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -386,58 +624,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-class _SimpleScreen extends StatelessWidget {
-  const _SimpleScreen({
-    required this.title,
-    required this.icon,
-    required this.description,
-  });
-
-  final String title;
-  final IconData icon;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: GVTopBar(title: title),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(GVSpacing.xl),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(GVSpacing.lg),
-                  decoration: BoxDecoration(
-                    color: GVColors.brandGreen.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, size: 48, color: GVColors.brandGreen),
-                ),
-                const SizedBox(height: GVSpacing.lg),
-                Text(
-                  title,
-                  style: GVTypography.h2.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: GVSpacing.sm),
-                Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  style: GVTypography.bodyMedium.copyWith(
-                    color: GVColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -72,6 +72,12 @@ class AdminSidebar extends ConsumerWidget {
             route: '/merchants',
             isVisible: role.canAccessOperations,
           ),
+          AdminSidebarItem(
+            title: 'Operating Locations',
+            icon: Icons.location_on_outlined,
+            route: '/locations',
+            isVisible: role.canAccessOperations,
+          ),
         ],
       },
       {
@@ -101,6 +107,14 @@ class AdminSidebar extends ConsumerWidget {
             badge: '1 Req',
             badgeColor: Colors.redAccent,
             isVisible: role.canAccessFinance,
+          ),
+          AdminSidebarItem(
+            title: 'Paystack Gateway',
+            icon: Icons.payments_outlined,
+            route: '/paystack',
+            badge: 'PROV',
+            badgeColor: GVColors.brandGreen,
+            isVisible: role.canAccessFinance || role.canAccessIntegrations,
           ),
           AdminSidebarItem(
             title: 'Support & Safety',

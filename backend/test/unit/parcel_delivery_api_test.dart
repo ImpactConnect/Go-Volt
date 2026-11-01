@@ -23,10 +23,10 @@ void main() {
       final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
       final data = body['data'] as Map<String, dynamic>;
 
-      expect(data['delivery_options'], isA<List>());
-      expect(data['package_categories'], isA<List>());
-      expect(data['size_bands'], isA<List>());
-      expect(data['handling_options'], isA<List>());
+      expect(data['delivery_options'], isA<List<dynamic>>());
+      expect(data['package_categories'], isA<List<dynamic>>());
+      expect(data['size_bands'], isA<List<dynamic>>());
+      expect(data['handling_options'], isA<List<dynamic>>());
       expect(data['policy_version'], 'v1.4');
       expect(data['prohibited_items_notice'], contains('Hazardous materials'));
     });
@@ -160,7 +160,8 @@ void main() {
       final cancelResponse = await handler(cancelRequest);
       expect(cancelResponse.statusCode, 200);
       final cancelBody = jsonDecode(await cancelResponse.readAsString()) as Map<String, dynamic>;
-      expect(cancelBody['data']['status'], 'CANCELLED');
+      final cancelData = cancelBody['data'] as Map<String, dynamic>;
+      expect(cancelData['status'], 'CANCELLED');
     });
   });
 }

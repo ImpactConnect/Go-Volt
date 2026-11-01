@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 class HomeState extends Equatable {
   const HomeState({
     required this.currentLocation,
+    this.currentCoordinates,
     this.serviceAreas = const [],
     this.savedPlaces = const [],
     this.campaigns = const [],
@@ -14,6 +15,7 @@ class HomeState extends Equatable {
   });
 
   final ServiceAreaDto currentLocation;
+  final LocationDto? currentCoordinates;
   final List<ServiceAreaDto> serviceAreas;
   final List<SavedPlaceDto> savedPlaces;
   final List<CampaignBannerDto> campaigns;
@@ -39,6 +41,8 @@ class HomeState extends Equatable {
 
   HomeState copyWith({
     ServiceAreaDto? currentLocation,
+    LocationDto? currentCoordinates,
+    bool clearCoordinates = false,
     List<ServiceAreaDto>? serviceAreas,
     List<SavedPlaceDto>? savedPlaces,
     List<CampaignBannerDto>? campaigns,
@@ -49,6 +53,8 @@ class HomeState extends Equatable {
   }) {
     return HomeState(
       currentLocation: currentLocation ?? this.currentLocation,
+      currentCoordinates:
+          clearCoordinates ? null : (currentCoordinates ?? this.currentCoordinates),
       serviceAreas: serviceAreas ?? this.serviceAreas,
       savedPlaces: savedPlaces ?? this.savedPlaces,
       campaigns: campaigns ?? this.campaigns,
@@ -61,6 +67,7 @@ class HomeState extends Equatable {
   @override
   List<Object?> get props => [
         currentLocation,
+        currentCoordinates,
         serviceAreas,
         savedPlaces,
         campaigns,

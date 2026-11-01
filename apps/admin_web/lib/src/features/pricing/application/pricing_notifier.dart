@@ -1,3 +1,4 @@
+import 'package:app_models/app_models.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/pricing_models.dart';
@@ -6,12 +7,14 @@ class PricingState extends Equatable {
   const PricingState({
     required this.rules,
     required this.zones,
+    this.rideCategories = _defaultRideCategories,
     this.selectedZoneId = 'lagos_island',
     this.selectedTier = ServiceTier.commute,
   });
 
   final List<PricingRuleModel> rules;
   final List<ServiceAreaZoneModel> zones;
+  final List<RideCategoryDto> rideCategories;
   final String selectedZoneId;
   final ServiceTier selectedTier;
 
@@ -32,20 +35,100 @@ class PricingState extends Equatable {
   PricingState copyWith({
     List<PricingRuleModel>? rules,
     List<ServiceAreaZoneModel>? zones,
+    List<RideCategoryDto>? rideCategories,
     String? selectedZoneId,
     ServiceTier? selectedTier,
   }) {
     return PricingState(
       rules: rules ?? this.rules,
       zones: zones ?? this.zones,
+      rideCategories: rideCategories ?? this.rideCategories,
       selectedZoneId: selectedZoneId ?? this.selectedZoneId,
       selectedTier: selectedTier ?? this.selectedTier,
     );
   }
 
   @override
-  List<Object?> get props => [rules, zones, selectedZoneId, selectedTier];
+  List<Object?> get props => [rules, zones, rideCategories, selectedZoneId, selectedTier];
 }
+
+const List<RideCategoryDto> _defaultRideCategories = [
+  RideCategoryDto(
+    id: 'cat_bike_std',
+    code: 'bike_standard',
+    name: 'GoRide Moto',
+    description: 'Fast and affordable solo rides on electric two-wheelers',
+    passengerCapacity: 1,
+    capacityLabel: '1 Seat (Helmet provided)',
+    baseFareKobo: 120000,
+    etaMinutes: 2,
+    features: ['Helmet provided', '1 Passenger', 'Fastest in traffic', 'Zero emission'],
+    iconKey: 'electric_bike',
+    isAvailable: true,
+    displayOrder: 1,
+    co2OffsetGrams: 450,
+  ),
+  RideCategoryDto(
+    id: 'cat_bike_plus',
+    code: 'bike_plus',
+    name: 'GoRide Moto Plus',
+    description: 'Top-rated electric bike rider with sanitized helmet & hairnet',
+    passengerCapacity: 1,
+    capacityLabel: '1 Seat (Premium)',
+    baseFareKobo: 180000,
+    etaMinutes: 2,
+    features: ['Sanitized helmet', 'Top-rated rider', 'Express lane', 'Zero emission'],
+    iconKey: 'electric_bike',
+    isAvailable: true,
+    displayOrder: 2,
+    co2OffsetGrams: 450,
+  ),
+  RideCategoryDto(
+    id: 'cat_car_std',
+    code: 'standard',
+    name: 'GoRide Standard',
+    description: 'Affordable, reliable everyday electric car rides',
+    passengerCapacity: 3,
+    capacityLabel: '3 Seats',
+    baseFareKobo: 280000,
+    etaMinutes: 2,
+    features: ['AC', '3 Seats', 'Trusted drivers'],
+    iconKey: 'electric_car',
+    isAvailable: true,
+    displayOrder: 3,
+    co2OffsetGrams: 850,
+  ),
+  RideCategoryDto(
+    id: 'cat_car_plus',
+    code: 'plus',
+    name: 'GoRide Plus',
+    description: 'More comfort and legroom in premium electric sedans',
+    passengerCapacity: 4,
+    capacityLabel: '4 Seats',
+    baseFareKobo: 350000,
+    etaMinutes: 3,
+    features: ['AC', 'Extra legroom', 'Top rated', 'Quiet ride'],
+    iconKey: 'electric_car',
+    isAvailable: true,
+    displayOrder: 4,
+    co2OffsetGrams: 950,
+  ),
+  RideCategoryDto(
+    id: 'cat_car_xl',
+    code: 'xl',
+    name: 'GoRide XL',
+    description: 'Bigger 6-seater electric vehicles for groups or extra luggage',
+    passengerCapacity: 6,
+    capacityLabel: '6 Seats',
+    baseFareKobo: 450000,
+    etaMinutes: 4,
+    features: ['AC', '6 Seats', 'Spacious trunk', 'Group trips'],
+    iconKey: 'electric_car',
+    isAvailable: true,
+    displayOrder: 5,
+    co2OffsetGrams: 1200,
+  ),
+];
 
 class PricingNotifier extends StateNotifier<PricingState> {
   PricingNotifier()
@@ -252,6 +335,33 @@ class PricingNotifier extends StateNotifier<PricingState> {
     }).toList();
 
     state = state.copyWith(zones: updatedZones);
+  }
+
+  /// Toggle customer availability of a ride option (2 bikes, 3 cars).
+  void toggleRideCategory(String categoryId, bool isAvailable) {
+    final updated = state.rideCategories.map((cat) {
+      if (cat.id == categoryId) {
+        return cat.copyWith(isAvailable: isAvailable);
+      }
+      return cat;
+    }).toList();
+
+    state = state.copyWith(rideCategories: updated);
+  }
+
+  /// Add a new ride option to the published customer catalogue.
+  void addRideCategory(RideCategoryDto category) {
+    state = state.copyWith(
+      rideCategories: [...state.rideCategories, category],
+    );
+  }
+
+  /// Update an existing ride option in the catalogue.
+  void updateRideCategory(RideCategoryDto category) {
+    final updated = state.rideCategories.map((c) {
+      return c.id == category.id ? category : c;
+    }).toList();
+    state = state.copyWith(rideCategories: updated);
   }
 }
 

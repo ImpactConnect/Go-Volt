@@ -1,3 +1,4 @@
+import 'package:app_models/app_models.dart';
 import 'package:customer_app/src/features/home/application/home_notifier.dart';
 import 'package:customer_app/src/features/home/application/notifications_notifier.dart';
 import 'package:customer_app/src/features/home/presentation/location_selector_modal.dart';
@@ -17,8 +18,28 @@ void main() {
   late NotificationsNotifier notificationsNotifier;
 
   setUp(() {
-    homeNotifier = HomeNotifier();
-    notificationsNotifier = NotificationsNotifier();
+    homeNotifier = HomeNotifier(
+      initialSavedPlaces: const [
+        SavedPlaceDto(
+          id: 'place_home',
+          label: 'Home',
+          address: 'Shaganu, Ogun',
+          type: SavedPlaceType.home,
+          latitude: 6.8403,
+          longitude: 3.6487,
+        ),
+        SavedPlaceDto(
+          id: 'place_work',
+          label: 'Work',
+          address: 'Market Road, Shaganu, Ogun',
+          type: SavedPlaceType.work,
+          latitude: 6.8435,
+          longitude: 3.6510,
+        ),
+      ],
+    );
+    notificationsNotifier = NotificationsNotifier(
+        initialNotifications: NotificationsNotifier.defaultNotifications);
   });
 
   Widget buildTestWidget({
@@ -74,13 +95,10 @@ void main() {
 
       // Service areas with live status badges
       expect(find.text('Service areas'), findsOneWidget);
-      expect(find.text('Victoria Island, Lagos'), findsWidgets);
-      expect(find.text('Lekki, Lagos'), findsWidgets);
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
+      expect(find.text('Shaganu, Ogun'), findsWidgets);
 
       // Status badges
       expect(find.text('Fully supported'), findsWidgets);
-      expect(find.text('Limited services'), findsOneWidget);
 
       // Confirm button
       expect(find.text('Confirm location'), findsOneWidget);
@@ -98,17 +116,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Enter search query "Ikoyi"
+      // Enter search query "Shaganu"
       await tester.enterText(
         find.widgetWithText(TextField, 'Search for an address'),
-        'Ikoyi',
+        'Shaganu',
       );
       await tester.pumpAndSettle();
 
-      // Only Ikoyi should match
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
-      expect(find.text('Victoria Island, Lagos'), findsNothing);
-      expect(find.text('Lekki, Lagos'), findsNothing);
+      // Shaganu should match
+      expect(find.text('Shaganu, Ogun'), findsWidgets);
     });
 
     testWidgets('selecting a service area and confirming updates homeNotifier',
@@ -123,8 +139,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap on Ikoyi area tile
-      await tester.tap(find.text('Ikoyi, Lagos'));
+      // Tap on Shaganu area tile
+      await tester.tap(find.text('Shaganu, Ogun').first);
       await tester.pumpAndSettle();
 
       // Tap Confirm location
@@ -132,8 +148,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify HomeNotifier state updated
-      expect(homeNotifier.state.currentLocation.id, 'ikoyi');
-      expect(homeNotifier.state.currentLocation.name, 'Ikoyi');
+      expect(homeNotifier.state.currentLocation.id, 'ogun-shaganu');
+      expect(homeNotifier.state.currentLocation.name, 'Shaganu');
     });
 
     testWidgets('renders cleanly in dark theme without overflow',

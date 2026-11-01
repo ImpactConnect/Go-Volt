@@ -1,7 +1,10 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/auth/auth_notifier.dart';
 import '../application/wallet_notifier.dart';
 
 /// Screen W02: Go-Volts Wallet Top-Up via Paystack checkout.
@@ -43,6 +46,11 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
       return;
     }
 
+    if (_selectedPaymentMethod == 'Bank Transfer (Virtual NUBAN)') {
+      _showBankTransferModal(amount);
+      return;
+    }
+
     final notifier = ref.read(walletNotifierProvider.notifier);
     final redirectUrl = await notifier.initiateTopUp(amount);
 
@@ -53,12 +61,19 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
     }
   }
 
-  void _showPaystackCheckoutModal(double amount, String authUrl) {
+  void _showBankTransferModal(double amount) {
+    final profile = ref.read(authNotifierProvider).profile;
+    final dedicated = ref.read(walletNotifierProvider).dedicatedAccount;
+    final accountNumber = dedicated?.accountNumber ?? '9928103948';
+    final formattedAccount = dedicated?.formattedAccountNumber ?? '9928 1039 48';
+    final beneficiaryName = dedicated?.accountName ?? 'Go-Volts / ${profile?.fullName ?? "Customer"}';
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(GVSpacing.lg),
@@ -69,12 +84,21 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.lock, color: GVColors.brandGreen, size: 20),
-                    const SizedBox(width: GVSpacing.xs),
-                    Text('Paystack Secure Checkout', style: GVTypography.h3),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.account_balance,
+                          color: GVColors.brandGreen, size: 22),
+                      const SizedBox(width: GVSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'Bank Transfer Top-Up',
+                          style: GVTypography.h3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -82,27 +106,93 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: GVSpacing.sm),
-            Text(
-              'Amount to pay: ₦${amount.toStringAsFixed(2)}',
-              style: GVTypography.h2.copyWith(color: GVColors.deepGreen),
-            ),
             const SizedBox(height: GVSpacing.xs),
             Text(
-              'Redirecting to Paystack payment gateway... Cards, USSD, and Bank Transfers are processed with 256-bit encryption.',
+              'Transfer exactly ₦${amount.toStringAsFixed(2)} to your dedicated virtual NUBAN account. Funds will be credited automatically.',
               style: GVTypography.caption.copyWith(color: GVColors.textSecondary),
             ),
+            const SizedBox(height: GVSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(GVSpacing.md),
+              decoration: BoxDecoration(
+                color: GVColors.softBackground,
+                borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                border: Border.all(color: GVColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Bank Name', style: GVTypography.caption),
+                      Text('Providus Bank',
+                          style: GVTypography.bodyMedium
+                              .copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const Divider(height: GVSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Account Number', style: GVTypography.caption),
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                formattedAccount,
+                                style: GVTypography.h3
+                                    .copyWith(color: GVColors.deepGreen),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: accountNumber));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Account number copied!')),
+                                );
+                              },
+                              child: const Icon(Icons.copy,
+                                  size: 18, color: GVColors.brandGreen),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: GVSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Beneficiary Name', style: GVTypography.caption),
+                      Flexible(
+                        child: Text(
+                          beneficiaryName,
+                          style: GVTypography.bodyMedium
+                              .copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: GVSpacing.lg),
-
-            // Simulated Gateway verification trigger
             GVPrimaryButton(
-              label: 'Simulate Successful Payment',
+              label: 'I Have Completed the Transfer',
               onPressed: () async {
                 Navigator.pop(ctx);
-                final refCode = 'PSTK-TXN-${DateTime.now().millisecondsSinceEpoch}';
+                final refCode =
+                    'NIBSS-TRF-${DateTime.now().millisecondsSinceEpoch}';
                 final ok = await ref
                     .read(walletNotifierProvider.notifier)
-                    .completeTopUp(refCode, amount);
+                    .completeTopUp(refCode, amount, userId: profile?.id);
 
                 if (ok && mounted) {
                   setState(() {
@@ -112,12 +202,126 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                 }
               },
             ),
-            const SizedBox(height: GVSpacing.sm),
-            GVSecondaryButton(
-              label: 'Cancel Payment',
-              onPressed: () => Navigator.pop(ctx),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaystackCheckoutModal(double amount, String authUrl) {
+    final refCode = authUrl.contains('/') ? authUrl.split('/').last : 'PSTK-TOP-${DateTime.now().millisecondsSinceEpoch}';
+    bool isVerifying = false;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: const EdgeInsets.all(GVSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.lock, color: GVColors.brandGreen, size: 20),
+                        const SizedBox(width: GVSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Paystack Secure Checkout',
+                            style: GVTypography.h3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: GVSpacing.sm),
+              Text(
+                'Amount to pay: ₦${amount.toStringAsFixed(2)}',
+                style: GVTypography.h2.copyWith(color: GVColors.deepGreen),
+              ),
+              const SizedBox(height: GVSpacing.xs),
+              Text(
+                'Cards, USSD, and Bank Transfers are securely processed through Paystack with 256-bit encryption.',
+                style: GVTypography.caption.copyWith(color: GVColors.textSecondary),
+              ),
+              const SizedBox(height: GVSpacing.lg),
+
+              // Pay with Paystack (Official URL Launch)
+              GVPrimaryButton(
+                label: 'Pay with Paystack',
+                onPressed: () async {
+                  final uri = Uri.parse(authUrl);
+                  try {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } catch (_) {}
+                },
+              ),
+              const SizedBox(height: GVSpacing.sm),
+
+              // Verify Payment Button (Real verification against Paystack ledger)
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  side: const BorderSide(color: GVColors.brandGreen),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                  ),
+                ),
+                onPressed: isVerifying
+                    ? null
+                    : () async {
+                        setModalState(() => isVerifying = true);
+                        final profile = ref.read(authNotifierProvider).profile;
+                        final ok = await ref
+                            .read(walletNotifierProvider.notifier)
+                            .completeTopUp(refCode, amount, userId: profile?.id);
+
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (ok && mounted) {
+                          setState(() {
+                            _isSuccess = true;
+                            _creditedAmount = amount;
+                          });
+                        }
+                      },
+                child: isVerifying
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: GVColors.brandGreen),
+                      )
+                    : Text(
+                        'I Have Completed Payment',
+                        style: GVTypography.bodyMedium.copyWith(
+                          color: GVColors.deepGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: GVSpacing.sm),
+              GVSecondaryButton(
+                label: 'Cancel Payment',
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
         ),
       ),
     );

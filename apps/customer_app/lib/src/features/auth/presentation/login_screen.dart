@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_notifier.dart';
+import '../../../core/auth/auth_state.dart';
 import '../../../core/router/app_router.dart';
 
 /// Screen 7: Login (AUTH-05-LOGIN)
@@ -51,6 +52,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated && mounted) {
+        context.go(AppRoutes.home);
+      } else if (next.status == AuthStatus.profileIncomplete && mounted) {
+        context.go(AppRoutes.completeProfile);
+      }
+    });
+
     final authState = ref.watch(authNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF131A16) : Colors.white;

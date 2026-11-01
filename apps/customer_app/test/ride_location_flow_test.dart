@@ -3,6 +3,7 @@ import 'package:customer_app/src/features/booking/application/booking_notifier.d
 import 'package:customer_app/src/features/booking/data/booking_repository.dart';
 import 'package:customer_app/src/features/booking/presentation/location_picker_screen.dart';
 import 'package:customer_app/src/features/booking/presentation/map_picker_screen.dart';
+import 'package:customer_app/src/features/home/application/home_notifier.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,6 +118,28 @@ void main() {
     return ProviderScope(
       overrides: [
         bookingRepositoryProvider.overrideWithValue(_MockBookingRepository()),
+        homeNotifierProvider.overrideWith(
+          (ref) => HomeNotifier(
+            initialSavedPlaces: const [
+              SavedPlaceDto(
+                id: 'p1',
+                label: 'Home',
+                address: '10 Main St, Shaganu, Ogun',
+                latitude: 6.8403,
+                longitude: 3.6487,
+                type: SavedPlaceType.home,
+              ),
+              SavedPlaceDto(
+                id: 'p2',
+                label: 'Work',
+                address: 'Town Hall, Shaganu, Ogun',
+                latitude: 6.8420,
+                longitude: 3.6500,
+                type: SavedPlaceType.work,
+              ),
+            ],
+          ),
+        ),
         if (notifier != null)
           bookingNotifierProvider.overrideWith((ref) => notifier),
       ],
@@ -140,7 +163,7 @@ void main() {
 
       expect(find.text('Enter your locations'), findsOneWidget);
       expect(find.text('Pickup location'), findsOneWidget);
-      expect(find.text('Eko Hotel and Suites'), findsOneWidget);
+      expect(find.text('Shaganu Central'), findsOneWidget);
       expect(find.text('Destination'), findsOneWidget);
       expect(find.text('Where are you going?'), findsOneWidget);
       expect(find.text('Use current location'), findsOneWidget);
@@ -171,17 +194,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Set location on map'), findsOneWidget);
-      expect(find.text('Eko Hotel and Suites'), findsOneWidget);
-      expect(find.text('Eko Hotel Roundabout'), findsOneWidget);
-      expect(find.text('Eko Hotel Car Park'), findsOneWidget);
+      expect(find.text('Shaganu Central Roundabout'), findsOneWidget);
+      expect(find.text('Shaganu Main Market'), findsOneWidget);
+      expect(find.text('Shaganu Town Hall'), findsOneWidget);
 
-      // Select "Eko Hotel Roundabout"
-      await tester.tap(find.text('Eko Hotel Roundabout'));
+      // Select "Shaganu Main Market"
+      await tester.tap(find.text('Shaganu Main Market'));
       await tester.pumpAndSettle();
 
       // Should return to Dual Entry with new pickup
       expect(find.text('Enter your locations'), findsOneWidget);
-      expect(find.text('Eko Hotel Roundabout'), findsOneWidget);
+      expect(find.text('Shaganu Main Market'), findsOneWidget);
     });
 
     testWidgets(
@@ -197,17 +220,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Set location on map'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Palms Mall'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Palms Mall Annex'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Palms Mall Car Park'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Shaganu Central Roundabout'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Shaganu Main Market'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Shaganu Town Hall'), findsOneWidget);
 
-      // Select "Palms Mall Annex"
-      await tester.tap(find.widgetWithText(ListTile, 'Palms Mall Annex'));
+      // Select "Shaganu Town Hall"
+      await tester.tap(find.widgetWithText(ListTile, 'Shaganu Town Hall'));
       await tester.pumpAndSettle();
 
       // Should return to Dual Entry with new destination
       expect(find.text('Enter your locations'), findsOneWidget);
-      expect(find.text('Palms Mall Annex'), findsOneWidget);
+      expect(find.text('Shaganu Town Hall'), findsOneWidget);
     });
 
     testWidgets(
@@ -249,14 +272,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Selected pickup location'), findsOneWidget);
-      expect(find.text('Eko Hotel and Suites'), findsNWidgets(2)); // pin callout and card
+      expect(find.text('Shaganu Central'), findsNWidgets(2)); // pin callout and card
       expect(find.text('Confirm pickup location'), findsOneWidget);
 
       await tester.tap(find.text('Confirm pickup location'));
       await tester.pumpAndSettle();
 
       expect(confirmedLocation, isNotNull);
-      expect(confirmedLocation?.label, equals('Eko Hotel and Suites'));
+      expect(confirmedLocation?.label, equals('Shaganu Central'));
     });
 
     testWidgets(
@@ -298,14 +321,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Selected destination'), findsOneWidget);
-      expect(find.text('Palms Mall'), findsNWidgets(2)); // pin callout and card
+      expect(find.text('Shaganu Central'), findsNWidgets(2)); // pin callout and card
       expect(find.text('Confirm destination'), findsOneWidget);
 
       await tester.tap(find.text('Confirm destination'));
       await tester.pumpAndSettle();
 
       expect(confirmedLocation, isNotNull);
-      expect(confirmedLocation?.label, equals('Palms Mall'));
+      expect(confirmedLocation?.label, equals('Shaganu Central'));
     });
   });
 }

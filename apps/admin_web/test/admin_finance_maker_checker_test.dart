@@ -160,6 +160,31 @@ void main() {
       expect(container.read(promotionsNotifierProvider).coupons.firstWhere((c) => c.code == 'VOLTFLASH').isActive, isFalse);
     });
 
+    test('PromotionsNotifier dynamically updates loyalty point valuation, thresholds and presets', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(promotionsNotifierProvider.notifier);
+
+      notifier.updateLoyaltyConfig(
+        pointsPerHundredNairaSpent: 8,
+        pointsRequired: 20,
+        creditAmountKobo: 100, // 20 pts = ₦1
+        minRedemptionPoints: 300,
+        maxRedemptionPoints: 5000,
+        presetPoints: [300, 600, 1200, 2400],
+      );
+
+      final config = container.read(promotionsNotifierProvider).loyaltyConfig;
+      expect(config.pointsPerHundredNairaSpent, equals(8));
+      expect(config.pointsRequired, equals(20));
+      expect(config.minRedemptionPoints, equals(300));
+      expect(config.maxRedemptionPoints, equals(5000));
+      expect(config.presetPoints, equals([300, 600, 1200, 2400]));
+      expect(config.formattedRate, equals('20 pts = ₦1'));
+      expect(config.formattedPresetChips, equals('300, 600, 1200, 2400'));
+    });
+
     test('SupportSafetyNotifier resolves tickets and gates confidential safety incidents', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);

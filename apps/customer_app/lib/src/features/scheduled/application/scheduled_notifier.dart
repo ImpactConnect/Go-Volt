@@ -1,13 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/api_providers.dart';
 import '../data/scheduled_repository.dart';
 import '../domain/scheduled_state.dart';
 import 'package:app_models/app_models.dart';
 
-final scheduledRepositoryProvider = Provider<ScheduledRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return ScheduledRepository(apiClient: apiClient);
-});
+// scheduledRepositoryProvider is imported from data/scheduled_repository.dart
 
 final scheduledNotifierProvider =
     StateNotifierProvider<ScheduledNotifier, ScheduledState>((ref) {

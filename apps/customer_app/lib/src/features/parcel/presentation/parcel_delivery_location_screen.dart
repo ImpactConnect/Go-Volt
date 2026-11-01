@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/services/gps_location_service.dart';
+import '../../booking/presentation/map_picker_screen.dart';
+import '../../home/application/home_notifier.dart';
 import '../application/parcel_booking_notifier.dart';
 
 /// Screen 6 — Delivery Location: Full-screen interactive map with red destination pin at Lekki (Palms Mall)
@@ -20,32 +24,18 @@ class ParcelDeliveryLocationScreen extends ConsumerStatefulWidget {
 class _ParcelDeliveryLocationScreenState
     extends ConsumerState<ParcelDeliveryLocationScreen> {
   static const LocationDto _defaultDestination = LocationDto(
-    latitude: 6.4357,
-    longitude: 3.4418,
-    address: 'Lekki, Lagos',
-    label: 'Palms Mall',
+    latitude: GpsLocationService.defaultLat,
+    longitude: GpsLocationService.defaultLng,
+    address: 'Central Roundabout, Shaganu, Ogun State',
+    label: 'Shaganu Central',
   );
 
-  static const List<LocationDto> _savedPlaces = [
-    LocationDto(
-      latitude: 6.4281,
-      longitude: 3.4219,
-      address: 'Victoria Island, Lagos',
-      label: 'Home',
-    ),
-    LocationDto(
-      latitude: 6.4474,
-      longitude: 3.4723,
-      address: 'Lekki Phase 1, Lagos',
-      label: 'Work',
-    ),
-    LocationDto(
-      latitude: 6.4357,
-      longitude: 3.4418,
-      address: 'Tap to select a location',
-      label: 'Choose on map',
-    ),
-  ];
+  static const LocationDto _chooseOnMap = LocationDto(
+    latitude: GpsLocationService.defaultLat,
+    longitude: GpsLocationService.defaultLng,
+    address: 'Pick exact GPS or landmark on map',
+    label: 'Choose on map',
+  );
 
   late LocationDto _currentLocation;
 
@@ -54,6 +44,26 @@ class _ParcelDeliveryLocationScreenState
     super.initState();
     final flowState = ref.read(parcelBookingNotifierProvider);
     _currentLocation = flowState.destinationLocation ?? _defaultDestination;
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.of(context).push<LocationDto>(
+      MaterialPageRoute(
+        builder: (context) => MapPickerScreen(
+          isPickup: false,
+          initialLocation: _currentLocation,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _currentLocation = result;
+      });
+      ref
+          .read(parcelBookingNotifierProvider.notifier)
+          .setDestinationLocation(result);
+    }
   }
 
   void _onConfirm() {
@@ -132,10 +142,27 @@ class _ParcelDeliveryLocationScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Interactive Vector Map Canvas for Lekki Area
+          // 1. Live Google Map for Destination
           Positioned.fill(
-            child: _ParcelDestinationMapCanvas(
-              isDark: isDark,
+            child: LiveGoogleMapView(
+              initialLatitude: _currentLocation.latitude,
+              initialLongitude: _currentLocation.longitude,
+              initialZoom: 16.0,
+              isPicker: false,
+              showZoomControls: true,
+              showMyLocationButton: false,
+              onPositionChanged: (newCoord) {
+                setState(() {
+                  _currentLocation = LocationDto(
+                    latitude: double.parse(newCoord.latitude.toStringAsFixed(5)),
+                    longitude: double.parse(newCoord.longitude.toStringAsFixed(5)),
+                    address:
+                        '${newCoord.latitude.toStringAsFixed(4)}°N, ${newCoord.longitude.toStringAsFixed(4)}°E',
+                    label: 'Destination Location',
+                  );
+                });
+                ref.read(parcelBookingNotifierProvider.notifier).setDestinationLocation(_currentLocation);
+              },
             ),
           ),
 
@@ -234,13 +261,33 @@ class _ParcelDeliveryLocationScreenState
                           icon: Icons.my_location_rounded,
                           tooltip: 'Recenter GPS',
                           isDark: isDark,
-                          onTap: () {
-                            setState(() {
-                              _currentLocation = _defaultDestination;
-                            });
-                            ref
-                                .read(parcelBookingNotifierProvider.notifier)
-                                .setDestinationLocation(_defaultDestination);
+                          onTap: () async {
+                            try {
+                              final gpsPos =
+                                  await GpsLocationService.getCurrentPosition(
+                                label: 'Destination (Current GPS)',
+                              );
+                              if (!mounted) return;
+                              setState(() {
+                                _currentLocation = gpsPos;
+                              });
+                              ref
+                                  .read(parcelBookingNotifierProvider.notifier)
+                                  .setDestinationLocation(gpsPos);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'GPS coordinates set: ${gpsPos.latitude.toStringAsFixed(4)}°N, ${gpsPos.longitude.toStringAsFixed(4)}°E',
+                                    ),
+                                    backgroundColor: GVColors.brandGreen,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              debugPrint('GPS ERROR: $e');
+                            }
                           },
                         ),
                         const SizedBox(width: GVSpacing.xs),
@@ -367,7 +414,17 @@ class _ParcelDeliveryLocationScreenState
                     ),
                     const SizedBox(height: GVSpacing.xs),
 
-                    for (final place in _savedPlaces) ...[
+                    for (final place in [
+                      ...ref.watch(homeNotifierProvider).savedPlaces.map(
+                            (p) => LocationDto(
+                              latitude: p.latitude,
+                              longitude: p.longitude,
+                              address: p.address,
+                              label: p.label,
+                            ),
+                          ),
+                      _chooseOnMap,
+                    ]) ...[
                       _ParcelSavedPlaceTile(
                         icon: place.label == 'Home'
                             ? Icons.home_rounded
@@ -386,7 +443,7 @@ class _ParcelDeliveryLocationScreenState
                                 .read(parcelBookingNotifierProvider.notifier)
                                 .setDestinationLocation(place);
                           } else {
-                            _showEditAddressDialog();
+                            _openMapPicker();
                           }
                         },
                         isDark: isDark,
@@ -546,99 +603,4 @@ class _BubbleTrianglePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BubbleTrianglePainter oldDelegate) =>
       oldDelegate.color != color;
-}
-
-class _ParcelDestinationMapCanvas extends StatelessWidget {
-  const _ParcelDestinationMapCanvas({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor =
-        isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
-    final streetColor =
-        isDark ? const Color(0xFF1E2822) : const Color(0xFFFCFDFD);
-    final waterColor =
-        isDark ? const Color(0xFF0D1D22) : const Color(0xFFD0E3EA);
-
-    return CustomPaint(
-      painter: _ParcelDestinationMapPainter(
-        bgColor: bgColor,
-        streetColor: streetColor,
-        waterColor: waterColor,
-      ),
-    );
-  }
-}
-
-class _ParcelDestinationMapPainter extends CustomPainter {
-  _ParcelDestinationMapPainter({
-    required this.bgColor,
-    required this.streetColor,
-    required this.waterColor,
-  });
-
-  final Color bgColor;
-  final Color streetColor;
-  final Color waterColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = bgColor,
-    );
-
-    // Lekki Coastal Waterway
-    final waterPaint = Paint()..color = waterColor;
-    final waterPath = Path()
-      ..moveTo(0, size.height * 0.12)
-      ..quadraticBezierTo(
-        size.width * 0.45,
-        size.height * 0.20,
-        size.width,
-        size.height * 0.08,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(waterPath, waterPaint);
-
-    final streetPaint = Paint()
-      ..color = streetColor
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final secondaryStreetPaint = Paint()
-      ..color = streetColor.withValues(alpha: 0.8)
-      ..strokeWidth = 6
-      ..style = PaintingStyle.stroke;
-
-    // Lekki-Epe expressway line & arterials
-    canvas.drawLine(
-      Offset(0, size.height * 0.48),
-      Offset(size.width, size.height * 0.38),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.68),
-      Offset(size.width, size.height * 0.60),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.42, size.height * 0.18),
-      Offset(size.width * 0.38, size.height),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.76, size.height * 0.15),
-      Offset(size.width * 0.72, size.height),
-      secondaryStreetPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParcelDestinationMapPainter oldDelegate) =>
-      false;
 }

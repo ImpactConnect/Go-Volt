@@ -1,3 +1,4 @@
+import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -162,6 +163,203 @@ class _PricingManagementScreenState
     );
   }
 
+  void _showAddRideOptionModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final codeController = TextEditingController();
+    final baseFareController = TextEditingController(text: '3000');
+    final capacityController = TextEditingController(text: '4');
+    final etaController = TextEditingController(text: '3');
+    final featuresController = TextEditingController(text: 'AC, Extra Legroom, Zero Emission');
+    final descController = TextEditingController();
+    String vehicleType = 'electric_car';
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AdminModalDialog(
+              title: 'Add New Ride Option',
+              icon: Icons.electric_car_outlined,
+              primaryActionLabel: 'Save Ride Option',
+              onPrimaryAction: () {
+                final baseKobo = ((double.tryParse(baseFareController.text) ?? 3000) * 100).round();
+                final capacity = int.tryParse(capacityController.text) ?? (vehicleType == 'electric_bike' ? 1 : 4);
+                final eta = int.tryParse(etaController.text) ?? 3;
+                final features = featuresController.text
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .toList();
+
+                final category = RideCategoryDto(
+                  id: 'cat_${codeController.text.trim().toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}',
+                  code: codeController.text.trim().toLowerCase().replaceAll(' ', '_'),
+                  name: nameController.text.trim().isNotEmpty ? nameController.text.trim() : 'New Ride Option',
+                  description: descController.text.trim().isNotEmpty ? descController.text.trim() : 'Eco-friendly electric ride',
+                  passengerCapacity: capacity,
+                  capacityLabel: '$capacity Seat${capacity > 1 ? 's' : ''}',
+                  baseFareKobo: baseKobo,
+                  etaMinutes: eta,
+                  features: features.isNotEmpty ? features : ['AC', 'Zero Emission'],
+                  iconKey: vehicleType,
+                  isAvailable: true,
+                  displayOrder: ref.read(pricingNotifierProvider).rideCategories.length + 1,
+                  co2OffsetGrams: vehicleType == 'electric_bike' ? 450 : 850,
+                );
+
+                ref.read(pricingNotifierProvider.notifier).addRideCategory(category);
+                Navigator.pop(dialogCtx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Added "${category.name}" to ride catalogue.')),
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Configure an admin-managed ride category that customers can book on the mobile app (§5.4 & §6.8.1).',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const Key('add_category_name_field'),
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Display Name (e.g. GoRide Express)',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          key: const Key('add_category_code_field'),
+                          controller: codeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Category Code (e.g. express)',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          key: const Key('add_category_type_dropdown'),
+                          initialValue: vehicleType,
+                          decoration: const InputDecoration(
+                            labelText: 'Vehicle Type',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                          dropdownColor: const Color(0xFF14241B),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'electric_bike',
+                              child: Text('🏍️ Electric Two-Wheeler (Bike)', style: TextStyle(color: Colors.white)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'electric_car',
+                              child: Text('🚗 Electric Four-Wheeler (Car)', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() {
+                                vehicleType = val;
+                                if (val == 'electric_bike' && capacityController.text == '4') {
+                                  capacityController.text = '1';
+                                }
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          key: const Key('add_category_base_fare_field'),
+                          controller: baseFareController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Base Fare (₦)',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const Key('add_category_capacity_field'),
+                          controller: capacityController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Seats / Capacity',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          key: const Key('add_category_eta_field'),
+                          controller: etaController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Typical ETA (minutes)',
+                            filled: true,
+                            fillColor: Color(0xFF14241B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('add_category_features_field'),
+                    controller: featuresController,
+                    decoration: const InputDecoration(
+                      labelText: 'Features (comma separated)',
+                      hintText: 'AC, Extra legroom, Zero emission',
+                      filled: true,
+                      fillColor: Color(0xFF14241B),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('add_category_desc_field'),
+                    controller: descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description',
+                      filled: true,
+                      fillColor: Color(0xFF14241B),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pricingState = ref.watch(pricingNotifierProvider);
@@ -193,6 +391,17 @@ class _PricingManagementScreenState
                 ),
               ),
               const SizedBox(width: GVSpacing.md),
+              OutlinedButton.icon(
+                key: const Key('add_ride_option_top_btn'),
+                onPressed: () => _showAddRideOptionModal(context),
+                icon: const Icon(Icons.electric_car, size: 18, color: GVColors.brandGreen),
+                label: const Text('Add Ride Option', style: TextStyle(color: Colors.white)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: GVColors.brandGreen),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              const SizedBox(width: GVSpacing.sm),
               ElevatedButton.icon(
                 key: const Key('create_draft_pricing_btn'),
                 onPressed: () => _showCreateDraftModal(context),
@@ -417,6 +626,250 @@ class _PricingManagementScreenState
           ),
           const SizedBox(height: GVSpacing.xl),
 
+          // Published Customer Ride Options Catalogue (v1.3 §5.4 & §6.8.1)
+          Container(
+            padding: const EdgeInsets.all(GVSpacing.md),
+            decoration: BoxDecoration(
+              color: const Color(0xFF101713),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF1F2B25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Published Ride Options Catalogue (Customer App)',
+                            style: GVTypography.h3.copyWith(color: Colors.white),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Dynamic vehicle options fetched and displayed in customer app (§5.4 & §6.8.1). Seeded with 2 bikes and 3 cars.',
+                            style: TextStyle(color: Colors.white60, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: GVSpacing.md),
+                    ElevatedButton.icon(
+                      key: const Key('add_ride_option_section_btn'),
+                      onPressed: () => _showAddRideOptionModal(context),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add Ride Option', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GVColors.brandGreen,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: GVSpacing.md),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _kpiChip(
+                      label: 'Total Options',
+                      value: '${pricingState.rideCategories.length}',
+                      color: Colors.white70,
+                    ),
+                    _kpiChip(
+                      label: '🏍️ Electric Bikes',
+                      value: '${pricingState.rideCategories.where((c) => c.iconKey == 'electric_bike').length}',
+                      color: Colors.tealAccent,
+                    ),
+                    _kpiChip(
+                      label: '🚗 Electric Cars',
+                      value: '${pricingState.rideCategories.where((c) => c.iconKey != 'electric_bike').length}',
+                      color: Colors.blueAccent,
+                    ),
+                    _kpiChip(
+                      label: 'Live in Customer App',
+                      value: '${pricingState.rideCategories.where((c) => c.isAvailable).length}',
+                      color: GVColors.brandGreen,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: GVSpacing.md),
+                Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(1.6),
+                    1: FlexColumnWidth(1.8),
+                    2: FlexColumnWidth(1.4),
+                    3: FlexColumnWidth(1.1),
+                    4: FlexColumnWidth(2.0),
+                    5: FlexColumnWidth(1.3),
+                  },
+                  children: [
+                    TableRow(
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFF1F2B25))),
+                      ),
+                      children: [
+                        _headerCell('VEHICLE TYPE'),
+                        _headerCell('NAME & CODE'),
+                        _headerCell('CAPACITY & ETA'),
+                        _headerCell('BASE FARE'),
+                        _headerCell('FEATURES'),
+                        _headerCell('STATUS / LIVE'),
+                      ],
+                    ),
+                    ...pricingState.rideCategories.map((category) {
+                      final isBike = category.iconKey == 'electric_bike';
+                      return TableRow(
+                        decoration: const BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Color(0xFF18221D))),
+                        ),
+                        children: [
+                          _dataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: (isBike ? Colors.teal : GVColors.brandGreen).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Icon(
+                                    isBike ? Icons.two_wheeler_rounded : Icons.directions_car_rounded,
+                                    size: 18,
+                                    color: isBike ? Colors.tealAccent : GVColors.brandGreen,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    isBike ? 'Electric Bike' : 'Electric Car',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isBike ? Colors.tealAccent : Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _dataCell(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  category.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  category.code,
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 11,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _dataCell(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  category.capacityLabel,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '~${category.etaMinutes} min away',
+                                  style: const TextStyle(color: GVColors.brandGreen, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _dataCell(
+                            Text(
+                              category.formattedPrice,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          _dataCell(
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: category.features.map((feat) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1B2B20),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: const Color(0xFF263F30)),
+                                  ),
+                                  child: Text(
+                                    feat,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          _dataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Switch(
+                                  key: Key('toggle_ride_cat_${category.id}'),
+                                  value: category.isAvailable,
+                                  activeThumbColor: GVColors.brandGreen,
+                                  onChanged: (val) {
+                                    ref.read(pricingNotifierProvider.notifier).toggleRideCategory(category.id, val);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${category.name} is now ${val ? "active" : "disabled"} for customers.',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  category.isAvailable ? 'LIVE' : 'OFF',
+                                  style: TextStyle(
+                                    color: category.isAvailable ? GVColors.brandGreen : Colors.white38,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: GVSpacing.xl),
+
           // Zone Service Tier Gating Matrix
           Container(
             padding: const EdgeInsets.all(GVSpacing.md),
@@ -554,6 +1007,28 @@ class _PricingManagementScreenState
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: child,
+    );
+  }
+
+  Widget _kpiChip({required String label, required String value, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF14241B),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFF233B2C)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }

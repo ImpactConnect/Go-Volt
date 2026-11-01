@@ -162,7 +162,7 @@ class GoogleAuthConfirmationScreen extends ConsumerWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => context.go(AppRoutes.home),
+                  onPressed: () => context.go(AppRoutes.completeProfile),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GVColors.brandGreen,
                     foregroundColor: GVColors.nearBlack,

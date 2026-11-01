@@ -9,12 +9,13 @@ void main() {
       final notifier = HomeNotifier();
       final state = notifier.state;
 
-      expect(state.currentLocation.name, equals('Victoria Island'));
+      expect(state.currentLocation.name, equals('Shaganu'));
+      expect(state.currentLocation.state, equals('Ogun'));
       expect(state.currentLocation.isFullySupported, isTrue);
       expect(state.isServiceAvailable(ServiceCode.instantRide), isTrue);
       expect(state.isServiceAvailable(ServiceCode.instantDelivery), isTrue);
-      expect(state.serviceAreas.length, greaterThanOrEqualTo(3));
-      expect(state.savedPlaces.length, equals(2));
+      expect(state.serviceAreas.isNotEmpty, isTrue);
+      expect(state.savedPlaces.isEmpty, isTrue);
       expect(state.campaigns.isNotEmpty, isTrue);
       expect(state.hasActiveBooking, isFalse);
     });
@@ -22,13 +23,20 @@ void main() {
     test('selectLocation updates area and evaluates service availability', () {
       final notifier = HomeNotifier();
 
-      // Select Ikoyi (which has limited services and no instant ride)
-      final ikoyi = notifier.state.serviceAreas.firstWhere((a) => a.id == 'ikoyi');
-      notifier.selectLocation(ikoyi);
+      // Test selecting a limited service area
+      final limitedArea = const ServiceAreaDto(
+        id: 'test-limited',
+        name: 'Test Zone',
+        state: 'Ogun',
+        status: ServiceAreaStatus.limited,
+        statusDescription: 'Limited services',
+        availableServices: [ServiceCode.instantDelivery],
+      );
+      notifier.selectLocation(limitedArea);
 
-      expect(notifier.state.currentLocation.name, equals('Ikoyi'));
+      expect(notifier.state.currentLocation.name, equals('Test Zone'));
       expect(notifier.state.currentLocation.isLimited, isTrue);
-      // Instant ride is unavailable in Ikoyi
+      // Instant ride is unavailable in limited area
       expect(notifier.state.isServiceAvailable(ServiceCode.instantRide), isFalse);
       // Instant delivery is available
       expect(notifier.state.isServiceAvailable(ServiceCode.instantDelivery), isTrue);
@@ -69,17 +77,19 @@ void main() {
   });
 
   group('NotificationsNotifier Unit Tests', () {
-    test('initial state has notifications and accurate unread count', () {
-      final notifier = NotificationsNotifier();
+    test('initial state for new user has empty notifications', () {
+      final notifier = NotificationsNotifier(initialNotifications: const []);
       final state = notifier.state;
 
-      expect(state.notifications.isNotEmpty, isTrue);
-      expect(state.unreadCount, equals(3));
-      expect(state.filteredNotifications.length, equals(state.notifications.length));
+      expect(state.notifications.isEmpty, isTrue);
+      expect(state.unreadCount, equals(0));
+      expect(state.filteredNotifications.isEmpty, isTrue);
     });
 
-    test('selectCategory filters notifications properly', () {
-      final notifier = NotificationsNotifier();
+    test('seeded notifications filter properly', () {
+      final notifier = NotificationsNotifier(
+        initialNotifications: NotificationsNotifier.defaultNotifications,
+      );
 
       notifier.selectCategory(NotificationCategory.bookings);
       expect(notifier.state.selectedCategory, equals(NotificationCategory.bookings));
@@ -95,7 +105,9 @@ void main() {
     });
 
     test('markAsRead updates item isRead and decrements unread count', () {
-      final notifier = NotificationsNotifier();
+      final notifier = NotificationsNotifier(
+        initialNotifications: NotificationsNotifier.defaultNotifications,
+      );
       final initialUnread = notifier.state.unreadCount;
 
       notifier.markAsRead('notif_01');
@@ -105,7 +117,9 @@ void main() {
     });
 
     test('markAllAsRead sets all items to read and resets unread count to 0', () {
-      final notifier = NotificationsNotifier();
+      final notifier = NotificationsNotifier(
+        initialNotifications: NotificationsNotifier.defaultNotifications,
+      );
       expect(notifier.state.unreadCount, greaterThan(0));
 
       notifier.markAllAsRead();

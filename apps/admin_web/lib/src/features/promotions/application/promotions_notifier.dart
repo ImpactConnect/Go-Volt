@@ -136,14 +136,26 @@ class PromotionsNotifier extends StateNotifier<PromotionsState> {
 
   void updateLoyaltyConfig({
     required int pointsPerHundredNairaSpent,
-    required BigInt koboPerPointRedeemed,
+    BigInt? koboPerPointRedeemed,
     required int minRedemptionPoints,
+    int? maxRedemptionPoints,
+    int? pointsRequired,
+    int? creditAmountKobo,
+    List<int>? presetPoints,
   }) {
+    final effectivePointsReq = pointsRequired ?? 10;
+    final effectiveCreditKobo = creditAmountKobo ?? (koboPerPointRedeemed != null ? (koboPerPointRedeemed.toInt() * effectivePointsReq) : 100);
+    final calculatedKoboPerPoint = koboPerPointRedeemed ?? BigInt.from(effectiveCreditKobo ~/ effectivePointsReq);
+
     state = state.copyWith(
       loyaltyConfig: state.loyaltyConfig.copyWith(
         pointsPerHundredNairaSpent: pointsPerHundredNairaSpent,
-        koboPerPointRedeemed: koboPerPointRedeemed,
+        koboPerPointRedeemed: calculatedKoboPerPoint,
         minRedemptionPoints: minRedemptionPoints,
+        maxRedemptionPoints: maxRedemptionPoints ?? state.loyaltyConfig.maxRedemptionPoints,
+        pointsRequired: effectivePointsReq,
+        creditAmountKobo: effectiveCreditKobo,
+        presetPoints: presetPoints ?? state.loyaltyConfig.presetPoints,
       ),
     );
   }

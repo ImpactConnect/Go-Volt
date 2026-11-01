@@ -3,7 +3,9 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
 import '../application/parcel_booking_notifier.dart';
 
@@ -81,12 +83,76 @@ class _ParcelLiveTrackingScreenState
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Full Route Vector Map
+            // Full Route Live Google Map
             Positioned.fill(
-              child: _LiveTrackingMapCanvas(
-                isDark: isDark,
-                isApproaching: false,
-                isInTransit: true,
+              child: LiveGoogleMapView(
+                initialLatitude: state.pickupLocation?.latitude ?? 6.8403,
+                initialLongitude: state.pickupLocation?.longitude ?? 3.6487,
+                initialZoom: 14.5,
+                markers: {
+                  if (state.pickupLocation != null)
+                    Marker(
+                      markerId: const MarkerId('parcel_pickup'),
+                      position: LatLng(
+                        state.pickupLocation!.latitude,
+                        state.pickupLocation!.longitude,
+                      ),
+                      infoWindow: InfoWindow(
+                        title: 'Pickup',
+                        snippet: state.pickupLocation!.address,
+                      ),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueGreen),
+                    ),
+                  if (state.destinationLocation != null)
+                    Marker(
+                      markerId: const MarkerId('parcel_destination'),
+                      position: LatLng(
+                        state.destinationLocation!.latitude,
+                        state.destinationLocation!.longitude,
+                      ),
+                      infoWindow: InfoWindow(
+                        title: 'Delivery',
+                        snippet: state.destinationLocation!.address,
+                      ),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueRed),
+                    ),
+                  Marker(
+                    markerId: const MarkerId('parcel_courier'),
+                    position: LatLng(
+                      (state.pickupLocation?.latitude ?? 6.8403) + 0.002,
+                      (state.pickupLocation?.longitude ?? 3.6487) + 0.002,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: riderName,
+                      snippet: riderVehicle,
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueAzure),
+                  ),
+                },
+                polylines: {
+                  if (state.pickupLocation != null &&
+                      state.destinationLocation != null)
+                    Polyline(
+                      polylineId: const PolylineId('parcel_route'),
+                      color: GVColors.brandGreen,
+                      width: 5,
+                      points: [
+                        LatLng(
+                          state.pickupLocation!.latitude,
+                          state.pickupLocation!.longitude,
+                        ),
+                        LatLng(
+                          state.destinationLocation!.latitude,
+                          state.destinationLocation!.longitude,
+                        ),
+                      ],
+                    ),
+                },
+                showZoomControls: true,
+                showMyLocationButton: true,
               ),
             ),
 
@@ -428,11 +494,43 @@ class _ParcelLiveTrackingScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Live Vector Route Map
+          // 1. Live Google Map Route
           Positioned.fill(
-            child: _LiveTrackingMapCanvas(
-              isDark: isDark,
-              isApproaching: isApproaching,
+            child: LiveGoogleMapView(
+              initialLatitude: state.pickupLocation?.latitude ?? 6.8403,
+              initialLongitude: state.pickupLocation?.longitude ?? 3.6487,
+              initialZoom: 15.0,
+              markers: {
+                if (state.pickupLocation != null)
+                  Marker(
+                    markerId: const MarkerId('parcel_pickup'),
+                    position: LatLng(
+                      state.pickupLocation!.latitude,
+                      state.pickupLocation!.longitude,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: 'Pickup Location',
+                      snippet: state.pickupLocation!.address,
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueGreen),
+                  ),
+                Marker(
+                  markerId: const MarkerId('parcel_courier_approach'),
+                  position: LatLng(
+                    (state.pickupLocation?.latitude ?? 6.8403) + 0.003,
+                    (state.pickupLocation?.longitude ?? 3.6487) + 0.002,
+                  ),
+                  infoWindow: InfoWindow(
+                    title: riderName,
+                    snippet: riderVehicle,
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueAzure),
+                ),
+              },
+              showZoomControls: true,
+              showMyLocationButton: true,
             ),
           ),
 
@@ -951,119 +1049,4 @@ class _CircularIconButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _LiveTrackingMapCanvas extends StatelessWidget {
-  const _LiveTrackingMapCanvas({
-    required this.isDark,
-    required this.isApproaching,
-    this.isInTransit = false,
-  });
-
-  final bool isDark;
-  final bool isApproaching;
-  final bool isInTransit;
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor =
-        isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
-    final streetColor =
-        isDark ? const Color(0xFF1E2822) : const Color(0xFFFCFDFD);
-    final waterColor =
-        isDark ? const Color(0xFF0D1D22) : const Color(0xFFD0E3EA);
-
-    return CustomPaint(
-      painter: _LiveTrackingMapPainter(
-        bgColor: bgColor,
-        streetColor: streetColor,
-        waterColor: waterColor,
-        isApproaching: isApproaching,
-        isInTransit: isInTransit,
-      ),
-    );
-  }
-}
-
-class _LiveTrackingMapPainter extends CustomPainter {
-  _LiveTrackingMapPainter({
-    required this.bgColor,
-    required this.streetColor,
-    required this.waterColor,
-    required this.isApproaching,
-    this.isInTransit = false,
-  });
-
-  final Color bgColor;
-  final Color streetColor;
-  final Color waterColor;
-  final bool isApproaching;
-  final bool isInTransit;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = bgColor,
-    );
-
-    // Lagoon line
-    final waterPaint = Paint()..color = waterColor;
-    final waterPath = Path()
-      ..moveTo(0, size.height * 0.14)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.22,
-        size.width,
-        size.height * 0.10,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(waterPath, waterPaint);
-
-    final streetPaint = Paint()
-      ..color = streetColor
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(0, size.height * 0.45),
-      Offset(size.width, size.height * 0.42),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.35, size.height * 0.15),
-      Offset(size.width * 0.35, size.height),
-      streetPaint,
-    );
-
-    // Green dynamic navigation polyline
-    final routePaint = Paint()
-      ..color = GVColors.brandGreen
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final startPoint = isApproaching
-        ? Offset(size.width * 0.46, size.height * 0.44)
-        : Offset(size.width * 0.38, size.height * 0.34);
-    final endPoint = Offset(size.width * 0.50, size.height * 0.52);
-
-    final routePath = Path()
-      ..moveTo(startPoint.dx, startPoint.dy)
-      ..quadraticBezierTo(
-        size.width * 0.44,
-        size.height * 0.46,
-        endPoint.dx,
-        endPoint.dy,
-      );
-
-    canvas.drawPath(routePath, routePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _LiveTrackingMapPainter oldDelegate) =>
-      oldDelegate.isApproaching != isApproaching;
 }

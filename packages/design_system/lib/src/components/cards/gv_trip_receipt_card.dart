@@ -244,17 +244,19 @@ class GVTripReceiptCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    item.label,
-                    style: (item.isBold
-                            ? GVTypography.bodyMedium
-                            : GVTypography.bodySmall)
-                        .copyWith(
-                      fontWeight:
-                          item.isBold ? FontWeight.w700 : FontWeight.normal,
-                      color: isDark
-                          ? GVColors.neutral400
-                          : GVColors.textSecondary,
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: (item.isBold
+                              ? GVTypography.bodyMedium
+                              : GVTypography.bodySmall)
+                          .copyWith(
+                        fontWeight:
+                            item.isBold ? FontWeight.w700 : FontWeight.normal,
+                        color: isDark
+                            ? GVColors.neutral400
+                            : GVColors.textSecondary,
+                      ),
                     ),
                   ),
                   Text(

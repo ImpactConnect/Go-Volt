@@ -45,8 +45,9 @@ class AccountScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.profile;
-    final fullName = user?.fullName ?? 'Alex Adeleke';
-    final phone = user?.phoneNumber ?? '+234 801 234 5678';
+    final fullName = user?.fullName.isNotEmpty == true ? user!.fullName : 'Customer';
+    final phone = user?.phoneNumber.isNotEmpty == true ? user!.phoneNumber : 'No phone registered';
+    final carbon = user?.carbonAvoidedKg ?? 0.0;
 
     return Scaffold(
       backgroundColor: GVColors.softBackground,
@@ -142,12 +143,14 @@ class AccountScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '28.4 kg CO₂ Emissions Avoided',
+                                '${carbon.toStringAsFixed(1)} kg CO₂ Emissions Avoided',
                                 style: GVTypography.bodySmallMedium
                                     .copyWith(color: GVColors.deepGreen),
                               ),
                               Text(
-                                'Across 12 completed Go-Volts electric rides in Lagos',
+                                carbon > 0
+                                    ? 'From your completed clean electric trips in Lagos'
+                                    : 'Take your first clean electric ride to start saving carbon!',
                                 style: GVTypography.caption
                                     .copyWith(color: GVColors.textSecondary),
                               ),
@@ -187,7 +190,7 @@ class AccountScreen extends ConsumerWidget {
                         style: GVTypography.bodyMedium),
                     subtitle: const Text('Paystack Cards, Transaction History'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go(AppRoutes.wallet),
+                    onTap: () => context.push(AppRoutes.wallet),
                   ),
                   const Divider(height: 1),
                   ListTile(

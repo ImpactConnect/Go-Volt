@@ -3,7 +3,9 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
 import '../application/tracking_notifier.dart';
 
@@ -368,10 +370,77 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Interactive Route Map
-          _TrackingMapCanvas(
-            status: status,
-            isDark: isDark,
+          // Live Google Map Tracking View
+          Positioned.fill(
+            child: LiveGoogleMapView(
+              initialLatitude: booking.pickupLocation.latitude,
+              initialLongitude: booking.pickupLocation.longitude,
+              initialZoom: 15.0,
+              markers: {
+                Marker(
+                  markerId: const MarkerId('live_pickup'),
+                  position: LatLng(
+                    booking.pickupLocation.latitude,
+                    booking.pickupLocation.longitude,
+                  ),
+                  infoWindow: InfoWindow(
+                    title: 'Pickup',
+                    snippet: booking.pickupLocation.address,
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueGreen),
+                ),
+                Marker(
+                  markerId: const MarkerId('live_dropoff'),
+                  position: LatLng(
+                    booking.dropoffLocation.latitude,
+                    booking.dropoffLocation.longitude,
+                  ),
+                  infoWindow: InfoWindow(
+                    title: 'Destination',
+                    snippet: booking.dropoffLocation.address,
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueRed),
+                ),
+                Marker(
+                  markerId: const MarkerId('driver_vehicle'),
+                  position: LatLng(
+                    booking.pickupLocation.latitude + 0.003,
+                    booking.pickupLocation.longitude + 0.002,
+                  ),
+                  infoWindow: InfoWindow(
+                    title: driverName,
+                    snippet: '$vehicleModel • $vehiclePlate',
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueAzure),
+                ),
+              },
+              polylines: {
+                Polyline(
+                  polylineId: const PolylineId('tracking_polyline'),
+                  color: GVColors.brandGreen,
+                  width: 5,
+                  points: [
+                    LatLng(
+                      booking.pickupLocation.latitude + 0.003,
+                      booking.pickupLocation.longitude + 0.002,
+                    ),
+                    LatLng(
+                      booking.pickupLocation.latitude,
+                      booking.pickupLocation.longitude,
+                    ),
+                    LatLng(
+                      booking.dropoffLocation.latitude,
+                      booking.dropoffLocation.longitude,
+                    ),
+                  ],
+                ),
+              },
+              showZoomControls: true,
+              showMyLocationButton: true,
+            ),
           ),
 
           // Top Floating Navigation & Action Bar
@@ -1175,161 +1244,5 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
         ),
       ),
     );
-  }
-}
-
-/// Custom Canvas Painter rendering street map grid, route polyline, and vehicle badges.
-class _TrackingMapCanvas extends StatelessWidget {
-  const _TrackingMapCanvas({
-    required this.status,
-    required this.isDark,
-  });
-
-  final BookingStatus status;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _LiveTrackingMapPainter(
-        status: status,
-        isDark: isDark,
-      ),
-    );
-  }
-}
-
-class _LiveTrackingMapPainter extends CustomPainter {
-  _LiveTrackingMapPainter({
-    required this.status,
-    required this.isDark,
-  });
-
-  final BookingStatus status;
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Background Map Fill
-    final bgPaint = Paint()
-      ..color = isDark ? const Color(0xFF0F1512) : const Color(0xFFE8ECE9);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    // Street Network Grid Lines
-    final roadPaint = Paint()
-      ..color = isDark ? const Color(0xFF1C2621) : const Color(0xFFFFFFFF)
-      ..strokeWidth = 5.0
-      ..style = PaintingStyle.stroke;
-
-    final minorRoadPaint = Paint()
-      ..color = isDark ? const Color(0xFF161E1A) : const Color(0xFFF3F5F4)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-
-    // Draw grid roads
-    for (double y = 60; y < size.height; y += 70) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y + 25), minorRoadPaint);
-    }
-    for (double x = 40; x < size.width; x += 80) {
-      canvas.drawLine(Offset(x, 0), Offset(x - 30, size.height), minorRoadPaint);
-    }
-
-    // Main Avenue
-    canvas.drawLine(
-      Offset(0, size.height * 0.35),
-      Offset(size.width, size.height * 0.28),
-      roadPaint,
-    );
-
-    // Route Polyline
-    final routePath = Path();
-    final pickupPoint = Offset(size.width * 0.45, size.height * 0.38);
-    final dropoffPoint = Offset(size.width * 0.75, size.height * 0.24);
-    final driverPoint = status == BookingStatus.assigned
-        ? Offset(size.width * 0.25, size.height * 0.46)
-        : (status == BookingStatus.arrivedAtPickup
-            ? Offset(size.width * 0.42, size.height * 0.39)
-            : Offset(size.width * 0.60, size.height * 0.31));
-
-    routePath.moveTo(pickupPoint.dx, pickupPoint.dy);
-    routePath.quadraticBezierTo(
-      size.width * 0.55,
-      size.height * 0.32,
-      dropoffPoint.dx,
-      dropoffPoint.dy,
-    );
-
-    final routeGlowPaint = Paint()
-      ..color = GVColors.brandGreen.withValues(alpha: 0.25)
-      ..strokeWidth = 10.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(routePath, routeGlowPaint);
-
-    final routeLinePaint = Paint()
-      ..color = GVColors.brandGreen
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(routePath, routeLinePaint);
-
-    // Pickup Marker (Green Pin)
-    final pickupMarkerPaint = Paint()..color = GVColors.brandGreen;
-    canvas.drawCircle(pickupPoint, 8, pickupMarkerPaint);
-    canvas.drawCircle(pickupPoint, 3, Paint()..color = Colors.white);
-
-    // Dropoff Marker (Red Pin)
-    final dropoffMarkerPaint = Paint()..color = const Color(0xFFE53935);
-    canvas.drawCircle(dropoffPoint, 8, dropoffMarkerPaint);
-    canvas.drawCircle(dropoffPoint, 3, Paint()..color = Colors.white);
-
-    // Vehicle Marker
-    final carBgPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(driverPoint, 14, carBgPaint);
-    canvas.drawCircle(
-      driverPoint,
-      14,
-      Paint()
-        ..color = GVColors.brandGreen
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke,
-    );
-
-    // Small ETA Callout Badge on Map (e.g. "6 min away" / "2 min away")
-    final badgeText = status == BookingStatus.assigned
-        ? '6 min away'
-        : (status == BookingStatus.arrivedAtPickup ? '2 min away' : '12 min');
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: badgeText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final badgeRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(driverPoint.dx, driverPoint.dy - 24),
-        width: textPainter.width + 12,
-        height: 18,
-      ),
-      const Radius.circular(9),
-    );
-    canvas.drawRRect(badgeRect, Paint()..color = const Color(0xFF1E2621));
-    textPainter.paint(
-      canvas,
-      Offset(driverPoint.dx - textPainter.width / 2, driverPoint.dy - 33),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _LiveTrackingMapPainter oldDelegate) {
-    return oldDelegate.status != status || oldDelegate.isDark != isDark;
   }
 }

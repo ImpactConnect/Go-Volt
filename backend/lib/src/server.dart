@@ -14,7 +14,12 @@ import 'routes/quotes_route.dart';
 import 'routes/rider_route.dart';
 import 'routes/partner_route.dart';
 import 'routes/deliveries_route.dart';
-
+import 'routes/operating_locations_route.dart';
+import 'routes/ride_categories_route.dart';
+import 'routes/scheduled_routes.dart';
+import 'routes/wallet_route.dart';
+import 'routes/loyalty_route.dart';
+import 'routes/coupons_route.dart';
 import 'shared/partner_database.dart';
 
 /// Configures and returns the root Shelf request handler with all middlewares and routes.
@@ -42,8 +47,36 @@ Handler createServerHandler({
   v1Router.mount('/rider', riderRouter().call);
   v1Router.mount('/delivery', deliveriesRouter().call);
   v1Router.mount('/deliveries', deliveriesRouter().call);
+  v1Router.mount('/operating-locations', operatingLocationsRouter().call);
+  final rideCats = rideCategoriesRouter();
+  v1Router.mount('/catalogue/ride-categories', rideCats.call);
+  v1Router.get('/catalogue/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
+  v1Router.mount('/ride-categories', rideCats.call);
+  v1Router.get('/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
+  v1Router.mount('/scheduled', scheduledRouter().call);
+  v1Router.post('/scheduled-quotes', handleCalculateQuote);
+  v1Router.mount('/scheduled-plans', scheduledPlansRouter().call);
+  v1Router.mount('/scheduled-trips', scheduledTripsRouter().call);
+  final walletRoutes = walletRouter();
+  v1Router.mount('/wallet', walletRoutes.call);
+  v1Router.get('/admin/paystack-settings', (Request req) => walletRoutes.call(req.change(path: 'admin/paystack-settings')));
+  v1Router.put('/admin/paystack-settings', (Request req) => walletRoutes.call(req.change(path: 'admin/paystack-settings')));
+  v1Router.get('/payments/paystack-public-key', (Request req) => walletRoutes.call(req.change(path: 'payments/paystack-public-key')));
+  v1Router.mount('/loyalty', loyaltyRouter().call);
+  v1Router.mount('/coupons', couponsRouter().call);
 
   router.mount('/api/v1', v1Router.call);
+  router.mount('/catalogue/ride-categories', rideCats.call);
+  router.get('/catalogue/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
+  router.mount('/ride-categories', rideCats.call);
+  router.get('/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
+  router.mount('/scheduled', scheduledRouter().call);
+  router.post('/scheduled-quotes', handleCalculateQuote);
+  router.mount('/scheduled-plans', scheduledPlansRouter().call);
+  router.mount('/scheduled-trips', scheduledTripsRouter().call);
+  router.mount('/wallet', walletRouter().call);
+  router.mount('/loyalty', loyaltyRouter().call);
+  router.mount('/coupons', couponsRouter().call);
 
   // Fallback 404
   router.all('/<ignored|.*>', (Request request) {

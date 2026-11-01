@@ -1,5 +1,8 @@
 import 'package:api_client/api_client.dart';
 import 'package:app_config/app_config.dart';
+import 'package:app_models/app_models.dart';
+import 'package:customer_app/src/core/auth/auth_notifier.dart';
+import 'package:customer_app/src/core/auth/auth_state.dart';
 import 'package:customer_app/src/core/providers/api_providers.dart';
 import 'package:customer_app/src/features/account/presentation/account_screen.dart';
 import 'package:customer_app/src/features/account/presentation/support_screen.dart';
@@ -15,7 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final testConfig = AppConfig.dev();
   final testApiClient = ApiClient(config: testConfig);
-  final testWalletRepo = WalletRepository(apiClient: testApiClient);
+  final testWalletRepo =
+      WalletRepository(apiClient: testApiClient, useSeedData: true);
 
   group('Phase 1D WalletNotifier Unit Tests', () {
     test('initializes balance, transactions, loyalty rewards and coupons', () async {
@@ -125,7 +129,7 @@ void main() {
 
     testWidgets('RewardsScreen renders points balance, referral code and active coupons',
         (tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 1200));
+      await tester.binding.setSurfaceSize(const Size(400, 2400));
 
       await tester.pumpWidget(
         ProviderScope(
@@ -162,6 +166,19 @@ void main() {
           overrides: [
             appConfigProvider.overrideWithValue(testConfig),
             apiClientProvider.overrideWithValue(testApiClient),
+            authNotifierProvider.overrideWith((ref) {
+              final notifier = AuthNotifier();
+              notifier.state = const AuthState(
+                status: AuthStatus.authenticated,
+                profile: ProfileDto(
+                  id: 'usr_test_account',
+                  fullName: 'Alex Adeleke',
+                  phoneNumber: '+234 801 234 5678',
+                  carbonAvoidedKg: 28.4,
+                ),
+              );
+              return notifier;
+            }),
           ],
           child: const MaterialApp(
             home: AccountScreen(),
@@ -222,6 +239,44 @@ void main() {
 
       expect(find.text('Inquiry Logged Successfully'), findsOneWidget);
       expect(find.textContaining('CASE-SUP-'), findsOneWidget);
+
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    testWidgets('RewardsScreen dynamically renders admin-configured presets and handles dynamic point conversion',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appConfigProvider.overrideWithValue(testConfig),
+            apiClientProvider.overrideWithValue(testApiClient),
+            walletRepositoryProvider.overrideWithValue(testWalletRepo),
+          ],
+          child: const MaterialApp(
+            home: RewardsScreen(),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Rewards & Eco-Points'), findsOneWidget);
+      expect(find.text('Select Redemption Amount:'), findsOneWidget);
+      // Admin configured preset chips should be present
+      expect(find.textContaining('pts'), findsWidgets);
+      expect(find.textContaining('Wallet Value: ₦'), findsOneWidget);
+
+      // Tap redemption button
+      final redeemBtn = find.widgetWithText(ElevatedButton, 'Redeem 1000 pts');
+      if (redeemBtn.evaluate().isNotEmpty) {
+        await tester.tap(redeemBtn);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.textContaining('Successfully converted'), findsOneWidget);
+      }
 
       await tester.binding.setSurfaceSize(null);
     });

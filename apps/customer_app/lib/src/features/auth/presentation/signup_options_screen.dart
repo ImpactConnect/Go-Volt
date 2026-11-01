@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_notifier.dart';
+import '../../../core/auth/auth_state.dart';
 import '../../../core/router/app_router.dart';
 
 /// Screen 3: Sign Up Options (AUTH-01B-SIGNUP-OPTIONS)
@@ -69,7 +70,13 @@ class SignUpOptionsScreen extends ConsumerWidget {
                         .read(authNotifierProvider.notifier)
                         .signInWithGoogle();
                     if (success && context.mounted) {
-                      context.go(AppRoutes.home);
+                      final authState = ref.read(authNotifierProvider);
+                      if (authState.status == AuthStatus.profileIncomplete ||
+                          authState.profile?.isProfileComplete != true) {
+                        context.go(AppRoutes.completeProfile);
+                      } else {
+                        context.go(AppRoutes.home);
+                      }
                     }
                   },
                   style: OutlinedButton.styleFrom(

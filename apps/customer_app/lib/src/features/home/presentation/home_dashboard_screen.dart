@@ -1,14 +1,20 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/services/gps_location_service.dart';
 import '../../booking/application/booking_notifier.dart';
 import '../application/home_notifier.dart';
 import '../application/notifications_notifier.dart';
+import 'create_destinations_pop_sheet.dart';
 import 'location_selector_modal.dart';
 
 /// Customer App Home Dashboard
@@ -19,11 +25,67 @@ import 'location_selector_modal.dart';
 /// - Screen 13: HOME-03-SERVICE-UNAVAILABLE (Service area restriction, referral banner switch)
 ///
 /// Follows Design Boards and Specification §10-§13. Zero hardcoded data.
-class HomeDashboardScreen extends ConsumerWidget {
+class HomeDashboardScreen extends ConsumerStatefulWidget {
   const HomeDashboardScreen({super.key});
 
+  /// Allows resetting the one-time session prompt when needed (e.g. fresh signup / logout).
+  static bool hasPromptedDestinations = false;
+  static void resetPromptSession() => hasPromptedDestinations = false;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeDashboardScreen> createState() =>
+      _HomeDashboardScreenState();
+}
+
+class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
+  Timer? _promptTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndPromptDestinations();
+      _resolveSilentGps();
+    });
+  }
+
+  Future<void> _resolveSilentGps() async {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+        return;
+      }
+      final loc = await GpsLocationService.getCurrentPosition(
+        label: 'Current Location',
+      );
+      if (mounted) {
+        ref.read(homeNotifierProvider.notifier).setCurrentCoordinates(loc);
+        ref.read(bookingNotifierProvider.notifier).setPickupLocation(loc);
+      }
+    } catch (_) {
+      // Ignore background GPS resolution errors
+    }
+  }
+
+  @override
+  void dispose() {
+    _promptTimer?.cancel();
+    super.dispose();
+  }
+
+  void _checkAndPromptDestinations() {
+    if (HomeDashboardScreen.hasPromptedDestinations) return;
+    if (ref.read(homeNotifierProvider).savedPlaces.isNotEmpty) return;
+    HomeDashboardScreen.hasPromptedDestinations = true;
+
+    _promptTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      if (ref.read(homeNotifierProvider).savedPlaces.isNotEmpty) return;
+      CreateDestinationsPopSheet.show(context);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authNotifierProvider);
     final homeState = ref.watch(homeNotifierProvider);
@@ -104,6 +166,10 @@ class HomeDashboardScreen extends ConsumerWidget {
                   isDark: isDark,
                   locationName: homeState.currentLocation.displayName,
                 ),
+                const SizedBox(height: GVSpacing.md),
+
+                // 3b. Uber / Bolt Style "Where to?" Search Pill
+                _buildWhereToSearchPill(context, isDark: isDark),
                 const SizedBox(height: GVSpacing.lg),
 
                 // 4. Section: What would you like to do?
@@ -156,17 +222,45 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ),
 
                 // 8. Saved Places Section
-                if (homeState.savedPlaces.isNotEmpty) ...[
-                  const SizedBox(height: GVSpacing.lg),
-                  Text(
-                    'Your saved places',
-                    style: GVTypography.h3.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: isDark ? Colors.white : GVColors.textPrimary,
+                const SizedBox(height: GVSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Your saved places',
+                        style: GVTypography.h3.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: isDark ? Colors.white : GVColors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: GVSpacing.sm),
+                    if (homeState.savedPlaces.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => CreateDestinationsPopSheet.show(context),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.add_rounded,
+                              size: 16,
+                              color: GVColors.brandGreen,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Add',
+                              style: GVTypography.label.copyWith(
+                                color: GVColors.brandGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: GVSpacing.xs),
+                if (homeState.savedPlaces.isNotEmpty)
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -193,19 +287,159 @@ class HomeDashboardScreen extends ConsumerWidget {
                         );
                       }).toList(),
                     ),
+                  )
+                else
+                  InkWell(
+                    onTap: () => CreateDestinationsPopSheet.show(context),
+                    borderRadius: GVBorderRadius.cardRadius,
+                    child: Container(
+                      padding: const EdgeInsets.all(GVSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1A231E) : Colors.white,
+                        borderRadius: GVBorderRadius.cardRadius,
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF2A3630)
+                              : GVColors.border,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: GVColors.brandGreen.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.bookmark_add_outlined,
+                              color: GVColors.brandGreen,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: GVSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Set up your frequent destinations',
+                                  style: GVTypography.bodySmallMedium.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.white
+                                        : GVColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Save Home, Work or favorite spots for 1-tap bookings',
+                                  style: GVTypography.caption.copyWith(
+                                    color: isDark
+                                        ? GVColors.neutral400
+                                        : GVColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: GVColors.brandGreen,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
 
                 // 9. Rewards Summary Widget (Screen 11)
                 const SizedBox(height: GVSpacing.lg),
                 _buildRewardsSection(
                   context,
                   isDark: isDark,
-                  ecoPoints: user?.ecoPointsBalance ?? 1250,
+                  ecoPoints: user?.ecoPointsBalance ?? 0,
                 ),
                 const SizedBox(height: GVSpacing.xxl),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Uber / Bolt style "Where to?" Search Pill
+  Widget _buildWhereToSearchPill(BuildContext context, {required bool isDark}) {
+    final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
+
+    return Material(
+      color: cardBg,
+      borderRadius: BorderRadius.circular(28),
+      child: InkWell(
+        onTap: () {
+          ref
+              .read(bookingNotifierProvider.notifier)
+              .selectService(ServiceCode.instantRide);
+          context.push(AppRoutes.locationPicker);
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: borderColor),
+            boxShadow: isDark ? null : GVShadows.card,
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.search_rounded,
+                color: GVColors.brandGreen,
+                size: 24,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'Where to?',
+                  style: GVTypography.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : GVColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF2A3630)
+                      : GVColors.softBackground,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 16,
+                      color: isDark ? Colors.white70 : GVColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Now',
+                      style: GVTypography.caption.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : GVColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -440,7 +674,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 title: 'Scheduled Pickup',
                 description: 'Plan a future journey',
                 icon: Icons.calendar_month_outlined,
-                onTap: () => context.push(AppRoutes.scheduledBooking),
+                onTap: () => context.push(AppRoutes.scheduledLanding),
               ),
             ),
           ],

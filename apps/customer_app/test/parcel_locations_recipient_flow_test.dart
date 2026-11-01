@@ -1,4 +1,6 @@
+import 'package:app_models/app_models.dart';
 import 'package:customer_app/src/core/router/app_router.dart';
+import 'package:customer_app/src/features/home/application/home_notifier.dart';
 import 'package:customer_app/src/features/parcel/application/parcel_booking_notifier.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_delivery_location_screen.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_pickup_location_screen.dart';
@@ -25,6 +27,35 @@ Widget _buildTestApp({
   );
 }
 
+ProviderContainer _createTestContainer() {
+  return ProviderContainer(
+    overrides: [
+      homeNotifierProvider.overrideWith(
+        (ref) => HomeNotifier(
+          initialSavedPlaces: const [
+            SavedPlaceDto(
+              id: 'p1',
+              label: 'Home',
+              address: '10 Main St, Shaganu, Ogun',
+              latitude: 6.8403,
+              longitude: 3.6487,
+              type: SavedPlaceType.home,
+            ),
+            SavedPlaceDto(
+              id: 'p2',
+              label: 'Work',
+              address: 'Town Hall, Shaganu, Ogun',
+              latitude: 6.8420,
+              longitude: 3.6500,
+              type: SavedPlaceType.work,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -36,7 +67,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -51,9 +82,9 @@ void main() {
       expect(find.text('Pickup location'), findsWidgets);
 
       // Central pin bubble and confirmed pickup card
-      expect(find.text('Eko Hotel and Suites'), findsWidgets);
+      expect(find.text('Shaganu Central'), findsWidgets);
       expect(
-        find.text('Adetokunbo Ademola St, Victoria Island, Lagos'),
+        find.text('Central Roundabout, Shaganu, Ogun State'),
         findsOneWidget,
       );
 
@@ -69,7 +100,7 @@ void main() {
 
       final state = container.read(parcelBookingNotifierProvider);
       expect(state.pickupLocation?.label, 'Work');
-      expect(state.pickupLocation?.address, 'Lekki Phase 1, Lagos');
+      expect(state.pickupLocation?.address, 'Town Hall, Shaganu, Ogun');
 
       // Continue button
       expect(find.text('Continue'), findsOneWidget);
@@ -226,7 +257,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -242,8 +273,8 @@ void main() {
 
       // Pin and confirmed address
       expect(find.text('Destination location'), findsOneWidget);
-      expect(find.text('Palms Mall'), findsWidgets);
-      expect(find.text('Palms Mall, Lekki, Lagos'), findsWidgets);
+      expect(find.text('Shaganu Main Market'), findsWidgets);
+      expect(find.text('Main Market, Shaganu, Ogun State'), findsWidgets);
 
       // Saved places
       expect(find.text('Saved places'), findsOneWidget);
@@ -256,7 +287,7 @@ void main() {
 
       final state = container.read(parcelBookingNotifierProvider);
       expect(state.destinationLocation?.label, 'Work');
-      expect(state.destinationLocation?.address, 'Lekki Phase 1, Lagos');
+      expect(state.destinationLocation?.address, 'Town Hall, Shaganu, Ogun');
 
       // Continue CTA
       expect(find.text('Continue'), findsOneWidget);
@@ -271,7 +302,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -296,7 +327,7 @@ void main() {
 
       expect(
         container.read(parcelBookingNotifierProvider).destinationLocation?.label,
-        'Palms Mall',
+        'Destination (Current GPS)',
       );
     });
   });

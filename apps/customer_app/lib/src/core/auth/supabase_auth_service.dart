@@ -54,6 +54,7 @@ class SupabaseAuthService {
     await sb.auth.signInWithOtp(
       email: email.trim(),
       shouldCreateUser: true,
+      emailRedirectTo: 'govolt://auth-callback',
     );
   }
 
@@ -85,6 +86,7 @@ class SupabaseAuthService {
     return await sb.auth.signUp(
       email: email.trim(),
       password: password,
+      emailRedirectTo: 'govolt://auth-callback',
       data: {
         'first_name': firstName.trim(),
         'last_name': lastName.trim(),
@@ -100,7 +102,10 @@ class SupabaseAuthService {
       throw const AuthException('Supabase is not initialized.');
     }
 
-    await sb.auth.resetPasswordForEmail(email.trim());
+    await sb.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: 'govolt://auth-callback',
+    );
   }
 
   /// Verifies recovery OTP code for password reset.
@@ -227,9 +232,11 @@ class SupabaseAuthService {
       rethrow;
     } catch (e) {
       final err = e.toString();
-      if (err.contains('10') || err.contains('Developer error')) {
+      if (err.contains('10') ||
+          err.contains('Developer error') ||
+          err.contains('sign_in_failed')) {
         throw const AuthException(
-          'Google Sign-In configuration error: Check that your Android SHA-1 fingerprint and package name match in Google Cloud Console.',
+          'Google Sign-In configuration error: In Google Cloud Console under project "go-volt-513114", create an Android OAuth Client with package "com.go_volt.app" and SHA-1 "30:4E:2B:0F:09:C3:5A:BE:30:B4:CC:A4:A5:53:EA:51:13:FF:BC:6F".',
         );
       }
       throw AuthException(

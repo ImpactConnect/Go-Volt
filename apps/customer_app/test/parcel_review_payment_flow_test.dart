@@ -58,10 +58,10 @@ void main() {
       expect(find.text('Delivery details'), findsOneWidget);
       expect(find.text('Edit'), findsOneWidget);
       expect(
-        find.text('Adetokunbo Ademola St, Victoria Island, Lagos'),
+        find.text('Central Roundabout, Shaganu, Ogun State'),
         findsOneWidget,
       );
-      expect(find.text('Palms Mall, Lekki, Lagos'), findsWidgets);
+      expect(find.text('Main Market, Shaganu, Ogun State'), findsWidgets);
 
       // 2. Package Details
       expect(find.text('Package details'), findsOneWidget);

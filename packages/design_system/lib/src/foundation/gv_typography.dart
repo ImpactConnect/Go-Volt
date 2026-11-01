@@ -82,6 +82,13 @@ abstract final class GVTypography {
 
   // ── Body ──────────────────────────────────────────────────────────────────
 
+  static TextStyle get bodyLarge => GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
+        color: GVColors.textPrimary,
+      );
+
   static TextStyle get body => GoogleFonts.poppins(
         fontSize: 16,
         fontWeight: FontWeight.w400,

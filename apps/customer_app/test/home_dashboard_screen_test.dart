@@ -50,8 +50,13 @@ void main() {
       ),
     );
 
-    homeNotifier = HomeNotifier();
-    notificationsNotifier = NotificationsNotifier();
+    HomeDashboardScreen.resetPromptSession();
+    homeNotifier = HomeNotifier(
+      initialSavedPlaces: HomeNotifier.defaultSavedPlaces,
+    );
+    notificationsNotifier = NotificationsNotifier(
+      initialNotifications: NotificationsNotifier.defaultNotifications,
+    );
     bookingNotifier = BookingNotifier(repository: _FakeBookingRepository());
   });
 
@@ -102,7 +107,7 @@ void main() {
 
       // Current location card
       expect(find.text('Your location'), findsOneWidget);
-      expect(find.text('Victoria Island, Lagos'), findsWidgets);
+      expect(find.text('Shaganu, Ogun'), findsWidgets);
 
       // Headline
       expect(find.text('What would you like to do?'), findsOneWidget);
@@ -124,10 +129,11 @@ void main() {
       expect(find.text('Use code GO20'), findsOneWidget);
       expect(find.text('Learn more'), findsOneWidget);
 
-      // Saved places row
+      // Saved places section (zero-data prompt for new users)
       expect(find.text('Your saved places'), findsOneWidget);
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Work'), findsOneWidget);
+      expect(find.text('Set up your frequent destinations'), findsOneWidget);
+      expect(find.text('Home'), findsNothing);
+      expect(find.text('Work'), findsNothing);
 
       // Rewards summary widget
       expect(find.text('Your rewards'), findsOneWidget);
@@ -171,16 +177,25 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      // Switch to Ikoyi (where instant rides are unavailable)
-      final ikoyi =
-          HomeNotifier.predefinedAreas.firstWhere((a) => a.id == 'ikoyi');
-      homeNotifier.selectLocation(ikoyi);
+      // Switch to a limited area (where instant rides are unavailable)
+      const limitedArea = ServiceAreaDto(
+        id: 'test-limited',
+        name: 'Limited Zone',
+        state: 'Ogun',
+        status: ServiceAreaStatus.limited,
+        statusDescription: 'Limited services',
+        availableServices: [
+          ServiceCode.instantDelivery,
+          ServiceCode.scheduledPickup,
+        ],
+      );
+      homeNotifier.selectLocation(limitedArea);
 
       await tester.pumpWidget(createWidget());
       await tester.pumpAndSettle();
 
-      // Current location is now Ikoyi, Lagos
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
+      // Current location is now Limited Zone, Ogun
+      expect(find.text('Limited Zone, Ogun'), findsOneWidget);
 
       // Book a Ride is disabled with red unavailable pill and reason
       expect(find.text('Currently unavailable'), findsOneWidget);
@@ -202,7 +217,7 @@ void main() {
   });
 
   group('Interactive Location Selector Bottom Sheet', () {
-    testWidgets('opens bottom sheet and switches location to Ikoyi dynamically',
+    testWidgets('opens bottom sheet and switches location to Shaganu dynamically',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
@@ -218,23 +233,21 @@ void main() {
 
       // Verify modal sheet opened
       expect(find.text('Select your location'), findsOneWidget);
-      expect(find.text('Victoria Island, Lagos'), findsWidgets);
-      expect(find.text('Lekki, Lagos'), findsOneWidget);
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
-      expect(find.text('Limited services'), findsOneWidget);
+      expect(find.text('Shaganu, Ogun'), findsWidgets);
+      expect(find.text('Fully supported'), findsWidgets);
 
-      // Tap on Ikoyi in the sheet
-      await tester.tap(find.text('Ikoyi, Lagos'));
+      // Tap on Shaganu in the sheet
+      await tester.tap(find.text('Shaganu, Ogun').last);
       await tester.pumpAndSettle();
 
       // Tap Confirm location CTA
       await tester.tap(find.text('Confirm location'));
       await tester.pumpAndSettle();
 
-      // Sheet should be dismissed and Dashboard now in Ikoyi (Screen 13) state
+      // Sheet should be dismissed and Dashboard now active
       expect(find.text('Select your location'), findsNothing);
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
-      expect(find.text('Currently unavailable'), findsOneWidget);
+      expect(find.text('Shaganu, Ogun'), findsWidgets);
+      expect(find.text('Currently unavailable'), findsNothing);
     });
   });
 

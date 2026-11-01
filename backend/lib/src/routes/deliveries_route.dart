@@ -66,7 +66,7 @@ Router deliveriesRouter() {
       body['delivery_option'] as Map<String, dynamic>? ??
           DeliveryOptionDto.standard.toJson(),
     );
-    final weightKg = (body['weight_kg'] as num?)?.toDouble() ?? 1.5;
+    final _ = (body['weight_kg'] as num?)?.toDouble() ?? 1.5;
     final sizeBand = ParcelSizeBandDto.fromJson(
       body['size_band'] as Map<String, dynamic>? ??
           ParcelSizeBandDto.small.toJson(),

@@ -21,8 +21,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
         super(
           const WalletState(
             wallet: WalletDto(
-              userId: 'usr-customer-01',
-              balance: 14500.0,
+              userId: '',
+              balance: 0.0,
               lockedBalance: 0.0,
               currency: 'NGN',
             ),
@@ -34,19 +34,23 @@ class WalletNotifier extends StateNotifier<WalletState> {
   final WalletRepository _repository;
 
   /// Loads full wallet ledger, loyalty points and promotional coupons.
-  Future<void> loadWallet() async {
+  Future<void> loadWallet({String? userId, String? userName}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final wallet = await _repository.getWallet();
-      final transactions = await _repository.getTransactions();
-      final loyalty = await _repository.getLoyaltyRewards();
+      final wallet = await _repository.getWallet(userId: userId);
+      final transactions = await _repository.getTransactions(userId: userId);
+      final loyalty = await _repository.getLoyaltyRewards(userId: userId, userName: userName);
       final coupons = await _repository.getCoupons();
+      final cards = await _repository.getSavedCards(userId: userId);
+      final dedicated = await _repository.getDedicatedAccount(userId: userId, userName: userName);
 
       state = state.copyWith(
         wallet: wallet,
         transactions: transactions,
         loyalty: loyalty,
         coupons: coupons,
+        savedCards: cards,
+        dedicatedAccount: dedicated,
         isLoading: false,
       );
     } catch (e) {
@@ -55,6 +59,102 @@ class WalletNotifier extends StateNotifier<WalletState> {
         error: 'Failed to synchronize wallet balance: $e',
       );
     }
+  }
+
+  /// Generates or refreshes user's unique referral code dynamically.
+  Future<String?> generateUniqueReferralCode({
+    required String userId,
+    String? userName,
+  }) async {
+    try {
+      final code = await _repository.generateUniqueReferralCode(
+        userId: userId,
+        userName: userName,
+      );
+      if (state.loyalty != null) {
+        final updatedLoyalty = LoyaltyRewardDto(
+          pointsBalance: state.loyalty!.pointsBalance,
+          conversionRatePointsPerNaira: state.loyalty!.conversionRatePointsPerNaira,
+          tierName: state.loyalty!.tierName,
+          pointsExpiringSoon: state.loyalty!.pointsExpiringSoon,
+          referralCode: code,
+          referralCount: state.loyalty!.referralCount,
+          referralEarningsNaira: state.loyalty!.referralEarningsNaira,
+          nextTierName: state.loyalty!.nextTierName,
+          nextTierPointsThreshold: state.loyalty!.nextTierPointsThreshold,
+          currentTierPointsFloor: state.loyalty!.currentTierPointsFloor,
+          referredFriends: state.loyalty!.referredFriends,
+          conversionRule: state.loyalty!.conversionRule,
+        );
+        state = state.copyWith(loyalty: updatedLoyalty);
+      }
+      return code;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Links a debit card authorization tokenized via Paystack.
+  Future<SavedPaymentCardDto?> linkCardViaPaystack({
+    required String reference,
+    String brand = 'Mastercard',
+    String last4 = '4242',
+    String expMonth = '12',
+    String expYear = '28',
+    String bank = 'Paystack Verified Bank',
+    String? userId,
+  }) async {
+    try {
+      final newCard = await _repository.verifyCardAuthorization(
+        reference: reference,
+        brand: brand,
+        last4: last4,
+        expMonth: expMonth,
+        expYear: expYear,
+        bank: bank,
+        userId: userId,
+      );
+
+      final updatedCards = [
+        ...state.savedCards.map((c) => newCard.isDefault ? c.copyWith(isDefault: false) : c),
+        newCard,
+      ];
+      state = state.copyWith(savedCards: updatedCards);
+      return newCard;
+    } catch (e) {
+      state = state.copyWith(error: 'Failed to link card: $e');
+      return null;
+    }
+  }
+
+  /// Deletes a saved card authorization.
+  Future<bool> deleteCard(String cardId, {String? userId}) async {
+    final ok = await _repository.deleteCard(cardId, userId: userId);
+    if (ok) {
+      final remaining = state.savedCards.where((c) => c.id != cardId).toList();
+      if (remaining.isNotEmpty && !remaining.any((c) => c.isDefault)) {
+        remaining[0] = remaining[0].copyWith(isDefault: true);
+      }
+      state = state.copyWith(savedCards: remaining);
+    }
+    return ok;
+  }
+
+  /// Sets a saved card as default.
+  Future<bool> setDefaultCard(String cardId, {String? userId}) async {
+    final ok = await _repository.setDefaultCard(cardId, userId: userId);
+    if (ok) {
+      final updated = state.savedCards
+          .map((c) => c.copyWith(isDefault: c.id == cardId))
+          .toList();
+      state = state.copyWith(savedCards: updated);
+    }
+    return ok;
+  }
+
+  /// Validates a promo code against active backend coupons.
+  Future<Map<String, dynamic>> validateCoupon(String code, {double orderAmount = 0.0}) async {
+    return await _repository.validateCoupon(code, orderAmount: orderAmount);
   }
 
   /// Initiates top-up via Paystack checkout.
@@ -78,10 +178,10 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 
   /// Completes Paystack top-up post verification and updates balance atomically.
-  Future<bool> completeTopUp(String reference, double amountNaira) async {
+  Future<bool> completeTopUp(String reference, double amountNaira, {String? userId}) async {
     state = state.copyWith(isProcessingTopUp: true);
     try {
-      final updatedWallet = await _repository.verifyTopUp(reference, amountNaira);
+      final updatedWallet = await _repository.verifyTopUp(reference, amountNaira, userId: userId);
       final newTx = WalletTransactionDto(
         id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
         userId: updatedWallet.userId,
@@ -109,15 +209,14 @@ class WalletNotifier extends StateNotifier<WalletState> {
     }
   }
 
-  /// Atomically converts Eco-Points into wallet credit.
+  /// Atomically converts Eco-Points into wallet credit using admin-configured rate.
   Future<bool> redeemLoyaltyPoints(int pointsToRedeem) async {
     if (state.loyalty == null || state.loyalty!.pointsBalance < pointsToRedeem) {
       state = state.copyWith(error: 'Insufficient Eco-Points for redemption.');
       return false;
     }
 
-    final creditNaira =
-        pointsToRedeem / state.loyalty!.conversionRatePointsPerNaira;
+    final creditNaira = state.loyalty!.conversionRule.calculateCreditNaira(pointsToRedeem);
     state = state.copyWith(isLoading: true);
 
     try {
@@ -144,6 +243,11 @@ class WalletNotifier extends StateNotifier<WalletState> {
         referralCode: state.loyalty!.referralCode,
         referralCount: state.loyalty!.referralCount,
         referralEarningsNaira: state.loyalty!.referralEarningsNaira,
+        nextTierName: state.loyalty!.nextTierName,
+        nextTierPointsThreshold: state.loyalty!.nextTierPointsThreshold,
+        currentTierPointsFloor: state.loyalty!.currentTierPointsFloor,
+        referredFriends: state.loyalty!.referredFriends,
+        conversionRule: state.loyalty!.conversionRule,
       );
 
       final redemptionTx = WalletTransactionDto(

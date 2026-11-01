@@ -8,6 +8,8 @@ class WalletState extends Equatable {
     this.transactions = const [],
     this.loyalty,
     this.coupons = const [],
+    this.savedCards = const [],
+    this.dedicatedAccount,
     this.isLoading = false,
     this.isProcessingTopUp = false,
     this.topUpRedirectUrl,
@@ -18,6 +20,8 @@ class WalletState extends Equatable {
   final List<WalletTransactionDto> transactions;
   final LoyaltyRewardDto? loyalty;
   final List<CouponDto> coupons;
+  final List<SavedPaymentCardDto> savedCards;
+  final DedicatedAccountDto? dedicatedAccount;
   final bool isLoading;
   final bool isProcessingTopUp;
   final String? topUpRedirectUrl;
@@ -28,6 +32,8 @@ class WalletState extends Equatable {
     List<WalletTransactionDto>? transactions,
     LoyaltyRewardDto? loyalty,
     List<CouponDto>? coupons,
+    List<SavedPaymentCardDto>? savedCards,
+    DedicatedAccountDto? dedicatedAccount,
     bool? isLoading,
     bool? isProcessingTopUp,
     String? topUpRedirectUrl,
@@ -38,6 +44,8 @@ class WalletState extends Equatable {
       transactions: transactions ?? this.transactions,
       loyalty: loyalty ?? this.loyalty,
       coupons: coupons ?? this.coupons,
+      savedCards: savedCards ?? this.savedCards,
+      dedicatedAccount: dedicatedAccount ?? this.dedicatedAccount,
       isLoading: isLoading ?? this.isLoading,
       isProcessingTopUp: isProcessingTopUp ?? this.isProcessingTopUp,
       topUpRedirectUrl: topUpRedirectUrl,
@@ -51,6 +59,8 @@ class WalletState extends Equatable {
         transactions,
         loyalty,
         coupons,
+        savedCards,
+        dedicatedAccount,
         isLoading,
         isProcessingTopUp,
         topUpRedirectUrl,

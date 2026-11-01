@@ -46,7 +46,7 @@ void main() {
 
       expect(parsed, equals(loc));
       expect(parsed.latitude, 6.5244);
-      expect(parsed.city, 'Lagos');
+      expect(parsed.city, 'Shaganu');
     });
 
     test('BookingDto parses complete JSON payload', () {

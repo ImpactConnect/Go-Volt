@@ -1,9 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
 import '../application/booking_notifier.dart';
 
@@ -29,6 +33,7 @@ class RideBookingScreen extends ConsumerStatefulWidget {
 }
 
 class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
+  final GlobalKey<LiveGoogleMapViewState> _mapKey = GlobalKey();
   late _RideStep _currentStep;
   final TextEditingController _promoController = TextEditingController();
   final TextEditingController _instructionsController =
@@ -37,54 +42,6 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
   String _selectedPaymentId = 'wallet';
   bool _agreedToTerms = true;
   DateTime? _scheduledDate;
-
-  // Fallback server catalogue ride categories (v1.3 §5.4)
-  static const List<RideCategoryDto> _defaultCategories = [
-    RideCategoryDto(
-      id: 'goride_standard',
-      code: 'standard',
-      name: 'GoRide Standard',
-      description: 'Affordable and reliable',
-      etaMinutes: 2,
-      capacityLabel: '3 Seats',
-      passengerCapacity: 3,
-      baseFareKobo: 280000,
-      features: ['AC', '3 Seats', 'Trusted riders'],
-    ),
-    RideCategoryDto(
-      id: 'goride_plus',
-      code: 'plus',
-      name: 'GoRide Plus',
-      description: 'More comfort',
-      etaMinutes: 3,
-      capacityLabel: '4 Seats',
-      passengerCapacity: 4,
-      baseFareKobo: 350000,
-      features: ['AC', 'Extra legroom', 'Top rated'],
-    ),
-    RideCategoryDto(
-      id: 'goride_xl',
-      code: 'xl',
-      name: 'GoRide XL',
-      description: 'Bigger vehicles for more space',
-      etaMinutes: 4,
-      capacityLabel: '6 Seats',
-      passengerCapacity: 6,
-      baseFareKobo: 450000,
-      features: ['AC', '6 Seats', 'Spacious trunk'],
-    ),
-    RideCategoryDto(
-      id: 'goride_green',
-      code: 'green',
-      name: 'GoRide Green',
-      description: 'Eco-friendly rides',
-      etaMinutes: 3,
-      capacityLabel: '4 Seats',
-      passengerCapacity: 4,
-      baseFareKobo: 300000,
-      features: ['Zero emission', 'Quiet ride', 'Carbon offset'],
-    ),
-  ];
 
   @override
   void initState() {
@@ -190,9 +147,87 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Map Background with Route Polyline
+          // Live Google Map with Route Polyline and Location Pins
           Positioned.fill(
-            child: _RouteMapCanvas(isDark: isDark),
+            child: LiveGoogleMapView(
+              key: _mapKey,
+              initialLatitude: booking.pickupLocation?.latitude ?? 6.8403,
+              initialLongitude: booking.pickupLocation?.longitude ?? 3.6487,
+              initialZoom: 14.5,
+              onMapCreated: (controller) {
+                if (booking.pickupLocation != null &&
+                    booking.dropoffLocation != null) {
+                  final pLat = booking.pickupLocation!.latitude;
+                  final pLng = booking.pickupLocation!.longitude;
+                  final dLat = booking.dropoffLocation!.latitude;
+                  final dLng = booking.dropoffLocation!.longitude;
+                  final bounds = LatLngBounds(
+                    southwest: LatLng(
+                      math.min(pLat, dLat),
+                      math.min(pLng, dLng),
+                    ),
+                    northeast: LatLng(
+                      math.max(pLat, dLat),
+                      math.max(pLng, dLng),
+                    ),
+                  );
+                  controller.animateCamera(
+                    CameraUpdate.newLatLngBounds(bounds, 70),
+                  );
+                }
+              },
+              markers: {
+                if (booking.pickupLocation != null)
+                  Marker(
+                    markerId: const MarkerId('pickup_marker'),
+                    position: LatLng(
+                      booking.pickupLocation!.latitude,
+                      booking.pickupLocation!.longitude,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: booking.pickupLocation!.label ?? 'Pickup',
+                      snippet: booking.pickupLocation!.address,
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueGreen),
+                  ),
+                if (booking.dropoffLocation != null)
+                  Marker(
+                    markerId: const MarkerId('dropoff_marker'),
+                    position: LatLng(
+                      booking.dropoffLocation!.latitude,
+                      booking.dropoffLocation!.longitude,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: booking.dropoffLocation!.label ?? 'Destination',
+                      snippet: booking.dropoffLocation!.address,
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed),
+                  ),
+              },
+              polylines: {
+                if (booking.pickupLocation != null &&
+                    booking.dropoffLocation != null)
+                  Polyline(
+                    polylineId: const PolylineId('ride_route_line'),
+                    color: GVColors.brandGreen,
+                    width: 5,
+                    points: [
+                      LatLng(
+                        booking.pickupLocation!.latitude,
+                        booking.pickupLocation!.longitude,
+                      ),
+                      LatLng(
+                        booking.dropoffLocation!.latitude,
+                        booking.dropoffLocation!.longitude,
+                      ),
+                    ],
+                  ),
+              },
+              showZoomControls: true,
+              showMyLocationButton: false,
+            ),
           ),
 
           // Top Floating Navigation Bar
@@ -209,7 +244,17 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                   _RoundIconButton(
                     icon: Icons.my_location_rounded,
                     tooltip: 'Recenter GPS',
-                    onTap: () {},
+                    onTap: () {
+                      if (booking.pickupLocation != null) {
+                        _mapKey.currentState?.animateTo(
+                          LatLng(
+                            booking.pickupLocation!.latitude,
+                            booking.pickupLocation!.longitude,
+                          ),
+                          zoom: 16.0,
+                        );
+                      }
+                    },
                     isDark: isDark,
                   ),
                 ],
@@ -283,9 +328,48 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildChooseRideScreen({required bool isDark}) {
     final booking = ref.watch(bookingNotifierProvider);
-    final categories = booking.rideCategories.isNotEmpty
-        ? booking.rideCategories
-        : _defaultCategories;
+    final categories = booking.rideCategories;
+
+    if (categories.isEmpty) {
+      return Scaffold(
+        backgroundColor: isDark ? const Color(0xFF131A16) : Colors.white,
+        appBar: AppBar(
+          backgroundColor: isDark ? const Color(0xFF131A16) : Colors.white,
+          elevation: 0,
+          leading: _RoundBackButton(onTap: _handleBack, isDark: isDark),
+          centerTitle: true,
+          title: Text(
+            'Choose a ride',
+            style: GVTypography.titleMedium.copyWith(
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : GVColors.textPrimary,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  color: GVColors.brandGreen,
+                  strokeWidth: 3,
+                ),
+              ),
+              const SizedBox(height: GVSpacing.md),
+              Text(
+                'Fetching live ride options...',
+                style: GVTypography.bodyMedium.copyWith(
+                  color: isDark ? Colors.white70 : GVColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     final selectedId = booking.selectedRideCategoryId ?? categories.first.id;
     final selectedCategory = categories.firstWhere(
@@ -320,6 +404,12 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                     final isSelected = category.id == selectedId;
                     final priceLabel = category.formattedBaseFare;
                     final etaLabel = '${category.etaMinutes} min away';
+                    final isBike = category.iconKey.contains('bike') ||
+                        category.iconKey.contains('moped') ||
+                        category.code.contains('bike');
+                    final vehicleIcon = isBike
+                        ? Icons.two_wheeler_rounded
+                        : Icons.directions_car_rounded;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: GVSpacing.md),
@@ -329,6 +419,7 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                         etaLabel: etaLabel,
                         description: category.description,
                         isSelected: isSelected,
+                        vehicleIcon: vehicleIcon,
                         features: isSelected
                             ? category.features
                                 .map(
@@ -336,9 +427,13 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                                     label: f,
                                     icon: f.contains('AC')
                                         ? Icons.ac_unit_rounded
-                                        : (f.contains('Seat')
+                                        : (f.contains('Seat') || f.contains('Passenger')
                                             ? Icons.event_seat_rounded
-                                            : Icons.verified_user_rounded),
+                                            : (f.contains('Helmet')
+                                                ? Icons.sports_motorsports_rounded
+                                                : (f.contains('traffic') || f.contains('Express')
+                                                    ? Icons.flash_on_rounded
+                                                    : Icons.verified_user_rounded))),
                                   ),
                                 )
                                 .toList()
@@ -370,26 +465,28 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Features summary row for selected category
+                  // Dynamic features summary row for selected category
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _CategoryFeaturePill(
-                        icon: Icons.ac_unit_rounded,
-                        label: 'AC',
+                    children: selectedCategory.features.take(3).map((f) {
+                      IconData icon = Icons.verified_user_rounded;
+                      if (f.contains('AC')) {
+                        icon = Icons.ac_unit_rounded;
+                      } else if (f.contains('Seat') || f.contains('Passenger')) {
+                        icon = Icons.event_seat_rounded;
+                      } else if (f.contains('Helmet')) {
+                        icon = Icons.sports_motorsports_rounded;
+                      } else if (f.contains('traffic') || f.contains('Express')) {
+                        icon = Icons.flash_on_rounded;
+                      } else if (f.contains('Zero') || f.contains('Eco')) {
+                        icon = Icons.eco_rounded;
+                      }
+                      return _CategoryFeaturePill(
+                        icon: icon,
+                        label: f,
                         isDark: isDark,
-                      ),
-                      _CategoryFeaturePill(
-                        icon: Icons.event_seat_rounded,
-                        label: selectedCategory.capacityLabel,
-                        isDark: isDark,
-                      ),
-                      _CategoryFeaturePill(
-                        icon: Icons.verified_user_rounded,
-                        label: 'Trusted riders',
-                        isDark: isDark,
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: GVSpacing.lg),
 
@@ -673,13 +770,18 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
     final quote = booking.quote;
     final breakdown = quote?.priceBreakdown;
 
-    final categories = booking.rideCategories.isNotEmpty
-        ? booking.rideCategories
-        : _defaultCategories;
-    final selectedCategory = categories.firstWhere(
-      (c) => c.id == (booking.selectedRideCategoryId ?? categories.first.id),
-      orElse: () => categories.first,
-    );
+    final categories = booking.rideCategories;
+    final selectedCategory = categories.isNotEmpty
+        ? categories.firstWhere(
+            (c) => c.id == (booking.selectedRideCategoryId ?? categories.first.id),
+            orElse: () => categories.first,
+          )
+        : null;
+
+    final isBike = selectedCategory != null &&
+        (selectedCategory.iconKey.contains('bike') ||
+            selectedCategory.iconKey.contains('moped') ||
+            selectedCategory.code.contains('bike'));
 
     final pickup = booking.pickupLocation?.address ??
         'Eko Hotel and Suites, Victoria Island, Lagos';
@@ -818,8 +920,10 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                                 : GVColors.softBackground,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
-                            Icons.directions_car_rounded,
+                          child: Icon(
+                            isBike
+                                ? Icons.two_wheeler_rounded
+                                : Icons.directions_car_rounded,
                             size: 26,
                             color: GVColors.brandGreen,
                           ),
@@ -830,7 +934,7 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                selectedCategory.name,
+                                selectedCategory?.name ?? 'GoRide',
                                 style: GVTypography.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: isDark
@@ -840,7 +944,7 @@ class _RideBookingScreenState extends ConsumerState<RideBookingScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${selectedCategory.etaMinutes} min away',
+                                '${selectedCategory?.etaMinutes ?? 2} min away',
                                 style: GVTypography.caption.copyWith(
                                   color: isDark
                                       ? GVColors.neutral400
@@ -1169,113 +1273,4 @@ class _RoundIconButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Simulated Map with curved polyline connecting pickup to dropoff
-class _RouteMapCanvas extends StatelessWidget {
-  const _RouteMapCanvas({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _RouteMapPainter(isDark: isDark),
-    );
-  }
-}
-
-class _RouteMapPainter extends CustomPainter {
-  _RouteMapPainter({required this.isDark});
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgColor =
-        isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
-    final streetColor =
-        isDark ? const Color(0xFF1E2822) : const Color(0xFFFCFDFD);
-    final waterColor =
-        isDark ? const Color(0xFF0D1D22) : const Color(0xFFD0E3EA);
-
-    // Land base
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = bgColor,
-    );
-
-    // Water channel
-    final waterPath = Path()
-      ..moveTo(0, size.height * 0.25)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.35,
-        size.width,
-        size.height * 0.20,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(waterPath, Paint()..color = waterColor);
-
-    // Grid streets
-    final streetPaint = Paint()
-      ..color = streetColor
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(0, size.height * 0.5),
-      Offset(size.width, size.height * 0.52),
-      streetPaint,
-    );
-
-    // Green dynamic Route Polyline connecting VI to Lekki
-    final routePaint = Paint()
-      ..color = GVColors.brandGreen
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final routePath = Path()
-      ..moveTo(size.width * 0.25, size.height * 0.42)
-      ..cubicTo(
-        size.width * 0.40,
-        size.height * 0.42,
-        size.width * 0.60,
-        size.height * 0.55,
-        size.width * 0.80,
-        size.height * 0.52,
-      );
-
-    canvas.drawPath(routePath, routePaint);
-
-    // Pickup Marker (Green Pin)
-    final pickupCenter = Offset(size.width * 0.25, size.height * 0.42);
-    canvas.drawCircle(
-      pickupCenter,
-      8,
-      Paint()..color = GVColors.brandGreen,
-    );
-    canvas.drawCircle(
-      pickupCenter,
-      4,
-      Paint()..color = Colors.white,
-    );
-
-    // Dropoff Marker (Red Pin)
-    final dropoffCenter = Offset(size.width * 0.80, size.height * 0.52);
-    canvas.drawCircle(
-      dropoffCenter,
-      8,
-      Paint()..color = GVColors.error,
-    );
-    canvas.drawCircle(
-      dropoffCenter,
-      4,
-      Paint()..color = Colors.white,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RouteMapPainter oldDelegate) => false;
 }

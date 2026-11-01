@@ -41,6 +41,23 @@ psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -v ON_ERROR
     ('veh_003', 'LAG-239-VOLT', 'Spiro Commuter EV', 2.8, 98, 'ACTIVE')
   ON CONFLICT (id) DO NOTHING;
 
+  -- Seed Operating Locations
+  INSERT INTO operating_locations (state, city, is_active, status, status_description, available_services, center_lat, center_lng)
+  VALUES 
+    ('Ogun', 'Shaganu', true, 'fully_supported', 'Fully supported', ARRAY['instant_ride','instant_delivery','scheduled_ride','scheduled_pickup'], 6.8403, 3.6487),
+    ('Ogun', 'Shagamu', true, 'fully_supported', 'Fully supported', ARRAY['instant_ride','instant_delivery','scheduled_ride','scheduled_pickup'], 6.8403, 3.6487)
+  ON CONFLICT (state, city) DO NOTHING;
+
+  -- Seed Dynamic Ride Categories (2 Bikes + 3 Cars)
+  INSERT INTO ride_categories (id, code, name, description, passenger_capacity, capacity_label, base_fare_kobo, eta_minutes, features, icon_key, is_available, display_order, status)
+  VALUES
+    ('cat_bike_std', 'bike_standard', 'GoRide Moto', 'Fast and affordable solo rides on electric two-wheelers', 1, '1 Seat (Helmet provided)', 120000, 2, '["Helmet provided", "1 Passenger", "Fastest in traffic", "Zero emission"]'::jsonb, 'electric_bike', true, 1, 'active'),
+    ('cat_bike_plus', 'bike_plus', 'GoRide Moto Plus', 'Top-rated electric bike rider with sanitized helmet & hairnet', 1, '1 Seat (Premium)', 180000, 2, '["Sanitized helmet", "Top-rated rider", "Express lane", "Zero emission"]'::jsonb, 'electric_bike', true, 2, 'active'),
+    ('cat_car_std', 'standard', 'GoRide Standard', 'Affordable, reliable everyday electric car rides', 3, '3 Seats', 280000, 2, '["AC", "3 Seats", "Trusted drivers"]'::jsonb, 'electric_car', true, 3, 'active'),
+    ('cat_car_plus', 'plus', 'GoRide Plus', 'More comfort and legroom in premium electric sedans', 4, '4 Seats', 350000, 3, '["AC", "Extra legroom", "Top rated", "Quiet ride"]'::jsonb, 'electric_car', true, 4, 'active'),
+    ('cat_car_xl', 'xl', 'GoRide XL', 'Bigger 6-seater electric vehicles for groups or extra luggage', 6, '6 Seats', 450000, 4, '["AC", "6 Seats", "Spacious trunk", "Group trips"]'::jsonb, 'electric_car', true, 5, 'active')
+  ON CONFLICT (code) DO NOTHING;
+
   -- Seed Default Admin User
   INSERT INTO users (id, email, full_name, role, status)
   VALUES

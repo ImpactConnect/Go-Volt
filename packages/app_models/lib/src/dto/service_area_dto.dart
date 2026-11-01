@@ -7,7 +7,7 @@ class ServiceAreaDto extends Equatable {
   const ServiceAreaDto({
     required this.id,
     required this.name,
-    this.state = 'Lagos',
+    this.state = 'Ogun',
     this.status = ServiceAreaStatus.fullySupported,
     this.statusDescription,
     this.availableServices = const [
@@ -33,7 +33,7 @@ class ServiceAreaDto extends Equatable {
     return ServiceAreaDto(
       id: json['id'] as String,
       name: json['name'] as String,
-      state: json['state'] as String? ?? 'Lagos',
+      state: json['state'] as String? ?? 'Ogun',
       status: status,
       statusDescription: json['status_description'] as String?,
       availableServices: services,

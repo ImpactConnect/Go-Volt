@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/services/gps_location_service.dart';
+import '../../booking/presentation/map_picker_screen.dart';
+import '../../home/application/home_notifier.dart';
 import '../application/parcel_booking_notifier.dart';
 
 /// Screen 4 — Pickup Location: Full-screen interactive map with pickup pin at Victoria Island
@@ -20,32 +24,18 @@ class ParcelPickupLocationScreen extends ConsumerStatefulWidget {
 class _ParcelPickupLocationScreenState
     extends ConsumerState<ParcelPickupLocationScreen> {
   static const LocationDto _defaultPickup = LocationDto(
-    latitude: 6.4281,
-    longitude: 3.4219,
-    address: 'Adetokunbo Ademola St, Victoria Island, Lagos',
-    label: 'Eko Hotel and Suites',
+    latitude: GpsLocationService.defaultLat,
+    longitude: GpsLocationService.defaultLng,
+    address: 'Central Roundabout, Shaganu, Ogun State',
+    label: 'Shaganu Central',
   );
 
-  static const List<LocationDto> _savedPlaces = [
-    LocationDto(
-      latitude: 6.4281,
-      longitude: 3.4219,
-      address: 'Victoria Island, Lagos',
-      label: 'Home',
-    ),
-    LocationDto(
-      latitude: 6.4474,
-      longitude: 3.4723,
-      address: 'Lekki Phase 1, Lagos',
-      label: 'Work',
-    ),
-    LocationDto(
-      latitude: 6.4357,
-      longitude: 3.4418,
-      address: 'Tap to select a location',
-      label: 'Choose on map',
-    ),
-  ];
+  static const LocationDto _chooseOnMap = LocationDto(
+    latitude: GpsLocationService.defaultLat,
+    longitude: GpsLocationService.defaultLng,
+    address: 'Pick exact GPS or landmark on map',
+    label: 'Choose on map',
+  );
 
   late LocationDto _currentLocation;
 
@@ -54,6 +44,26 @@ class _ParcelPickupLocationScreenState
     super.initState();
     final flowState = ref.read(parcelBookingNotifierProvider);
     _currentLocation = flowState.pickupLocation ?? _defaultPickup;
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.of(context).push<LocationDto>(
+      MaterialPageRoute(
+        builder: (context) => MapPickerScreen(
+          isPickup: true,
+          initialLocation: _currentLocation,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _currentLocation = result;
+      });
+      ref
+          .read(parcelBookingNotifierProvider.notifier)
+          .setPickupLocation(result);
+    }
   }
 
   void _onConfirm() {
@@ -131,11 +141,27 @@ class _ParcelPickupLocationScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Interactive Vector Map Canvas
+          // 1. Live Google Map
           Positioned.fill(
-            child: _ParcelMapCanvas(
-              isDark: isDark,
-              isPickup: true,
+            child: LiveGoogleMapView(
+              initialLatitude: _currentLocation.latitude,
+              initialLongitude: _currentLocation.longitude,
+              initialZoom: 16.0,
+              isPicker: false,
+              showZoomControls: true,
+              showMyLocationButton: false,
+              onPositionChanged: (newCoord) {
+                setState(() {
+                  _currentLocation = LocationDto(
+                    latitude: double.parse(newCoord.latitude.toStringAsFixed(5)),
+                    longitude: double.parse(newCoord.longitude.toStringAsFixed(5)),
+                    address:
+                        '${newCoord.latitude.toStringAsFixed(4)}°N, ${newCoord.longitude.toStringAsFixed(4)}°E',
+                    label: 'Pickup Location',
+                  );
+                });
+                ref.read(parcelBookingNotifierProvider.notifier).setPickupLocation(_currentLocation);
+              },
             ),
           ),
 
@@ -255,13 +281,25 @@ class _ParcelPickupLocationScreenState
                       icon: Icons.my_location_rounded,
                       tooltip: 'Recenter GPS',
                       isDark: isDark,
-                      onTap: () {
+                      onTap: () async {
+                        final gpsPos =
+                            await GpsLocationService.getCurrentPosition();
+                        if (!mounted || !context.mounted) return;
                         setState(() {
-                          _currentLocation = _defaultPickup;
+                          _currentLocation = gpsPos;
                         });
                         ref
                             .read(parcelBookingNotifierProvider.notifier)
-                            .setPickupLocation(_defaultPickup);
+                            .setPickupLocation(gpsPos);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'GPS detected: ${gpsPos.latitude.toStringAsFixed(4)}°N, ${gpsPos.longitude.toStringAsFixed(4)}°E',
+                            ),
+                            backgroundColor: GVColors.brandGreen,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -379,7 +417,17 @@ class _ParcelPickupLocationScreenState
                     ),
                     const SizedBox(height: GVSpacing.xs),
 
-                    for (final place in _savedPlaces) ...[
+                    for (final place in [
+                      ...ref.watch(homeNotifierProvider).savedPlaces.map(
+                            (p) => LocationDto(
+                              latitude: p.latitude,
+                              longitude: p.longitude,
+                              address: p.address,
+                              label: p.label,
+                            ),
+                          ),
+                      _chooseOnMap,
+                    ]) ...[
                       _ParcelSavedPlaceTile(
                         icon: place.label == 'Home'
                             ? Icons.home_rounded
@@ -398,7 +446,7 @@ class _ParcelPickupLocationScreenState
                                 .read(parcelBookingNotifierProvider.notifier)
                                 .setPickupLocation(place);
                           } else {
-                            _showEditAddressDialog();
+                            _openMapPicker();
                           }
                         },
                         isDark: isDark,
@@ -558,103 +606,4 @@ class _BubbleTrianglePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BubbleTrianglePainter oldDelegate) =>
       oldDelegate.color != color;
-}
-
-class _ParcelMapCanvas extends StatelessWidget {
-  const _ParcelMapCanvas({required this.isDark, required this.isPickup});
-  final bool isDark;
-  final bool isPickup;
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor =
-        isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
-    final streetColor =
-        isDark ? const Color(0xFF1E2822) : const Color(0xFFFCFDFD);
-    final waterColor =
-        isDark ? const Color(0xFF0D1D22) : const Color(0xFFD0E3EA);
-
-    return CustomPaint(
-      painter: _ParcelMapPainter(
-        bgColor: bgColor,
-        streetColor: streetColor,
-        waterColor: waterColor,
-        isPickup: isPickup,
-      ),
-    );
-  }
-}
-
-class _ParcelMapPainter extends CustomPainter {
-  _ParcelMapPainter({
-    required this.bgColor,
-    required this.streetColor,
-    required this.waterColor,
-    required this.isPickup,
-  });
-
-  final Color bgColor;
-  final Color streetColor;
-  final Color waterColor;
-  final bool isPickup;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Fill land background
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = bgColor,
-    );
-
-    // Water Bodies (Lagos Lagoon / Atlantic shoreline)
-    final waterPaint = Paint()..color = waterColor;
-    final waterPath = Path()
-      ..moveTo(0, size.height * 0.16)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.24,
-        size.width,
-        size.height * 0.14,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(waterPath, waterPaint);
-
-    // Major Streets
-    final streetPaint = Paint()
-      ..color = streetColor
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final secondaryStreetPaint = Paint()
-      ..color = streetColor.withValues(alpha: 0.8)
-      ..strokeWidth = 6
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(0, size.height * 0.44),
-      Offset(size.width, size.height * 0.40),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.62),
-      Offset(size.width, size.height * 0.68),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.36, size.height * 0.18),
-      Offset(size.width * 0.32, size.height),
-      streetPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.70, size.height * 0.18),
-      Offset(size.width * 0.74, size.height),
-      secondaryStreetPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParcelMapPainter oldDelegate) => false;
 }

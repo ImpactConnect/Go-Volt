@@ -10,6 +10,7 @@ export 'src/foundation/gv_durations.dart';
 export 'src/foundation/gv_theme.dart';
 
 // Components — Buttons
+export 'src/components/buttons/gv_button.dart';
 export 'src/components/buttons/gv_primary_button.dart';
 export 'src/components/buttons/gv_secondary_button.dart';
 export 'src/components/buttons/gv_outlined_button.dart';

@@ -9,7 +9,18 @@ final notificationsNotifierProvider =
 });
 
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
-  NotificationsNotifier() : super(_initialState);
+  NotificationsNotifier({List<CustomerNotificationDto>? initialNotifications})
+      : super(
+          NotificationsState(
+            notifications: initialNotifications ?? defaultNotifications,
+            selectedCategory: NotificationCategory.all,
+          ),
+        );
+
+  /// Clears notifications for a clean new user baseline.
+  void clearForNewUser() {
+    state = state.copyWith(notifications: const []);
+  }
 
   static final List<CustomerNotificationDto> defaultNotifications = [
     CustomerNotificationDto(
@@ -59,12 +70,6 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     ),
   ];
 
-  static NotificationsState get _initialState {
-    return NotificationsState(
-      notifications: defaultNotifications,
-      selectedCategory: NotificationCategory.all,
-    );
-  }
 
   /// Sets the active notification filter category tab.
   void selectCategory(NotificationCategory category) {

@@ -1,6 +1,7 @@
 import 'package:app_models/app_models.dart';
 import 'package:customer_app/src/core/router/app_router.dart';
 import 'package:customer_app/src/features/parcel/application/parcel_booking_notifier.dart';
+import 'package:customer_app/src/features/parcel/data/parcel_repository.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_confirmation_screen.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_finding_rider_screen.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_live_tracking_screen.dart';
@@ -30,6 +31,14 @@ Widget _buildTestApp({
   );
 }
 
+ProviderContainer _createTestContainer() {
+  return ProviderContainer(
+    overrides: [
+      parcelRepositoryProvider.overrideWithValue(FakeParcelRepository()),
+    ],
+  );
+}
+
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -41,7 +50,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       // Pre-commit booking to have active delivery
@@ -70,8 +79,8 @@ void main() {
       expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
 
       // Route summary
-      expect(find.text('Eko Hotel and Suites'), findsOneWidget);
-      expect(find.text('Palms Mall'), findsOneWidget);
+      expect(find.text('Shaganu Central'), findsOneWidget);
+      expect(find.text('Shaganu Main Market'), findsOneWidget);
       expect(find.textContaining('Fragile item • 1.5 kg'), findsOneWidget);
 
       // CTAs
@@ -89,7 +98,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -113,7 +122,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -160,7 +169,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -212,7 +221,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -259,7 +268,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container

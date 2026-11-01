@@ -12,8 +12,8 @@ class LocationDto extends Equatable {
       landmark: json['landmark'] as String?,
       contactName: json['contact_name'] as String?,
       contactPhone: json['contact_phone'] as String?,
-      city: json['city'] as String? ?? 'Lagos',
-      state: json['state'] as String? ?? 'Lagos',
+      city: json['city'] as String? ?? 'Shaganu',
+      state: json['state'] as String? ?? 'Ogun',
     );
   }
   const LocationDto({
@@ -24,8 +24,8 @@ class LocationDto extends Equatable {
     this.landmark,
     this.contactName,
     this.contactPhone,
-    this.city = 'Lagos',
-    this.state = 'Lagos',
+    this.city = 'Shaganu',
+    this.state = 'Ogun',
   });
 
   final double latitude;

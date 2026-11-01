@@ -94,24 +94,43 @@ class LoyaltyConfigModel extends Equatable {
     required this.koboPerPointRedeemed,
     required this.minRedemptionPoints,
     required this.totalCirculatingPoints,
+    this.pointsRequired = 10,
+    this.creditAmountKobo = 100, // ₦1
+    this.maxRedemptionPoints = 10000,
+    this.presetPoints = const [200, 500, 1000, 2500],
   });
 
   final int pointsPerHundredNairaSpent;
   final BigInt koboPerPointRedeemed; // e.g. 100 kobo (₦1) per point
   final int minRedemptionPoints;
   final int totalCirculatingPoints;
+  final int pointsRequired;
+  final int creditAmountKobo;
+  final int maxRedemptionPoints;
+  final List<int> presetPoints;
+
+  String get formattedRate => '$pointsRequired pts = ₦${(creditAmountKobo / 100).toStringAsFixed(0)}';
+  String get formattedPresetChips => presetPoints.join(', ');
 
   LoyaltyConfigModel copyWith({
     int? pointsPerHundredNairaSpent,
     BigInt? koboPerPointRedeemed,
     int? minRedemptionPoints,
     int? totalCirculatingPoints,
+    int? pointsRequired,
+    int? creditAmountKobo,
+    int? maxRedemptionPoints,
+    List<int>? presetPoints,
   }) {
     return LoyaltyConfigModel(
       pointsPerHundredNairaSpent: pointsPerHundredNairaSpent ?? this.pointsPerHundredNairaSpent,
       koboPerPointRedeemed: koboPerPointRedeemed ?? this.koboPerPointRedeemed,
       minRedemptionPoints: minRedemptionPoints ?? this.minRedemptionPoints,
       totalCirculatingPoints: totalCirculatingPoints ?? this.totalCirculatingPoints,
+      pointsRequired: pointsRequired ?? this.pointsRequired,
+      creditAmountKobo: creditAmountKobo ?? this.creditAmountKobo,
+      maxRedemptionPoints: maxRedemptionPoints ?? this.maxRedemptionPoints,
+      presetPoints: presetPoints ?? this.presetPoints,
     );
   }
 
@@ -121,6 +140,10 @@ class LoyaltyConfigModel extends Equatable {
         koboPerPointRedeemed,
         minRedemptionPoints,
         totalCirculatingPoints,
+        pointsRequired,
+        creditAmountKobo,
+        maxRedemptionPoints,
+        presetPoints,
       ];
 }
 

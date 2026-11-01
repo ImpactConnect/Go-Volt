@@ -49,6 +49,7 @@ abstract final class GVColors {
 
   /// Aliases & Dashboard / Web tokens
   static const Color voltGreen = brandGreen;
+  static const Color primary = brandGreen;
   static const Color electricBlue = info;
   static const Color warningOrange = warning;
   static const Color errorRed = error;
@@ -66,6 +67,7 @@ abstract final class GVColors {
   static const Color neutral300 = Color(0xFFD1D5DB);
   static const Color neutral200 = Color(0xFFE5E7EB);
   static const Color neutral100 = Color(0xFFF3F4F6);
+  static const Color neutral50 = Color(0xFFF9FAFB);
 
   // ── Text ───────────────────────────────────────────────────────────────────
 

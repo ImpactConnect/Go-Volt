@@ -171,5 +171,91 @@ void main() {
       expect(find.byKey(const Key('create_draft_pricing_btn')), findsOneWidget);
       expect(find.text('Service Area Gating & Dynamic Surge Override'), findsOneWidget);
     });
+
+    test('PricingNotifier manages 5 seeded ride options (2 bikes, 3 cars) and allows toggle and addition', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final state = container.read(pricingNotifierProvider);
+      final notifier = container.read(pricingNotifierProvider.notifier);
+
+      // Verify 5 seeded options: 2 bikes and 3 cars
+      expect(state.rideCategories.length, equals(5));
+      final bikeCategories = state.rideCategories.where((c) => c.iconKey == 'electric_bike').toList();
+      final carCategories = state.rideCategories.where((c) => c.iconKey != 'electric_bike').toList();
+      expect(bikeCategories.length, equals(2));
+      expect(carCategories.length, equals(3));
+
+      expect(bikeCategories.any((b) => b.name == 'GoRide Moto'), isTrue);
+      expect(bikeCategories.any((b) => b.name == 'GoRide Moto Plus'), isTrue);
+      expect(carCategories.any((c) => c.name == 'GoRide Standard'), isTrue);
+      expect(carCategories.any((c) => c.name == 'GoRide Plus'), isTrue);
+      expect(carCategories.any((c) => c.name == 'GoRide XL'), isTrue);
+
+      // Toggle category availability
+      final moto = bikeCategories.first;
+      expect(moto.isAvailable, isTrue);
+      notifier.toggleRideCategory(moto.id, false);
+
+      final updatedMoto = container.read(pricingNotifierProvider)
+          .rideCategories.firstWhere((c) => c.id == moto.id);
+      expect(updatedMoto.isAvailable, isFalse);
+
+      // Add a 6th ride option
+      const newOption = RideCategoryDto(
+        id: 'cat_car_lux',
+        code: 'luxury',
+        name: 'GoRide Luxury',
+        description: 'VIP luxury electric sedan service',
+        passengerCapacity: 3,
+        baseFareKobo: 600000,
+        etaMinutes: 5,
+        iconKey: 'electric_car',
+        isAvailable: true,
+      );
+      notifier.addRideCategory(newOption);
+      expect(container.read(pricingNotifierProvider).rideCategories.length, equals(6));
+    });
+
+    testWidgets('PricingManagementScreen renders ride options catalogue and handles availability toggle', (tester) async {
+      tester.view.physicalSize = const Size(1440, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: GVTheme.darkTheme,
+            home: const Scaffold(
+              body: PricingManagementScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check section header and 5 seeded ride options
+      expect(find.text('Published Ride Options Catalogue (Customer App)'), findsOneWidget);
+      expect(find.byKey(const Key('add_ride_option_top_btn')), findsOneWidget);
+      expect(find.byKey(const Key('add_ride_option_section_btn')), findsOneWidget);
+
+      expect(find.text('GoRide Moto'), findsOneWidget);
+      expect(find.text('GoRide Moto Plus'), findsOneWidget);
+      expect(find.text('GoRide Standard'), findsOneWidget);
+      expect(find.text('GoRide Plus'), findsOneWidget);
+      expect(find.text('GoRide XL'), findsOneWidget);
+
+      // Toggle first category
+      final toggleKey = find.byKey(const Key('toggle_ride_cat_cat_bike_std'));
+      expect(toggleKey, findsOneWidget);
+      await tester.tap(toggleKey);
+      await tester.pumpAndSettle();
+
+      expect(find.text('GoRide Moto is now disabled for customers.'), findsOneWidget);
+    });
   });
 }

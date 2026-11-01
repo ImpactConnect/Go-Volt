@@ -115,6 +115,44 @@ class RideCategoryDto extends Equatable {
         'co2_offset_grams': co2OffsetGrams,
       };
 
+  RideCategoryDto copyWith({
+    String? id,
+    String? code,
+    String? name,
+    String? description,
+    int? passengerCapacity,
+    int? baseFareKobo,
+    int? etaMinutes,
+    String? capacityLabel,
+    List<String>? features,
+    String? iconKey,
+    String? imageUrl,
+    String? serviceAreaId,
+    String? pricingRuleId,
+    bool? isAvailable,
+    int? displayOrder,
+    int? co2OffsetGrams,
+  }) {
+    return RideCategoryDto(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      passengerCapacity: passengerCapacity ?? this.passengerCapacity,
+      baseFareKobo: baseFareKobo ?? this.baseFareKobo,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+      capacityLabel: capacityLabel ?? this.capacityLabel,
+      features: features ?? this.features,
+      iconKey: iconKey ?? this.iconKey,
+      imageUrl: imageUrl ?? this.imageUrl,
+      serviceAreaId: serviceAreaId ?? this.serviceAreaId,
+      pricingRuleId: pricingRuleId ?? this.pricingRuleId,
+      isAvailable: isAvailable ?? this.isAvailable,
+      displayOrder: displayOrder ?? this.displayOrder,
+      co2OffsetGrams: co2OffsetGrams ?? this.co2OffsetGrams,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,

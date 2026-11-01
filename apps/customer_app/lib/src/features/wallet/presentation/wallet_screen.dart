@@ -1,27 +1,198 @@
+import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/auth/auth_notifier.dart';
 import '../../../core/router/app_router.dart';
 import '../application/wallet_notifier.dart';
 
 /// Screen W01: Go-Volts Customer Wallet Home.
-class WalletScreen extends ConsumerWidget {
+/// Complies with Master Tech Spec v1.5 §8.2, §8.3 & Screen W01-W04.
+class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends ConsumerState<WalletScreen> {
+  String _selectedTxFilter = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(authNotifierProvider).profile;
+      ref.read(walletNotifierProvider.notifier).loadWallet(
+            userId: profile?.id,
+            userName: profile?.fullName,
+          );
+    });
+  }
+
+  void _showTransactionDetails(WalletTransactionDto tx) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(GVSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: tx.isCredit
+                            ? GVColors.statusActiveBg
+                            : GVColors.softBackground,
+                        child: Icon(
+                          tx.isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+                          color: tx.isCredit
+                              ? GVColors.brandGreen
+                              : GVColors.deepGreen,
+                        ),
+                      ),
+                      const SizedBox(width: GVSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Transaction Details',
+                          style: GVTypography.h3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: GVSpacing.md),
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    '${tx.isCredit ? '+' : '-'}₦${tx.amount.toStringAsFixed(2)}',
+                    style: GVTypography.h1.copyWith(
+                      color: tx.isCredit ? GVColors.brandGreen : GVColors.deepGreen,
+                      fontSize: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: GVColors.statusActiveBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      tx.status,
+                      style: GVTypography.caption.copyWith(
+                        color: GVColors.brandGreen,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: GVSpacing.lg),
+            Container(
+              padding: const EdgeInsets.all(GVSpacing.md),
+              decoration: BoxDecoration(
+                color: GVColors.softBackground,
+                borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                border: Border.all(color: GVColors.border),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow('Description', tx.description),
+                  const Divider(height: GVSpacing.md),
+                  _buildDetailRow('Reference', tx.reference),
+                  const Divider(height: GVSpacing.md),
+                  _buildDetailRow(
+                    'Date & Time',
+                    '${tx.createdAt.day}/${tx.createdAt.month}/${tx.createdAt.year} • ${tx.createdAt.hour.toString().padLeft(2, '0')}:${tx.createdAt.minute.toString().padLeft(2, '0')}',
+                  ),
+                  const Divider(height: GVSpacing.md),
+                  _buildDetailRow(
+                    'Transaction Type',
+                    tx.isCredit ? 'Credit / Top-Up' : 'Debit / Fare Payment',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: GVSpacing.lg),
+            GVPrimaryButton(
+              label: 'Close',
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: GVTypography.caption),
+        Flexible(
+          child: Text(
+            value,
+            style: GVTypography.bodySmallMedium
+                .copyWith(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(walletNotifierProvider);
     final wallet = state.wallet;
     final loyalty = state.loyalty;
+
+    final filteredTransactions = state.transactions.where((tx) {
+      if (_selectedTxFilter == 'Top-Up') return tx.isCredit;
+      if (_selectedTxFilter == 'Rides & Delivery') return !tx.isCredit;
+      if (_selectedTxFilter == 'Redemptions') {
+        return tx.description.toLowerCase().contains('eco-point') ||
+            tx.description.toLowerCase().contains('reward');
+      }
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: GVColors.softBackground,
       appBar: const GVTopBar(title: 'My Wallet'),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () =>
-              ref.read(walletNotifierProvider.notifier).loadWallet(),
+          onRefresh: () async {
+            final profile = ref.read(authNotifierProvider).profile;
+            await ref.read(walletNotifierProvider.notifier).loadWallet(
+                  userId: profile?.id,
+                  userName: profile?.fullName,
+                );
+          },
           color: GVColors.brandGreen,
           child: ListView(
             padding: const EdgeInsets.all(GVSpacing.md),
@@ -153,82 +324,95 @@ class WalletScreen extends ConsumerWidget {
               ),
               const SizedBox(height: GVSpacing.md),
 
-              // Quick feature tabs (Rewards & Coupons)
+              // 4 Quick Feature Tiles Grid
               Row(
                 children: [
                   Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                      onTap: () => context.push(AppRoutes.walletRewards),
-                      child: Container(
-                        padding: const EdgeInsets.all(GVSpacing.md),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              BorderRadius.circular(GVBorderRadius.md),
-                          boxShadow: GVShadows.card,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.card_giftcard,
-                                color: GVColors.brandGreen, size: 28),
-                            const SizedBox(height: GVSpacing.xs),
-                            Text('Eco-Rewards', style: GVTypography.h3),
-                            Text('Convert points to credit',
-                                style: GVTypography.caption),
-                          ],
-                        ),
-                      ),
+                    child: _buildActionTile(
+                      icon: Icons.add_card,
+                      iconColor: GVColors.brandGreen,
+                      title: 'Top Up',
+                      subtitle: 'Cards & Transfer',
+                      onTap: () => context.push(AppRoutes.walletTopUp),
                     ),
                   ),
-                  const SizedBox(width: GVSpacing.md),
+                  const SizedBox(width: GVSpacing.sm),
                   Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                      onTap: () => context.push(AppRoutes.walletRewards),
-                      child: Container(
-                        padding: const EdgeInsets.all(GVSpacing.md),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              BorderRadius.circular(GVBorderRadius.md),
-                          boxShadow: GVShadows.card,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.local_offer_outlined,
-                                color: GVColors.deepGreen, size: 28),
-                            const SizedBox(height: GVSpacing.xs),
-                            Text('Coupons & Promos', style: GVTypography.h3),
-                            Text('${state.coupons.length} Active vouchers',
-                                style: GVTypography.caption),
-                          ],
-                        ),
-                      ),
+                    child: _buildActionTile(
+                      icon: Icons.credit_card,
+                      iconColor: GVColors.deepGreen,
+                      title: 'Payment Cards',
+                      subtitle: 'Saved Methods',
+                      onTap: () => context.push(AppRoutes.walletPaymentMethods),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: GVSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.card_giftcard,
+                      iconColor: GVColors.brandGreen,
+                      title: 'Eco-Rewards',
+                      subtitle: 'Convert to credit',
+                      onTap: () => context.push(AppRoutes.walletRewards),
+                    ),
+                  ),
+                  const SizedBox(width: GVSpacing.sm),
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.local_offer_outlined,
+                      iconColor: GVColors.deepGreen,
+                      title: 'Coupons & Promos',
+                      subtitle: '${state.coupons.length} Active vouchers',
+                      onTap: () => context.push(AppRoutes.walletCoupons),
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: GVSpacing.lg),
 
-              // Transaction History Section
+              // Transaction History Section Header & Filter Chips
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: Text('Recent Transactions', style: GVTypography.h3),
+                    child: Text(
+                      'Recent Transactions',
+                      style: GVTypography.h3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('View All'),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${filteredTransactions.length} records',
+                    style: GVTypography.caption,
                   ),
                 ],
               ),
               const SizedBox(height: GVSpacing.xs),
 
-              if (state.transactions.isEmpty)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All'),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('Top-Up'),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('Rides & Delivery'),
+                    const SizedBox(width: 6),
+                    _buildFilterChip('Redemptions'),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: GVSpacing.sm),
+
+              if (filteredTransactions.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(GVSpacing.xl),
                   alignment: Alignment.center,
@@ -237,7 +421,7 @@ class WalletScreen extends ConsumerWidget {
                       const Icon(Icons.receipt_long_outlined,
                           size: 48, color: GVColors.textSecondary),
                       const SizedBox(height: GVSpacing.sm),
-                      Text('No transactions yet',
+                      Text('No transactions found',
                           style: GVTypography.bodyMedium),
                       Text('Your top-ups and ride payments will appear here.',
                           style: GVTypography.caption),
@@ -245,80 +429,83 @@ class WalletScreen extends ConsumerWidget {
                   ),
                 )
               else
-                ...state.transactions.map(
-                  (tx) => Container(
-                    margin: const EdgeInsets.only(bottom: GVSpacing.sm),
-                    padding: const EdgeInsets.all(GVSpacing.md),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(GVBorderRadius.md),
-                      boxShadow: GVShadows.card,
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: tx.isCredit
-                              ? GVColors.statusActiveBg
-                              : GVColors.softBackground,
-                          child: Icon(
-                            tx.isCredit
-                                ? Icons.arrow_downward
-                                : Icons.arrow_upward,
-                            color: tx.isCredit
-                                ? GVColors.brandGreen
-                                : GVColors.deepGreen,
-                            size: 18,
+                ...filteredTransactions.map(
+                  (tx) => InkWell(
+                    borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                    onTap: () => _showTransactionDetails(tx),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: GVSpacing.sm),
+                      padding: const EdgeInsets.all(GVSpacing.md),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                        boxShadow: GVShadows.card,
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: tx.isCredit
+                                ? GVColors.statusActiveBg
+                                : GVColors.softBackground,
+                            child: Icon(
+                              tx.isCredit
+                                  ? Icons.arrow_downward
+                                  : Icons.arrow_upward,
+                              color: tx.isCredit
+                                  ? GVColors.brandGreen
+                                  : GVColors.deepGreen,
+                              size: 18,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: GVSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(width: GVSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(tx.description,
+                                    style: GVTypography.bodySmallMedium,
+                                    overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${tx.createdAt.day}/${tx.createdAt.month}/${tx.createdAt.year} • Ref: ${tx.reference}',
+                                  style: GVTypography.caption,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: GVSpacing.sm),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(tx.description,
-                                  style: GVTypography.bodySmallMedium,
-                                  overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 2),
                               Text(
-                                '${tx.createdAt.day}/${tx.createdAt.month}/${tx.createdAt.year} • Ref: ${tx.reference}',
-                                style: GVTypography.caption,
-                                overflow: TextOverflow.ellipsis,
+                                '${tx.isCredit ? '+' : '-'}₦${tx.amount.toStringAsFixed(0)}',
+                                style: GVTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: tx.isCredit
+                                      ? GVColors.brandGreen
+                                      : GVColors.nearBlack,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: GVColors.statusActiveBg,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  tx.status,
+                                  style: GVTypography.caption.copyWith(
+                                    color: GVColors.brandGreen,
+                                    fontSize: 10,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: GVSpacing.sm),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${tx.isCredit ? '+' : '-'}₦${tx.amount.toStringAsFixed(0)}',
-                              style: GVTypography.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: tx.isCredit
-                                    ? GVColors.brandGreen
-                                    : GVColors.nearBlack,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: GVColors.statusActiveBg,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                tx.status,
-                                style: GVTypography.caption.copyWith(
-                                  color: GVColors.brandGreen,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -326,6 +513,56 @@ class WalletScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(GVBorderRadius.md),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(GVSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(GVBorderRadius.md),
+          boxShadow: GVShadows.card,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: iconColor, size: 26),
+            const SizedBox(height: GVSpacing.xs),
+            Text(title,
+                style: GVTypography.bodyMedium
+                    .copyWith(fontWeight: FontWeight.bold)),
+            Text(subtitle, style: GVTypography.caption),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    final isSelected = _selectedTxFilter == label;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? Colors.white : GVColors.textPrimary,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: GVColors.deepGreen,
+      backgroundColor: Colors.white,
+      onSelected: (_) => setState(() => _selectedTxFilter = label),
     );
   }
 }

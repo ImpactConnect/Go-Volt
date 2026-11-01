@@ -1,6 +1,7 @@
 import 'package:app_models/app_models.dart';
 import 'package:customer_app/src/core/router/app_router.dart';
 import 'package:customer_app/src/features/parcel/application/parcel_booking_notifier.dart';
+import 'package:customer_app/src/features/parcel/data/parcel_repository.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_delivered_screen.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_live_tracking_screen.dart';
 import 'package:customer_app/src/features/parcel/presentation/parcel_rating_screen.dart';
@@ -28,6 +29,14 @@ Widget _buildTestApp({
   );
 }
 
+ProviderContainer _createTestContainer() {
+  return ProviderContainer(
+    overrides: [
+      parcelRepositoryProvider.overrideWithValue(FakeParcelRepository()),
+    ],
+  );
+}
+
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -39,7 +48,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -82,7 +91,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -104,7 +113,7 @@ void main() {
       // Recipient details
       expect(find.text('Delivered to'), findsOneWidget);
       expect(find.text('John Doe'), findsWidgets);
-      expect(find.textContaining('Palms Mall, Lekki, Lagos'), findsOneWidget);
+      expect(find.textContaining('Main Market, Shaganu, Ogun State'), findsOneWidget);
 
       // Timestamp & Digital signature
       expect(find.text('Delivered at'), findsOneWidget);
@@ -126,7 +135,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -147,8 +156,8 @@ void main() {
       expect(find.text('DVL12345678'), findsOneWidget);
 
       // Locations & Package summary
-      expect(find.textContaining('Eko Hotel and Suites'), findsOneWidget);
-      expect(find.textContaining('Palms Mall'), findsOneWidget);
+      expect(find.textContaining('Central Roundabout, Shaganu'), findsOneWidget);
+      expect(find.textContaining('Main Market, Shaganu'), findsOneWidget);
       expect(find.textContaining('Fragile item • 1.5 kg'), findsOneWidget);
 
       // Fare Breakdown
@@ -181,7 +190,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container
@@ -258,7 +267,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final container = ProviderContainer();
+      final container = _createTestContainer();
       addTearDown(container.dispose);
 
       await container

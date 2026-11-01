@@ -55,7 +55,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.unauthenticated);
   }
 
-  /// Registers user and dispatches a 6-digit verification code to their Email.
+  /// Registers user and logs in directly (email OTP bypassed for now).
   Future<bool> register({
     String? firstName,
     String? lastName,
@@ -63,6 +63,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     String? phoneNumber,
+    bool requireOtp = false,
   }) async {
     state = state.copyWith(
       status: AuthStatus.authenticating,
@@ -87,30 +88,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final effectiveFullName = '$effectiveFirstName $effectiveLastName'.trim();
 
     try {
+      String userId = 'usr_${DateTime.now().millisecondsSinceEpoch}';
+      String token = 'session_token_${DateTime.now().millisecondsSinceEpoch}';
+
       if (_authService.isInitialized) {
-        await _authService.signUpWithEmail(
+        final res = await _authService.signUpWithEmail(
           email: cleanEmail,
           password: password,
           firstName: effectiveFirstName,
           lastName: effectiveLastName,
         );
+        if (res.user != null) {
+          userId = res.user!.id;
+        }
+        if (res.session != null) {
+          token = res.session!.accessToken;
+        }
       }
 
       state = state.copyWith(
-        status: AuthStatus.otpSent,
+        status: requireOtp ? AuthStatus.otpSent : AuthStatus.authenticated,
         pendingFirstName: effectiveFirstName,
         pendingLastName: effectiveLastName,
         pendingEmail: cleanEmail,
         pendingPhoneNumber: formattedPhone,
         pendingPassword: password,
         profile: ProfileDto(
-          id: 'temp_reg',
+          id: userId,
           fullName: effectiveFullName,
           phoneNumber: formattedPhone ?? '',
           email: cleanEmail,
           roles: const [UserRole.customer],
           createdAt: DateTime.now(),
         ),
+        token: token,
       );
       return true;
     } on AuthException catch (e) {
@@ -120,7 +131,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage:
-            'Failed to dispatch email verification code: ${e.toString().replaceAll("Exception: ", "")}',
+            'Registration failed: ${e.toString().replaceAll("Exception: ", "")}',
       );
       return false;
     }
@@ -406,19 +417,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Completes profile by adding or updating phone number and/or name.
+  /// Completes profile with all required registration fields.
   Future<bool> completeProfile({
     String? fullName,
     required String phoneNumber,
+    String? gender,
+    String? state,
+    String? city,
+    String? currentAddress,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? avatarUrl,
   }) async {
-    state = state.copyWith(
+    this.state = this.state.copyWith(
       status: AuthStatus.authenticating,
       errorMessage: null,
     );
 
     try {
       final formattedPhone = SupabaseAuthService.formatPhoneNumber(phoneNumber);
-      final effectiveName = fullName ?? state.profile?.fullName ?? 'Customer';
+      final effectiveName = fullName ?? this.state.profile?.fullName ?? 'Customer';
 
       if (_authService.isInitialized) {
         await _authService.updateUserMetadata(
@@ -427,27 +445,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
 
-      final currentProfile = state.profile;
+      final currentProfile = this.state.profile;
       final updatedProfile = ProfileDto(
         id: currentProfile?.id ?? 'usr_current',
         fullName: effectiveName,
         phoneNumber: formattedPhone,
         email: currentProfile?.email,
-        avatarUrl: currentProfile?.avatarUrl,
+        avatarUrl: avatarUrl ?? currentProfile?.avatarUrl,
         roles: currentProfile?.roles ?? const [UserRole.customer],
         createdAt: currentProfile?.createdAt,
         updatedAt: DateTime.now(),
-        carbonAvoidedKg: currentProfile?.carbonAvoidedKg ?? 28.4,
-        ecoPointsBalance: currentProfile?.ecoPointsBalance ?? 320,
+        carbonAvoidedKg: currentProfile?.carbonAvoidedKg ?? 0.0,
+        ecoPointsBalance: currentProfile?.ecoPointsBalance ?? 0,
+        gender: gender,
+        state: state,
+        city: city,
+        currentAddress: currentAddress,
+        emergencyContactName: emergencyContactName,
+        emergencyContactPhone: emergencyContactPhone,
       );
 
-      state = state.copyWith(
+      this.state = this.state.copyWith(
         status: AuthStatus.authenticated,
         profile: updatedProfile,
       );
       return true;
     } catch (e) {
-      state = state.copyWith(
+      this.state = this.state.copyWith(
         status: AuthStatus.error,
         errorMessage:
             'Failed to update profile: ${e.toString().replaceAll("Exception: ", "")}',
@@ -549,6 +573,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
       }
     } on AuthException catch (e) {
+      if (e.message.toLowerCase().contains('email not confirmed')) {
+        // Email OTP is bypassed for now as requested
+        final cleanEmail = identifier.trim().toLowerCase();
+        final profile = ProfileDto(
+          id: 'usr_${cleanEmail.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}',
+          fullName: cleanEmail.split('@').first,
+          phoneNumber: '',
+          email: cleanEmail,
+          roles: const [UserRole.customer],
+          createdAt: DateTime.now(),
+        );
+
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          profile: profile,
+          token: 'session_token_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        return true;
+      }
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.message);
       return false;
     } catch (e) {

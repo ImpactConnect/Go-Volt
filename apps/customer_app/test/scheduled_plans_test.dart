@@ -19,6 +19,7 @@ void main() {
     id: 'plan-test-01',
     planReference: 'GV-SCH-2026-TEST',
     planType: 'SCHOOL_RUN_PLAN',
+    purpose: TripPurpose.schoolRun,
     title: 'Corona Schools Lekki - Daily Run',
     pickupLocation: const LocationDto(
       latitude: 6.4474,
@@ -40,7 +41,7 @@ void main() {
     totalTrips: 20,
     usedTrips: 4,
     remainingTrips: 16,
-    status: 'ACTIVE',
+    status: PlanStatus.active,
     startDate: DateTime.now().subtract(const Duration(days: 4)),
     expiryDate: DateTime.now().add(const Duration(days: 26)),
     handoverOtp: '849201',

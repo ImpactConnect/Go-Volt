@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
+import '../../../core/services/google_places_service.dart';
+import 'current_location_map_screen.dart';
 import '../application/home_notifier.dart';
 import '../application/home_state.dart';
 
@@ -34,23 +37,57 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   ServiceAreaDto? _selectedArea;
-  bool _isLocating = false;
+  Timer? _debounceTimer;
+  String? _placesSessionToken;
+  List<PlacePrediction> _livePredictions = [];
+  bool _isLoadingPredictions = false;
 
   @override
   void initState() {
     super.initState();
     _selectedArea = ref.read(homeNotifierProvider).currentLocation;
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim().toLowerCase();
-      });
-    });
+    _placesSessionToken = GooglePlacesService.generateSessionToken();
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query.trim().toLowerCase();
+    });
+
+    _debounceTimer?.cancel();
+    if (query.trim().isEmpty) {
+      setState(() {
+        _livePredictions = [];
+        _isLoadingPredictions = false;
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () async {
+      setState(() => _isLoadingPredictions = true);
+      try {
+        final predictions = await ref
+            .read(googlePlacesServiceProvider)
+            .searchPredictions(query, sessionToken: _placesSessionToken);
+        if (mounted) {
+          setState(() {
+            _livePredictions = predictions;
+            _isLoadingPredictions = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _isLoadingPredictions = false);
+        }
+      }
+    });
   }
 
   @override
@@ -158,6 +195,23 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   _buildGpsOptionTile(isDark, homeState),
                   const SizedBox(height: 20),
 
+                  // Live Google Places Address Predictions
+                  if (_livePredictions.isNotEmpty) ...[
+                    Text(
+                      'Address suggestions',
+                      style: GVTypography.bodySmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : GVColors.textPrimary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._livePredictions.map(
+                      (prediction) => _buildPredictionTile(isDark, prediction),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Saved Locations Section
                   if (filteredPlaces.isNotEmpty) ...[
                     Text(
@@ -263,7 +317,14 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
               title: 'Search address',
               isSelected: _selectedTab == 1,
               isDark: isDark,
-              onTap: () => setState(() => _selectedTab = 1),
+              onTap: () {
+                setState(() => _selectedTab = 1);
+                if (_searchController.text.isNotEmpty) {
+                  _onSearchChanged(_searchController.text);
+                } else {
+                  _onSearchChanged('Shaganu');
+                }
+              },
             ),
           ),
         ],
@@ -312,6 +373,7 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
 
     return TextField(
       controller: _searchController,
+      onChanged: _onSearchChanged,
       style: TextStyle(color: isDark ? Colors.white : GVColors.textPrimary),
       decoration: InputDecoration(
         hintText: 'Search for an address',
@@ -324,15 +386,31 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
           color: isDark ? GVColors.neutral400 : GVColors.textSecondary,
           size: 20,
         ),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear_rounded, size: 18),
-                onPressed: () => _searchController.clear(),
+        suffixIcon: _isLoadingPredictions
+            ? const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: GVColors.brandGreen,
+                  ),
+                ),
               )
-            : null,
+            : (_searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                  )
+                : null),
         filled: true,
         fillColor: fieldBg,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: borderColor),
@@ -340,6 +418,118 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: GVColors.brandGreen, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  /// Live Google Places Prediction Item
+  Widget _buildPredictionTile(bool isDark, PlacePrediction prediction) {
+    final tileBg = isDark ? const Color(0xFF1C2420) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
+    final isSelected = _selectedArea?.name == prediction.mainText;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: tileBg,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () async {
+            final placesService = ref.read(googlePlacesServiceProvider);
+            LocationDto? loc;
+            try {
+              loc = await placesService.getPlaceDetails(
+                prediction.placeId,
+                sessionToken: _placesSessionToken,
+              );
+            } catch (_) {}
+
+            final area = ServiceAreaDto(
+              id: 'place_${prediction.placeId}',
+              name: loc?.label ?? prediction.mainText,
+              state: loc?.state ?? 'Ogun',
+              status: ServiceAreaStatus.fullySupported,
+              statusDescription: 'Operating Service Area',
+              availableServices: const [
+                ServiceCode.instantRide,
+                ServiceCode.instantDelivery,
+                ServiceCode.scheduledRide,
+                ServiceCode.scheduledPickup,
+              ],
+            );
+            setState(() {
+              _selectedArea = area;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? GVColors.brandGreen : borderColor,
+                width: isSelected ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF131A16)
+                        : GVColors.softBackground,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: GVColors.brandGreen,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        prediction.mainText,
+                        style: GVTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : GVColors.textPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        prediction.secondaryText.isNotEmpty
+                            ? prediction.secondaryText
+                            : prediction.description,
+                        style: GVTypography.caption.copyWith(
+                          color: isDark
+                              ? GVColors.neutral400
+                              : GVColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.north_west_rounded,
+                  color:
+                      isSelected ? GVColors.brandGreen : GVColors.neutral400,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -354,7 +544,7 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
       color: tileBg,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: _isLocating ? null : () => _detectGpsLocation(homeState),
+        onTap: () => _openCurrentLocationMap(homeState),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -371,19 +561,11 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   color: GVColors.brandGreen.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: _isLocating
-                    ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: GVColors.brandGreen,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.my_location_rounded,
-                        color: GVColors.brandGreen,
-                        size: 20,
-                      ),
+                child: const Icon(
+                  Icons.my_location_rounded,
+                  color: GVColors.brandGreen,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -656,66 +838,30 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
     );
   }
 
-  /// GPS resolution action
-  Future<void> _detectGpsLocation(HomeState homeState) async {
-    setState(() => _isLocating = true);
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enable GPS location services')),
-          );
-        }
-        return;
-      }
+  /// Opens the Live Google Map screen for real-time GPS coordinate selection.
+  Future<void> _openCurrentLocationMap(HomeState homeState) async {
+    final loc = await CurrentLocationMapScreen.open(context);
+    if (loc != null && mounted) {
+      final matchingArea = homeState.serviceAreas.firstWhere(
+        (a) =>
+            a.name.toLowerCase().contains('shaganu') ||
+            a.state.toLowerCase().contains('ogun'),
+        orElse: () => homeState.currentLocation,
+      );
+      setState(() => _selectedArea = matchingArea);
+      ref.read(homeNotifierProvider.notifier).selectLocation(matchingArea);
 
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(matchingArea);
       }
-
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 5),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Current location confirmed: ${loc.label ?? loc.address} (${loc.latitude.toStringAsFixed(4)}°N, ${loc.longitude.toStringAsFixed(4)}°E)',
           ),
-        ).catchError((_) => Position(
-              latitude: 6.4281,
-              longitude: 3.4219,
-              timestamp: DateTime.now(),
-              accuracy: 5.0,
-              altitude: 0.0,
-              altitudeAccuracy: 0.0,
-              heading: 0.0,
-              headingAccuracy: 0.0,
-              speed: 0.0,
-              speedAccuracy: 0.0,
-            ));
-
-        // Default to Victoria Island for Lagos island coordinates
-        final detected = homeState.serviceAreas.first;
-        if (mounted) {
-          setState(() => _selectedArea = detected);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Location detected: ${detected.displayName} (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})',
-              ),
-            ),
-          );
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _selectedArea = homeState.serviceAreas.first);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLocating = false);
-      }
+          backgroundColor: GVColors.brandGreen,
+        ),
+      );
     }
   }
 
@@ -758,8 +904,8 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                         label: label,
                         address: address,
                         type: SavedPlaceType.custom,
-                        latitude: 6.43,
-                        longitude: 3.43,
+                        latitude: 6.8403,
+                        longitude: 3.6487,
                       ),
                     );
                 Navigator.of(dialogCtx).pop();

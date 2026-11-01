@@ -41,14 +41,14 @@ void main() {
       );
 
       expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('Scheduled'), findsOneWidget);
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Rewards'), findsOneWidget);
-      expect(find.text('Wallet'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
 
-      await tester.tap(find.text('Rewards'));
+      await tester.tap(find.text('Scheduled'));
       await tester.pump();
-      expect(selectedTab, GVNavTab.rewards);
+      expect(selectedTab, GVNavTab.scheduled);
     });
   });
 

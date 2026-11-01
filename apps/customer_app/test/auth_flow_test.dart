@@ -149,7 +149,7 @@ void main() {
   });
 
   group('AuthNotifier Email OTP & Google Auth Unit Tests', () {
-    test('register dispatches email OTP and sets pendingEmail', () async {
+    test('register directly authenticates when requireOtp is false', () async {
       final notifier = AuthNotifier(authService: _FakeSupabaseAuthService());
 
       final success = await notifier.register(
@@ -158,6 +158,24 @@ void main() {
         phoneNumber: '08012345678',
         email: 'folake@example.com',
         password: 'Password123!',
+      );
+
+      expect(success, isTrue);
+      expect(notifier.state.status, equals(AuthStatus.authenticated));
+      expect(notifier.state.pendingEmail, equals('folake@example.com'));
+      expect(notifier.state.pendingPhoneNumber, equals('+2348012345678'));
+    });
+
+    test('register dispatches email OTP when requireOtp is true', () async {
+      final notifier = AuthNotifier(authService: _FakeSupabaseAuthService());
+
+      final success = await notifier.register(
+        firstName: 'Folake',
+        lastName: 'Adeleke',
+        phoneNumber: '08012345678',
+        email: 'folake@example.com',
+        password: 'Password123!',
+        requireOtp: true,
       );
 
       expect(success, isTrue);
@@ -175,6 +193,7 @@ void main() {
         phoneNumber: '08012345678',
         email: 'folake@example.com',
         password: 'Password123!',
+        requireOtp: true,
       );
 
       final success = await notifier.verifyOtp('123456');
@@ -372,9 +391,11 @@ void main() {
         ),
       );
 
-      expect(find.text('Complete Profile'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
-      expect(find.text('Alex Odeh'), findsNWidgets(2));
+      expect(find.text('Complete Your Profile'), findsOneWidget);
+      expect(find.text('Google account verified'), findsOneWidget);
+      expect(find.text('alex.odeh@gmail.com'), findsOneWidget);
+      expect(find.text('Alex'), findsOneWidget);
+      expect(find.text('Odeh'), findsOneWidget);
     });
   });
 }

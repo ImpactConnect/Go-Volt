@@ -208,6 +208,7 @@ class RiderDto extends Equatable {
     this.documents = const [],
     this.guarantor,
     this.trainingCompleted = true,
+    this.avatarUrl,
   });
 
   factory RiderDto.fromJson(Map<String, dynamic> json) {
@@ -217,6 +218,7 @@ class RiderDto extends Equatable {
       fullName: json['full_name'] as String,
       phoneNumber: json['phone_number'] as String,
       email: json['email'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       vehiclePlate: json['vehicle_plate'] as String,
       vehicleModel: json['vehicle_model'] as String,
       vehicleType: VehicleType.fromString(
@@ -268,6 +270,10 @@ class RiderDto extends Equatable {
   final List<RiderDocumentDto> documents;
   final RiderGuarantorDto? guarantor;
   final bool trainingCompleted;
+  final String? avatarUrl;
+
+  String get name => fullName;
+  int get completedTrips => totalTripsCompleted;
 
   bool get canGoOnline {
     if (status == RiderStatus.suspended || status == RiderStatus.pendingApproval) {
@@ -296,6 +302,7 @@ class RiderDto extends Equatable {
     'documents': documents.map((d) => d.toJson()).toList(),
     if (guarantor != null) 'guarantor': guarantor!.toJson(),
     'training_completed': trainingCompleted,
+    if (avatarUrl != null) 'avatar_url': avatarUrl,
   };
 
   @override
@@ -305,6 +312,7 @@ class RiderDto extends Equatable {
     fullName,
     phoneNumber,
     email,
+    avatarUrl,
     vehiclePlate,
     vehicleModel,
     vehicleType,

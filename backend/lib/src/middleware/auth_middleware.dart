@@ -49,7 +49,7 @@ Middleware authMiddleware({
             kAuthUserEmailKey: email ?? '',
             kAuthUserRolesKey: roles,
           };
-          return innerHandler(request.change(context: updatedContext));
+          return await innerHandler(request.change(context: updatedContext));
         } else {
           // Dev / Mock JWT support
           final updatedContext = {
@@ -58,7 +58,7 @@ Middleware authMiddleware({
             kAuthUserEmailKey: 'user@govolts.ng',
             kAuthUserRolesKey: ['customer'],
           };
-          return innerHandler(request.change(context: updatedContext));
+          return await innerHandler(request.change(context: updatedContext));
         }
       } catch (e, stack) {
         _log.warning('JWT verification failed for path: ${request.url.path}', e, stack);

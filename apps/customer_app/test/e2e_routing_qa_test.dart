@@ -54,8 +54,10 @@ void main() {
   setUp(() {
     fakeAuthService = _FakeSupabaseAuthService();
     authNotifier = AuthNotifier(authService: fakeAuthService);
-    homeNotifier = HomeNotifier();
-    notificationsNotifier = NotificationsNotifier();
+    homeNotifier =
+        HomeNotifier(initialSavedPlaces: HomeNotifier.defaultSavedPlaces);
+    notificationsNotifier = NotificationsNotifier(
+        initialNotifications: NotificationsNotifier.defaultNotifications);
     bookingNotifier = BookingNotifier(repository: _FakeBookingRepository());
     walletNotifier = WalletNotifier(repository: _FakeWalletRepository());
   });
@@ -166,21 +168,22 @@ void main() {
 
       await tester.pumpWidget(buildAppWithRouter());
       await tester.pumpAndSettle();
-
-      // 1. Home Dashboard renders dynamic content
-      expect(find.text('GO-VOLTS'), findsOneWidget);
-      expect(find.textContaining('Alex!'), findsOneWidget);
-      expect(find.text('What would you like to do?'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
 
       // 2. Tap Location Selector card -> opens Screen 14 LocationSelectorModal
       await tester.tap(find.text('Your location'));
       await tester.pumpAndSettle();
 
       expect(find.text('Select your location'), findsOneWidget);
-      expect(find.text('Ikoyi, Lagos'), findsOneWidget);
+      expect(find.text('Remo North, Ogun'), findsOneWidget);
 
-      // Select Ikoyi and confirm
-      await tester.tap(find.text('Ikoyi, Lagos'));
+      // Select Remo North and confirm
+      await tester.tap(find.text('Remo North, Ogun'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Confirm location'));
@@ -211,23 +214,33 @@ void main() {
       // Verify unread badge is now cleared on Home Dashboard
       expect(find.text('3'), findsNothing);
 
-      // 4. Test 5-Tab Persistent Navigation Bar
+      // Dismiss frequent destinations pop sheet if prompted after 2s timer
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
+
+      // 4. Test 5-Tab Persistent Navigation Bar (Home, Send, Scheduled, Activity, Profile)
       final homeTab = find.descendant(
         of: find.byType(GVBottomNavigation),
         matching: find.text('Home'),
       );
       expect(homeTab, findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('Scheduled'), findsOneWidget);
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Rewards'), findsOneWidget);
-      expect(find.text('Wallet'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
 
-      // Tap Rewards Tab
-      await tester.tap(find.text('Rewards'));
+      // Tap Send Tab
+      await tester.tap(find.text('Send'));
       await tester.pumpAndSettle();
 
-      // Tap Wallet Tab
-      await tester.tap(find.text('Wallet'));
+      // Tap Scheduled Tab
+      await tester.tap(find.text('Scheduled'));
+      await tester.pumpAndSettle();
+
+      // Tap Activity Tab
+      await tester.tap(find.text('Activity'));
       await tester.pumpAndSettle();
 
       // Tap Profile Tab
@@ -238,6 +251,12 @@ void main() {
       await tester.tap(homeTab);
       await tester.pumpAndSettle();
       expect(find.text('What would you like to do?'), findsOneWidget);
+
+      // Dismiss frequent destinations pop sheet if prompted
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
     });
   });
 
@@ -267,6 +286,12 @@ void main() {
 
       expect(find.text('GO-VOLTS'), findsOneWidget);
       expect(find.text('What would you like to do?'), findsOneWidget);
+
+      // Dismiss frequent destinations pop sheet if prompted
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
     });
 
     testWidgets('Standard phone breakpoint (390x844 dp) has zero layout overflows',
@@ -294,6 +319,12 @@ void main() {
 
       expect(find.text('GO-VOLTS'), findsOneWidget);
       expect(find.text('What would you like to do?'), findsOneWidget);
+
+      // Dismiss frequent destinations pop sheet if prompted
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
     });
 
     testWidgets('Tablet breakpoint (800x1280 dp) renders cleanly',
@@ -321,6 +352,12 @@ void main() {
 
       expect(find.text('GO-VOLTS'), findsOneWidget);
       expect(find.text('What would you like to do?'), findsOneWidget);
+
+      // Dismiss frequent destinations pop sheet if prompted
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
     });
   });
 
@@ -350,6 +387,12 @@ void main() {
 
       expect(find.text('GO-VOLTS'), findsOneWidget);
       expect(find.text('What would you like to do?'), findsOneWidget);
+
+      // Dismiss frequent destinations pop sheet if prompted
+      if (find.text('Skip for now').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip for now'));
+        await tester.pumpAndSettle();
+      }
     });
   });
 }

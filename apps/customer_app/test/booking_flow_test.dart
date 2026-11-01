@@ -4,6 +4,7 @@ import 'package:customer_app/src/features/booking/data/booking_repository.dart';
 import 'package:customer_app/src/features/booking/presentation/location_picker_screen.dart';
 import 'package:customer_app/src/features/booking/presentation/ride_booking_screen.dart';
 import 'package:customer_app/src/features/booking/presentation/scheduled_booking_screen.dart';
+import 'package:customer_app/src/features/home/application/home_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -152,11 +153,32 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final fakeRepo = _FakeBookingRepository();
+      final fakeHomeNotifier = HomeNotifier(
+        initialSavedPlaces: const [
+          SavedPlaceDto(
+            id: 'p1',
+            label: 'Home',
+            address: '10 Main St, Shaganu, Ogun',
+            latitude: 6.8403,
+            longitude: 3.6487,
+            type: SavedPlaceType.home,
+          ),
+          SavedPlaceDto(
+            id: 'p2',
+            label: 'Work',
+            address: 'Town Hall, Shaganu, Ogun',
+            latitude: 6.8420,
+            longitude: 3.6500,
+            type: SavedPlaceType.work,
+          ),
+        ],
+      );
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             bookingRepositoryProvider.overrideWithValue(fakeRepo),
+            homeNotifierProvider.overrideWith((ref) => fakeHomeNotifier),
           ],
           child: const MaterialApp(
             home: LocationPickerScreen(),

@@ -169,12 +169,14 @@ void main() {
   final testApiClient = ApiClient(config: testConfig);
   final testScheduledRepo = ScheduledRepository(apiClient: testApiClient);
   final testTrackingRepo = TrackingRepository(apiClient: testApiClient);
-  final testWalletRepo = WalletRepository(apiClient: testApiClient);
+  final testWalletRepo =
+      WalletRepository(apiClient: testApiClient, useSeedData: true);
 
   final testSchoolRunPlan = ScheduledPlanDto(
     id: 'plan-sim-01',
     planReference: 'GV-SCH-SIM-2026',
     planType: 'SCHOOL_RUN_PLAN',
+    purpose: TripPurpose.schoolRun,
     title: 'Corona Schools Lekki - Daily Run',
     pickupLocation: const LocationDto(
       latitude: 6.4474,
@@ -196,7 +198,7 @@ void main() {
     totalTrips: 20,
     usedTrips: 4,
     remainingTrips: 16,
-    status: 'ACTIVE',
+    status: PlanStatus.active,
     startDate: DateTime.now().subtract(const Duration(days: 4)),
     expiryDate: DateTime.now().add(const Duration(days: 26)),
     handoverOtp: '849201',
@@ -802,10 +804,11 @@ void main() {
 
       // Paystack modal opens
       expect(find.text('Paystack Secure Checkout'), findsOneWidget);
-      expect(find.text('Simulate Successful Payment'), findsOneWidget);
+      expect(find.text('Pay with Paystack'), findsOneWidget);
+      expect(find.text('I Have Completed Payment'), findsOneWidget);
 
-      // Tap Simulate Successful Payment
-      await tester.tap(find.text('Simulate Successful Payment'));
+      // Tap I Have Completed Payment (ledger verification)
+      await tester.tap(find.text('I Have Completed Payment'));
       await tester.pumpAndSettle();
 
       // Verifies success confirmation screen
@@ -814,7 +817,7 @@ void main() {
     });
 
     testWidgets('simulates RewardsScreen loyalty points balance, coupons, and referral code', (tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.physicalSize = const Size(800, 2200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 

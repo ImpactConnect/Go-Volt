@@ -204,7 +204,52 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                         }).toList(),
                       ),
                     ),
-                  const SizedBox(height: GVSpacing.md),
+                  if (plans.isNotEmpty) const SizedBox(height: GVSpacing.md),
+
+                  if (plans.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: GVSpacing.lg, vertical: GVSpacing.xxl),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(GVSpacing.lg),
+                              decoration: BoxDecoration(
+                                color: GVColors.brandGreen
+                                    .withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.calendar_month_rounded,
+                                size: 48,
+                                color: GVColors.brandGreen,
+                              ),
+                            ),
+                            const SizedBox(height: GVSpacing.md),
+                            Text(
+                              'No scheduled plans yet',
+                              style: GVTypography.h2,
+                            ),
+                            const SizedBox(height: GVSpacing.xs),
+                            Text(
+                              'Set up weekly school-run safety pickups or recurring work commutes with guaranteed electric vehicles.',
+                              textAlign: TextAlign.center,
+                              style: GVTypography.bodyMedium.copyWith(
+                                color: GVColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: GVSpacing.lg),
+                            GVPrimaryButton(
+                              label: 'Create Scheduled Plan',
+                              onPressed: () =>
+                                  context.push(AppRoutes.scheduledBooking),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                   if (selectedPlan != null) ...[
                     // Plan Overview Card
@@ -237,7 +282,7 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  selectedPlan.status,
+                                  selectedPlan.status.label,
                                   style: GVTypography.bodySmallMedium.copyWith(
                                     color: selectedPlan.isPaused
                                         ? GVColors.warning

@@ -56,7 +56,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         );
 
     if (success && mounted) {
-      context.push(AppRoutes.otpVerify);
+      context.go(AppRoutes.completeProfile);
     }
   }
 

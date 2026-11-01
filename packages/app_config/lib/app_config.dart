@@ -45,7 +45,7 @@ class AppConfig {
       supabaseAnonKey:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4cmhxcHZhcnhhcWN1aGZxaWVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMDI4MjMsImV4cCI6MjEwODY3ODgyM30.0ddSWsHWCYzJBlOuaAC0WB8bLKWwpVJZY7IfnFKVQ-Q',
       googleWebClientId:
-          '579715305549-kmhajsqu77f6ehup6jhv2fmgbefmmij9.apps.googleusercontent.com',
+          '635282245140-fcdk1kkt5dbk87gh5qam7ljbhi5t3tm9.apps.googleusercontent.com',
       enableSentry: false,
     );
   }

@@ -175,7 +175,7 @@ class ArrivedAtPickupScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      driver?.name ?? 'Ahmed Ibrahim',
+                                      driver?.name ?? 'Assigned Captain',
                                       style: GVTypography.bodyLarge.copyWith(
                                         color: textColor,
                                         fontWeight: FontWeight.bold,
@@ -204,7 +204,7 @@ class ArrivedAtPickupScreen extends ConsumerWidget {
                                           child: Text(
                                             driver != null
                                                 ? '${driver.vehicleModel} • ${driver.vehiclePlate}'
-                                                : 'Toyota Corolla • ABC-123XY',
+                                                : 'Electric Vehicle',
                                             style: GVTypography.caption.copyWith(
                                               color: subtextColor,
                                             ),

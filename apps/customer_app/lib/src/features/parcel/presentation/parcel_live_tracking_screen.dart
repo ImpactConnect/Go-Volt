@@ -67,15 +67,14 @@ class _ParcelLiveTrackingScreenState
     final delivery = state.activeDelivery;
     final status = delivery?.status ?? BookingStatus.assigned;
     final pickupLabel =
-        state.pickupLocation?.label ?? 'Eko Hotel and Suites';
-    final pickupAddress = state.pickupLocation?.address ??
-        'Adetokunbo Ademola St, Victoria Island, Lagos';
+        state.pickupLocation?.label ?? 'Pickup';
+    final pickupAddress = state.pickupLocation?.address ?? '';
 
-    final riderName = delivery?.riderName ?? 'Daniel Okafor';
-    final riderVehicle = delivery?.riderVehicle ?? 'Yamaha Bike - ABC-123XY';
-    final riderRating = delivery?.riderRating ?? 4.9;
-    final riderTrips = delivery?.riderTotalTrips ?? 320;
-    final etaMinutes = delivery?.etaMinutes ?? 6;
+    final riderName = delivery?.riderName ?? 'Assigned Courier';
+    final riderVehicle = delivery?.riderVehicle ?? 'Electric Bike';
+    final riderRating = delivery?.riderRating ?? 5.0;
+    final riderTrips = delivery?.riderTotalTrips ?? 0;
+    final etaMinutes = delivery?.etaMinutes ?? 0;
 
     // Screen 14: In-Transit Live Tracking (On the way)
     if (status == BookingStatus.inProgress) {

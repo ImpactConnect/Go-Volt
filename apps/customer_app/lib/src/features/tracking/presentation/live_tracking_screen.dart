@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
+import '../../booking/application/booking_notifier.dart';
 import '../application/tracking_notifier.dart';
 
 /// Screens 12, 13, 14 — Live Tracking:
@@ -33,45 +34,10 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
       if (!mounted) return;
       final state = ref.read(liveTrackingNotifierProvider);
       if (state == null) {
-        // Fallback default dynamic booking matching Board 2 (Daniel Okafor / Toyota Corolla)
-        ref.read(liveTrackingNotifierProvider.notifier).initTracking(
-              BookingDto(
-                id: 'demo-live-01',
-                bookingReference: 'GV-TRK-8392',
-                serviceCode: ServiceCode.instantRide,
-                status: widget.initialStatus ?? BookingStatus.assigned,
-                pickupLocation: const LocationDto(
-                  latitude: 6.4281,
-                  longitude: 3.4219,
-                  address: 'Eko Hotel and Suites',
-                  label: 'Eko Hotel and Suites',
-                ),
-                dropoffLocation: const LocationDto(
-                  latitude: 6.4344,
-                  longitude: 3.4428,
-                  address: 'Palms Mall',
-                  label: 'Palms Mall',
-                ),
-                priceBreakdown: const PriceBreakdownDto(
-                  baseAmountKobo: 150000,
-                  distanceAmountKobo: 110000,
-                  timeAmountKobo: 30000,
-                  serviceFeeKobo: 20000,
-                  totalAmountKobo: 320000,
-                ),
-                createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-                riderId: 'rider-daniel-01',
-                riderName: 'Daniel Okafor',
-                riderPhone: '+2348039281742',
-                riderRating: 4.8,
-                driverTripsCount: 320,
-                vehicleType: VehicleType.electricCar,
-                vehiclePlate: 'KJA 123 AB',
-                vehicleModel: 'Toyota Corolla - Black',
-                distanceKm: 8.4,
-                durationMinutes: 12,
-              ),
-            );
+        final activeBooking = ref.read(bookingNotifierProvider).activeBooking;
+        if (activeBooking != null) {
+          ref.read(liveTrackingNotifierProvider.notifier).initTracking(activeBooking);
+        }
       } else if (widget.initialStatus != null &&
           state.status != widget.initialStatus) {
         ref
@@ -356,11 +322,11 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
     }
 
     final booking = trackingState.booking;
-    final driverName = booking.riderName ?? 'Daniel Okafor';
-    final vehiclePlate = booking.vehiclePlate ?? 'KJA 123 AB';
-    final vehicleModel = booking.vehicleModel ?? 'Toyota Corolla - Black';
-    final rating = booking.riderRating ?? 4.8;
-    final tripCount = booking.driverTripsCount ?? 320;
+    final driverName = booking.riderName ?? 'Driver';
+    final vehiclePlate = booking.vehiclePlate ?? '';
+    final vehicleModel = booking.vehicleModel ?? 'Go-Volt EV';
+    final rating = booking.riderRating ?? 5.0;
+    final tripCount = booking.driverTripsCount ?? 0;
     final status = trackingState.status;
 
     final theme = Theme.of(context);

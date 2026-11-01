@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../../core/router/app_router.dart';
 import '../../application/scheduled_trips_notifier.dart';
 
@@ -25,7 +24,8 @@ class DriverAssignedScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
     final driver = trip?.assignedDriver;
 
@@ -71,49 +71,49 @@ class DriverAssignedScreen extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Positioned.fill(
-                    child: LiveGoogleMapView(
-                      initialLatitude: trip?.pickupLocation.latitude ?? 6.8403,
-                      initialLongitude: trip?.pickupLocation.longitude ?? 3.6487,
-                      initialZoom: 15.0,
-                      showZoomControls: true,
-                      showMyLocationButton: false,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.electric_car_rounded,
-                          size: 48,
-                          color: GVColors.primary,
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.black87 : Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                              ),
-                            ],
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? const Color(0xFF1E2822)
+                        : const Color(0xFFE5EDE8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.electric_car_rounded,
+                            size: 48,
+                            color: GVColors.primary,
                           ),
-                          child: Text(
-                            'Tomorrow, 8:00 AM',
-                            style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.black87 : Colors.white,
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.full,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Tomorrow, 8:00 AM',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -155,7 +155,7 @@ class DriverAssignedScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              driver?.name ?? 'Ahmed Ibrahim',
+                              driver?.name ?? 'Assigned Captain',
                               style: GVTypography.labelLarge.copyWith(
                                 color: textColor,
                                 fontWeight: FontWeight.bold,
@@ -163,38 +163,54 @@ class DriverAssignedScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                const Icon(Icons.star_rounded,
-                                    size: 16, color: Color(0xFFFFB800)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${driver?.rating.toStringAsFixed(1) ?? "4.8"} (${driver?.completedTrips ?? 320} trips)',
-                                  style: GVTypography.bodySmall.copyWith(
-                                    color: subtextColor,
-                                    fontSize: 12,
+                            if (driver != null) ...[
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    size: 16,
+                                    color: Color(0xFFFFB800),
                                   ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              '${driver?.vehicleModel ?? "Toyota Corolla"} • ${driver?.vehiclePlate ?? "ABC-123XY"}',
-                              style: GVTypography.bodySmall.copyWith(
-                                color: subtextColor,
-                                fontSize: 12,
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${driver.rating.toStringAsFixed(1)} (${driver.completedTrips} trips)',
+                                    style: GVTypography.bodySmall.copyWith(
+                                      color: subtextColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
+                              Text(
+                                '${driver.vehicleModel} • ${driver.vehiclePlate}',
+                                style: GVTypography.bodySmall.copyWith(
+                                  color: subtextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ] else
+                              Text(
+                                'Awaiting vehicle assignment',
+                                style: GVTypography.bodySmall.copyWith(
+                                  color: subtextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline_rounded,
-                            color: GVColors.primary),
+                        icon: const Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          color: GVColors.primary,
+                        ),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: const Icon(Icons.call_outlined,
-                            color: GVColors.primary),
+                        icon: const Icon(
+                          Icons.call_outlined,
+                          color: GVColors.primary,
+                        ),
                         onPressed: () {},
                       ),
                     ],
@@ -205,12 +221,16 @@ class DriverAssignedScreen extends ConsumerWidget {
                   // Trip route preview
                   Row(
                     children: [
-                      Icon(Icons.location_on_rounded,
-                          size: 16, color: GVColors.primary),
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          trip?.pickupLocation.address ?? 'Central Roundabout, Shaganu, Ogun State',
+                          trip?.pickupLocation.address ??
+                              '3, Ahmadu Bello Way, Kaduna',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GVTypography.bodySmall.copyWith(
@@ -224,12 +244,16 @@ class DriverAssignedScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded,
-                          size: 16, color: Colors.redAccent),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: Colors.redAccent,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          trip?.destinationLocation.address ?? 'Remo High Street, Shaganu, Ogun State',
+                          trip?.destinationLocation.address ??
+                              'Bayero University, Kaduna',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GVTypography.bodySmall.copyWith(
@@ -249,7 +273,8 @@ class DriverAssignedScreen extends ConsumerWidget {
                     text: 'View trip details',
                     onPressed: () {
                       notifier.advanceTripStatus(
-                          ScheduledTripStatus.driverApproaching);
+                        ScheduledTripStatus.driverApproaching,
+                      );
                       context.push(AppRoutes.scheduledDriverApproaching);
                     },
                   ),
@@ -261,12 +286,14 @@ class DriverAssignedScreen extends ConsumerWidget {
                     width: double.infinity,
                     height: 48,
                     child: OutlinedButton(
-                      onPressed: () => context.push(AppRoutes.scheduledSkipTrip),
+                      onPressed: () =>
+                          context.push(AppRoutes.scheduledSkipTrip),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: borderColor),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(GVBorderRadius.md),
+                          borderRadius: BorderRadius.circular(
+                            GVBorderRadius.md,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -287,4 +314,3 @@ class DriverAssignedScreen extends ConsumerWidget {
     );
   }
 }
-

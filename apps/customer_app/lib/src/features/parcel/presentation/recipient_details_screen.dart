@@ -35,14 +35,14 @@ class _RecipientDetailsScreenState
   void initState() {
     super.initState();
     final flowState = ref.read(parcelBookingNotifierProvider);
-    final recipient = flowState.recipient ?? RecipientDetailsDto.defaultRecipient;
+    final recipient = flowState.recipient;
 
-    _nameController = TextEditingController(text: recipient.fullName);
-    _phoneController = TextEditingController(text: recipient.phoneNumber);
+    _nameController = TextEditingController(text: recipient?.fullName ?? '');
+    _phoneController = TextEditingController(text: recipient?.phoneNumber ?? '');
     _additionalInfoController =
-        TextEditingController(text: recipient.additionalAddressInfo ?? '');
-    _deliveryAddress = recipient.deliveryAddress;
-    _saveAsRecipient = recipient.saveAsRecipient;
+        TextEditingController(text: recipient?.additionalAddressInfo ?? '');
+    _deliveryAddress = recipient?.deliveryAddress ?? '';
+    _saveAsRecipient = recipient?.saveAsRecipient ?? false;
   }
 
   @override
@@ -212,24 +212,27 @@ class _RecipientDetailsScreenState
                       const Divider(height: 1),
                       const SizedBox(height: GVSpacing.md),
 
-                      // Recent Recipients Header
-                      Text(
-                        'Recent recipients',
-                        style: GVTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? GVColors.white : GVColors.textPrimary,
+                      if (_recentRecipients.isNotEmpty) ...[
+                        // Recent Recipients Header
+                        Text(
+                          'Recent recipients',
+                          style: GVTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? GVColors.white : GVColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: GVSpacing.sm),
+                        const SizedBox(height: GVSpacing.sm),
 
-                      // Recent Recipients List
-                      for (final recent in _recentRecipients) ...[
-                        _buildRecentRecipientTile(
-                          recipient: recent,
-                          isDark: isDark,
-                          onTap: () => _selectRecentRecipient(recent),
-                        ),
-                        const SizedBox(height: GVSpacing.xs),
+                        // Recent Recipients List
+                        for (final recent in _recentRecipients) ...[
+                          _buildRecentRecipientTile(
+                            recipient: recent,
+                            isDark: isDark,
+                            onTap: () => _selectRecentRecipient(recent),
+                          ),
+                          const SizedBox(height: GVSpacing.xs),
+                        ],
+                        const SizedBox(height: GVSpacing.md),
                       ],
 
                       const SizedBox(height: GVSpacing.xl),

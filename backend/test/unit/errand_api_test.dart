@@ -48,7 +48,7 @@ void main() {
       // 2. Search query filter
       final searchReq = Request(
         'GET',
-        Uri.parse('http://localhost:8080/api/v1/errands/shops?search=Kakuri'),
+        Uri.parse('http://localhost:8080/api/v1/errands/shops?search=Shaganu%20Central'),
       );
       final searchResponse = await handler(searchReq);
       expect(searchResponse.statusCode, 200);
@@ -56,7 +56,7 @@ void main() {
       final searchShops = searchBody['data'] as List<dynamic>;
       expect(searchShops.length, 1);
       final firstShop = searchShops.first as Map<String, dynamic>;
-      expect(firstShop['name'], 'Kakuri Main Market');
+      expect(firstShop['name'], 'Shaganu Central Market');
     });
 
     test('POST /api/v1/errands/quotes calculates authoritative quote for Buy Items (Flow A)', () async {

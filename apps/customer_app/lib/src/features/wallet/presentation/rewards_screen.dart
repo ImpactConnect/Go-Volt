@@ -107,18 +107,18 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
           children: [
             // Compact & Modern Eco-Points Card (W05)
             Container(
-              padding: const EdgeInsets.all(GVSpacing.md),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F3120), Color(0xFF091C13)],
+                  colors: [Color(0xFF0D2E1E), Color(0xFF071910)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(GVBorderRadius.lg),
-                border: Border.all(color: const Color(0xFF1E4D34), width: 1.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E5236), width: 1.2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -127,60 +127,56 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Top Row: Tier Tag & Level Badge
+                  // Top Row: Tier Badge & Level Pill
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: GVColors.brandGreen.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.eco_rounded,
-                                  color: GVColors.brandGreen, size: 16),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                loyalty?.tierName ?? 'Starter (Level 1)',
-                                style: GVTypography.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: GVColors.brandGreen.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: GVColors.brandGreen.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.eco_rounded, color: GVColors.brandGreen, size: 14),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  loyalty?.tierName ?? 'Starter (Level 1)',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: GVColors.brandGreen,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                        ),
-                        child: Text(
-                          points >= 2500 ? 'Level 3' : (points >= 500 ? 'Level 2' : 'Level 1'),
-                          style: GVTypography.caption.copyWith(
-                            color: GVColors.brandGreen,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
+                      Text(
+                        '${points == 0 ? 0 : ((loyalty?.tierProgressFraction ?? 0.0) * 100).toInt()}% to next tier',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: GVSpacing.sm),
+                  const SizedBox(height: 12),
 
-                  // Points & Wallet Value Row
+                  // Points Balance & Value Badge
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -190,88 +186,88 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           Text(
                             '$points',
                             style: const TextStyle(
-                              fontSize: 34,
+                              fontSize: 28,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
                               height: 1.0,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             'pts',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Colors.white.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(width: 8),
                       Flexible(
-                        child: Text(
-                          '≈ ₦${(loyalty?.conversionRule.calculateCreditNaira(selectedPoints) ?? (selectedPoints / conversionRate)).toStringAsFixed(0)} value',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: GVColors.brandGreen,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF123B25),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF1E5C3A)),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          child: Text(
+                            '≈ ₦${(loyalty?.conversionRule.calculateCreditNaira(selectedPoints) ?? (selectedPoints / conversionRate)).toStringAsFixed(0)} value',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF00E676),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
 
-                  // Slim Tier Progress
+                  // Slim Tier Progress Bar
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: points == 0 ? 0.0 : (loyalty?.tierProgressFraction ?? 0.0),
-                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundColor: Colors.white.withValues(alpha: 0.12),
                       valueColor: const AlwaysStoppedAnimation<Color>(GVColors.brandGreen),
                       minHeight: 4,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          points == 0
-                              ? '500 pts to Eco Cruiser (Level 2)'
-                              : '${loyalty?.pointsToNextTier ?? 500} pts to ${loyalty?.nextTierName ?? "Next Tier"}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${((points == 0 ? 0.0 : (loyalty?.tierProgressFraction ?? 0.0)) * 100).toInt()}%',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: GVColors.brandGreen,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    points == 0
+                        ? '500 pts to Eco Cruiser (Level 2)'
+                        : '${loyalty?.pointsToNextTier ?? 500} pts to ${loyalty?.nextTierName ?? "Next Tier"}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
                   ),
-                  const SizedBox(height: GVSpacing.sm),
+                  const SizedBox(height: 14),
 
-                  // Preset Selection Header
+                  // Divider
+                  Container(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Redemption Preset Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(
+                      const Flexible(
                         child: Text(
                           'Select Redemption Amount:',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -281,15 +277,15 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                         'Wallet Value: ₦${(loyalty?.conversionRule.calculateCreditNaira(selectedPoints) ?? (selectedPoints / conversionRate)).toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: GVColors.brandGreen,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF00E676),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
 
-                  // Compact High-Contrast Preset Segmented Buttons (Wrap avoids overflow)
+                  // High-Contrast Preset Segmented Buttons
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -308,25 +304,29 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? GVColors.brandGreen
-                                : const Color(0xFF142E20),
+                                : const Color(0xFF133522),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: isSelected
                                   ? GVColors.brandGreen
-                                  : const Color(0xFF234B35),
+                                  : const Color(0xFF235C3A),
                               width: 1.2,
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (isSelected) ...[
+                                const Icon(Icons.check_circle, size: 13, color: Color(0xFF052814)),
+                                const SizedBox(width: 4),
+                              ],
                               Text(
                                 '$preset pts',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: isSelected
-                                      ? const Color(0xFF092415)
+                                      ? const Color(0xFF052814)
                                       : Colors.white,
                                 ),
                               ),
@@ -337,8 +337,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
-                                      ? const Color(0xFF0F3B22)
-                                      : GVColors.brandGreen,
+                                      ? const Color(0xFF0B3D20)
+                                      : const Color(0xFF7DE6B1),
                                 ),
                               ),
                             ],
@@ -347,22 +347,29 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: GVSpacing.md),
+                  const SizedBox(height: 14),
 
-                  // Full-Width Clean Conversion Action
+                  // Conversion Action Button with Explicit High-Contrast Disabled Styling
                   SizedBox(
-                    height: 42,
+                    height: 44,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: points >= minRedemptionThreshold
                             ? GVColors.brandGreen
-                            : Colors.white.withValues(alpha: 0.1),
+                            : const Color(0xFF133522),
                         foregroundColor: points >= minRedemptionThreshold
-                            ? const Color(0xFF092415)
-                            : Colors.white38,
+                            ? const Color(0xFF052814)
+                            : Colors.white70,
+                        disabledBackgroundColor: const Color(0xFF133522),
+                        disabledForegroundColor: Colors.white70,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: points >= minRedemptionThreshold
+                                ? Colors.transparent
+                                : const Color(0xFF235C3A),
+                          ),
                         ),
                       ),
                       onPressed: points >= minRedemptionThreshold
@@ -371,13 +378,13 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                       child: Text(
                         points >= minRedemptionThreshold
                             ? 'Redeem ${selectedPoints > points ? points : selectedPoints} pts'
-                            : 'Min. $minRedemptionThreshold pts required to convert',
+                            : 'Min. $minRedemptionThreshold pts required to convert (Earn +15/ride)',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
                           color: points >= minRedemptionThreshold
-                              ? const Color(0xFF092415)
-                              : Colors.white38,
+                              ? const Color(0xFF052814)
+                              : Colors.white70,
                         ),
                       ),
                     ),

@@ -6,6 +6,23 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
+/// Record holding a generated binding quote along with its requested pickup and dropoff locations.
+class QuoteRecord {
+  const QuoteRecord({
+    required this.quote,
+    required this.pickup,
+    required this.dropoff,
+  });
+
+  final QuoteDto quote;
+  final LocationDto pickup;
+  final LocationDto dropoff;
+}
+
+/// In-memory store for active binding quotes so bookings can resolve dynamic pickup,
+/// dropoff, and price breakdowns by quote ID.
+final Map<String, QuoteRecord> quotesStore = {};
+
 /// Calculates distance between two coordinates in kilometers using Haversine formula.
 double _haversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
   const earthRadiusKm = 6371.0;
@@ -87,6 +104,12 @@ Future<Response> createQuoteHandler(Request request) async {
     estimatedDurationMinutes: durationMinutes,
     estimatedDistanceKm: double.parse(distanceKm.toStringAsFixed(1)),
     expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 10)),
+  );
+
+  quotesStore[quote.quoteId] = QuoteRecord(
+    quote: quote,
+    pickup: pickup,
+    dropoff: dropoff,
   );
 
   final payload = {

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../../core/router/app_router.dart';
 import '../../application/scheduled_trips_notifier.dart';
 
@@ -25,7 +24,8 @@ class TripInProgressScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
     final driver = trip?.assignedDriver;
 
@@ -74,51 +74,49 @@ class TripInProgressScreen extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Positioned.fill(
-                    child: LiveGoogleMapView(
-                      initialLatitude: trip?.pickupLocation.latitude ?? 6.8403,
-                      initialLongitude: trip?.pickupLocation.longitude ?? 3.6487,
-                      initialZoom: 15.0,
-                      showZoomControls: true,
-                      showMyLocationButton: false,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.route_rounded,
-                          size: 56,
-                          color: GVColors.primary,
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? const Color(0xFF1E2822)
+                        : const Color(0xFFE5EDE8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.route_rounded,
+                            size: 56,
                             color: GVColors.primary,
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 8,
-                              ),
-                            ],
                           ),
-                          child: const Text(
-                            '10 min (4.2 km)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GVColors.primary,
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.full,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              '10 min (4.2 km)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
@@ -131,8 +129,9 @@ class TripInProgressScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(GVSpacing.md),
                       decoration: BoxDecoration(
                         color: cardBg,
-                        borderRadius:
-                            BorderRadius.circular(GVBorderRadius.card),
+                        borderRadius: BorderRadius.circular(
+                          GVBorderRadius.card,
+                        ),
                         border: Border.all(color: borderColor),
                         boxShadow: [
                           BoxShadow(
@@ -150,7 +149,9 @@ class TripInProgressScreen extends ConsumerWidget {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: GVColors.primary.withValues(alpha: 0.2),
+                                backgroundColor: GVColors.primary.withValues(
+                                  alpha: 0.2,
+                                ),
                                 child: Text(
                                   driver != null && driver.name.isNotEmpty
                                       ? driver.name[0]
@@ -167,7 +168,7 @@ class TripInProgressScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      driver?.name ?? 'Ahmed Ibrahim',
+                                      driver?.name ?? 'Assigned Captain',
                                       style: GVTypography.bodyLarge.copyWith(
                                         color: textColor,
                                         fontWeight: FontWeight.bold,
@@ -196,10 +197,9 @@ class TripInProgressScreen extends ConsumerWidget {
                                           child: Text(
                                             driver != null
                                                 ? '${driver.vehicleModel} • ${driver.vehiclePlate}'
-                                                : 'Toyota Corolla • ABC-123XY',
-                                            style: GVTypography.caption.copyWith(
-                                              color: subtextColor,
-                                            ),
+                                                : 'Electric Vehicle',
+                                            style: GVTypography.caption
+                                                .copyWith(color: subtextColor),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -265,7 +265,7 @@ class TripInProgressScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       trip?.destinationAddress ??
-                                          'Remo High Street, Shaganu, Ogun State',
+                                          'Bayero University, Kaduna',
                                       style: GVTypography.bodyMedium.copyWith(
                                         color: textColor,
                                         fontWeight: FontWeight.w600,
@@ -317,8 +317,9 @@ class TripInProgressScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             side: BorderSide(color: borderColor),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(GVBorderRadius.button),
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.button,
+                              ),
                             ),
                           ),
                           icon: const Icon(
@@ -337,7 +338,8 @@ class TripInProgressScreen extends ConsumerWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                    'Live location link copied to clipboard.'),
+                                  'Live location link copied to clipboard.',
+                                ),
                               ),
                             );
                           },
@@ -350,8 +352,9 @@ class TripInProgressScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             side: const BorderSide(color: Color(0xFFEF4444)),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(GVBorderRadius.button),
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.button,
+                              ),
                             ),
                           ),
                           icon: const Icon(
@@ -379,7 +382,8 @@ class TripInProgressScreen extends ConsumerWidget {
                     type: GVButtonType.primary,
                     onPressed: () {
                       notifier.advanceTripStatus(
-                          ScheduledTripStatus.arrivedAtDestination);
+                        ScheduledTripStatus.arrivedAtDestination,
+                      );
                       context.push(AppRoutes.scheduledArrivingDestination);
                     },
                   ),
@@ -421,7 +425,8 @@ class TripInProgressScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      'Emergency team alerted. Go-Volts dispatch is calling your phone now.'),
+                    'Emergency team alerted. Go-Volts dispatch is calling your phone now.',
+                  ),
                   backgroundColor: Color(0xFFEF4444),
                 ),
               );

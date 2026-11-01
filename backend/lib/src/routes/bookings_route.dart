@@ -4,6 +4,8 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:uuid/uuid.dart';
 
+import 'quotes_route.dart';
+
 const _uuid = Uuid();
 
 // In-memory backing store for initial scaffold before live DB connection
@@ -25,28 +27,69 @@ Router bookingsRouter() {
       body['payment_method'] as String? ?? 'WALLET',
     );
 
+    // Resolve dynamic pickup, dropoff, and pricing from active quotesStore if quote_id is supplied
+    final quoteId = body['quote_id'] as String?;
+    final quoteRecord = quoteId != null ? quotesStore[quoteId] : null;
+
+    final serviceCode = quoteRecord != null
+        ? quoteRecord.quote.serviceCode
+        : ServiceCode.fromString(body['service_code'] as String? ?? 'RIDE_INSTANT');
+
+    final LocationDto pickupLocation;
+    if (quoteRecord != null) {
+      pickupLocation = quoteRecord.pickup;
+    } else if (body['pickup'] is Map<String, dynamic>) {
+      pickupLocation = LocationDto.fromJson(body['pickup'] as Map<String, dynamic>);
+    } else {
+      pickupLocation = const LocationDto(
+        latitude: 6.8403,
+        longitude: 3.6487,
+        address: 'Shaganu Central Hub, Shaganu, Ogun State',
+        label: 'Shaganu Central',
+        city: 'Shaganu',
+        state: 'Ogun',
+      );
+    }
+
+    final LocationDto dropoffLocation;
+    if (quoteRecord != null) {
+      dropoffLocation = quoteRecord.dropoff;
+    } else if (body['dropoff'] is Map<String, dynamic>) {
+      dropoffLocation = LocationDto.fromJson(body['dropoff'] as Map<String, dynamic>);
+    } else {
+      dropoffLocation = const LocationDto(
+        latitude: 6.8450,
+        longitude: 3.6520,
+        address: 'Remo High Street, Shaganu, Ogun State',
+        label: 'Remo High Street',
+        city: 'Shaganu',
+        state: 'Ogun',
+      );
+    }
+
+    final PriceBreakdownDto priceBreakdown;
+    if (quoteRecord != null) {
+      priceBreakdown = quoteRecord.quote.priceBreakdown;
+    } else if (body['price_breakdown'] is Map<String, dynamic>) {
+      priceBreakdown = PriceBreakdownDto.fromJson(body['price_breakdown'] as Map<String, dynamic>);
+    } else {
+      priceBreakdown = const PriceBreakdownDto(
+        baseFare: 400,
+        distanceFare: 600,
+        timeFare: 250,
+        platformFee: 50,
+        totalFare: 1300,
+      );
+    }
+
     final booking = BookingDto(
       id: bookingId,
       bookingReference: refNumber,
-      serviceCode: ServiceCode.instantRide,
+      serviceCode: serviceCode,
       status: BookingStatus.searchingRider,
-      pickupLocation: const LocationDto(
-        latitude: 6.5244,
-        longitude: 3.3792,
-        address: 'Marina, Lagos',
-      ),
-      dropoffLocation: const LocationDto(
-        latitude: 6.4500,
-        longitude: 3.4200,
-        address: 'Victoria Island, Lagos',
-      ),
-      priceBreakdown: const PriceBreakdownDto(
-        baseFare: 400,
-        distanceFare: 1200,
-        timeFare: 300,
-        platformFee: 50,
-        totalFare: 1950,
-      ),
+      pickupLocation: pickupLocation,
+      dropoffLocation: dropoffLocation,
+      priceBreakdown: priceBreakdown,
       paymentMethod: paymentMethod,
       paymentStatus: PaymentStatus.authorized,
       createdAt: DateTime.now().toUtc(),

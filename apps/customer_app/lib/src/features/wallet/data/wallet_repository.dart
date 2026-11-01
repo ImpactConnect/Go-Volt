@@ -14,7 +14,7 @@ class WalletRepository {
   Future<WalletDto> getWallet({String? userId}) async {
     try {
       final res = await _apiClient.dio.get(
-        '/api/v1/wallet/me',
+        '/wallet/me',
         queryParameters: {
           'user_id': ?userId,
         },
@@ -42,7 +42,7 @@ class WalletRepository {
   Future<List<WalletTransactionDto>> getTransactions({String? userId}) async {
     try {
       final res = await _apiClient.dio.get(
-        '/api/v1/wallet/transactions',
+        '/wallet/transactions',
         queryParameters: {
           'user_id': ?userId,
         },
@@ -78,7 +78,7 @@ class WalletRepository {
         'user_id': ?userId,
         'user_name': ?userName,
       };
-      final res = await _apiClient.dio.get('/api/v1/loyalty/me', queryParameters: query);
+      final res = await _apiClient.dio.get('/loyalty/me', queryParameters: query);
       final data = res.data as Map<String, dynamic>;
       return LoyaltyRewardDto.fromJson(data['data'] as Map<String, dynamic>);
     } catch (_) {
@@ -126,7 +126,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/loyalty/referral-code/generate',
+        '/loyalty/referral-code/generate',
         data: {'user_id': userId, 'user_name': userName},
       );
       final data = res.data as Map<String, dynamic>;
@@ -142,7 +142,7 @@ class WalletRepository {
 
   Future<List<CouponDto>> getCoupons() async {
     try {
-      final res = await _apiClient.dio.get('/api/v1/coupons/me');
+      final res = await _apiClient.dio.get('/coupons/me');
       final data = res.data as Map<String, dynamic>;
       final list = data['data'] as List<dynamic>;
       return list
@@ -178,7 +178,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/coupons/validate',
+        '/coupons/validate',
         data: {'code': code, 'order_amount': orderAmount},
       );
       return res.data as Map<String, dynamic>;
@@ -201,7 +201,7 @@ class WalletRepository {
   Future<List<SavedPaymentCardDto>> getSavedCards({String? userId}) async {
     try {
       final res = await _apiClient.dio.get(
-        '/api/v1/wallet/cards',
+        '/wallet/cards',
         queryParameters: userId != null ? {'user_id': userId} : null,
       );
       final data = res.data as Map<String, dynamic>;
@@ -218,7 +218,7 @@ class WalletRepository {
   Future<Map<String, dynamic>> initializeCardAuthorization({String? userId}) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/wallet/cards/initialize-authorization',
+        '/wallet/cards/initialize-authorization',
         data: userId != null ? {'user_id': userId} : null,
       );
       return res.data as Map<String, dynamic>;
@@ -244,7 +244,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/wallet/cards/verify-authorization',
+        '/wallet/cards/verify-authorization',
         data: {
           'reference': reference,
           'brand': brand,
@@ -275,7 +275,7 @@ class WalletRepository {
   Future<bool> deleteCard(String cardId, {String? userId}) async {
     try {
       await _apiClient.dio.delete(
-        '/api/v1/wallet/cards/$cardId',
+        '/wallet/cards/$cardId',
         queryParameters: userId != null ? {'user_id': userId} : null,
       );
       return true;
@@ -288,7 +288,7 @@ class WalletRepository {
   Future<bool> setDefaultCard(String cardId, {String? userId}) async {
     try {
       await _apiClient.dio.patch(
-        '/api/v1/wallet/cards/$cardId/default',
+        '/wallet/cards/$cardId/default',
         queryParameters: userId != null ? {'user_id': userId} : null,
       );
       return true;
@@ -304,7 +304,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.get(
-        '/api/v1/wallet/dedicated-account',
+        '/wallet/dedicated-account',
         queryParameters: {
           'user_id': ?userId,
           'user_name': ?userName,
@@ -328,7 +328,7 @@ class WalletRepository {
   Future<Map<String, dynamic>> initiateTopUp(double amountNaira) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/wallet/top-up/initialize',
+        '/wallet/top-up/initialize',
         data: {'amount_naira': amountNaira},
       );
       return res.data as Map<String, dynamic>;
@@ -348,7 +348,7 @@ class WalletRepository {
   Future<WalletDto> verifyTopUp(String reference, double amountNaira, {String? userId}) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/wallet/top-up/verify',
+        '/wallet/top-up/verify',
         data: {
           'reference': reference,
           'amount_naira': amountNaira,
@@ -367,7 +367,7 @@ class WalletRepository {
       return WalletDto.fromJson(payload);
     } catch (e) {
       if (useSeedData) {
-        // Offline test fixture harness support
+        // Explicit offline test fixture harness
         return WalletDto(
           userId: userId ?? 'usr-customer-01',
           balance: 14500.0 + amountNaira,
@@ -400,7 +400,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.get(
-        '/api/v1/wallet/top-up/check-transfer',
+        '/wallet/top-up/check-transfer',
         queryParameters: {
           'user_id': ?userId,
           'account_number': ?accountNumber,
@@ -438,7 +438,7 @@ class WalletRepository {
   }) async {
     try {
       final res = await _apiClient.dio.post(
-        '/api/v1/loyalty/redeem',
+        '/loyalty/redeem',
         data: {'points': points, 'credit_naira': creditNaira},
       );
       return res.data as Map<String, dynamic>;

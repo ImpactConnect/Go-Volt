@@ -22,9 +22,9 @@ class SchoolRunSafetyScreen extends ConsumerWidget {
       );
     }
 
-    final otp = schoolRunPlan.handoverOtp ?? '849201';
+    final otp = schoolRunPlan.handoverOtp ?? '------';
     final childName = schoolRunPlan.passengerName;
-    final schoolName = schoolRunPlan.schoolName ?? 'Corona Schools Victoria Island';
+    final schoolName = schoolRunPlan.schoolName ?? schoolRunPlan.dropoffLocation.label ?? 'Designated School';
     final contacts = schoolRunPlan.authorizedContacts;
 
     return Scaffold(

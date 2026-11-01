@@ -461,7 +461,7 @@ class _SelectShopScreenState extends ConsumerState<SelectShopScreen> {
                 controller: addressCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Shop Address / Location *',
-                  hintText: 'e.g. Near Agwa Roundabout, Kaduna',
+                  hintText: 'e.g. Near Shaganu Roundabout, Ogun State',
                   border: OutlineInputBorder(),
                 ),
               ),

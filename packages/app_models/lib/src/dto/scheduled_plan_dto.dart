@@ -189,7 +189,7 @@ class ScheduledPlanDto extends Equatable {
     required this.pickupTime,
     this.returnTime,
     required this.passengerName,
-    this.passengerPhone = '+234 803 123 4567',
+    this.passengerPhone = '',
     this.schoolName,
     this.legs = const [],
     required this.totalTrips,

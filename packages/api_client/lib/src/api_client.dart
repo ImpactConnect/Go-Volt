@@ -146,6 +146,23 @@ class ApiClient {
     );
   }
 
+  /// Fetches active operating locations provisioned by the admin platform.
+  Future<ApiResponse<List<OperatingLocationDto>>> getOperatingLocations() async {
+    return _send<List<OperatingLocationDto>>(
+      method: 'GET',
+      path: '/operating-locations',
+      parser: (data) {
+        if (data is List) {
+          return data
+              .map((e) =>
+                  OperatingLocationDto.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+        return <OperatingLocationDto>[];
+      },
+    );
+  }
+
   /// Advisory validation of a coupon against a quote (v1.3 §6.4 & §8.7).
   Future<ApiResponse<CouponValidationDto>> validateCoupon({
     required String code,
@@ -472,27 +489,76 @@ class ApiClient {
   }
 
   // ---------------------------------------------------------------------------
-  // USER PROFILE
+  // USER PROFILE & VERIFICATION (Spec Group A)
   // ---------------------------------------------------------------------------
 
-  Future<ApiResponse<ProfileDto>> getProfile() async {
+  Future<ApiResponse<ProfileDto>> getProfile({String? userId}) async {
     return _send<ProfileDto>(
       method: 'GET',
-      path: '/users/profile',
+      path: '/api/v1/profile/me',
+      queryParameters: {
+        'user_id': ?userId,
+      },
       parser: (data) => ProfileDto.fromJson(data as Map<String, dynamic>),
     );
   }
 
   Future<ApiResponse<ProfileDto>> updateProfile({
+    String? userId,
     String? fullName,
     String? email,
+    String? phoneNumber,
+    String? currentAddress,
+    String? city,
+    String? state,
+    String? gender,
     String? avatarUrl,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
   }) async {
     return _send<ProfileDto>(
       method: 'PATCH',
-      path: '/users/profile',
-      data: {'full_name': ?fullName, 'email': ?email, 'avatar_url': ?avatarUrl},
+      path: '/api/v1/profile/me',
+      data: {
+        'user_id': ?userId,
+        'full_name': ?fullName,
+        'email': ?email,
+        'phone_number': ?phoneNumber,
+        'current_address': ?currentAddress,
+        'city': ?city,
+        'state': ?state,
+        'gender': ?gender,
+        'avatar_url': ?avatarUrl,
+        'emergency_contact_name': ?emergencyContactName,
+        'emergency_contact_phone': ?emergencyContactPhone,
+      },
       parser: (data) => ProfileDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<AccountVerificationDto>> getAccountVerification({String? userId}) async {
+    return _send<AccountVerificationDto>(
+      method: 'GET',
+      path: '/api/v1/profile/verification',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) => AccountVerificationDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> submitAccountVerification({
+    String? userId,
+    Map<String, String>? documentUrls,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/api/v1/profile/verification/submit',
+      data: {
+        'user_id': ?userId,
+        'document_urls': ?documentUrls,
+      },
+      parser: (data) => data as Map<String, dynamic>,
     );
   }
 
@@ -943,6 +1009,280 @@ class ApiClient {
         'days_of_week': daysOfWeek,
       },
       parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SETTINGS & SAVED PLACES (Spec Group B)
+  // ---------------------------------------------------------------------------
+
+  Future<ApiResponse<NotificationPreferencesDto>> getNotificationPreferences({String? userId}) async {
+    return _send<NotificationPreferencesDto>(
+      method: 'GET',
+      path: '/api/v1/notification-preferences',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) => NotificationPreferencesDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<NotificationPreferencesDto>> updateNotificationPreferences({
+    String? userId,
+    required NotificationPreferencesDto preferences,
+  }) async {
+    return _send<NotificationPreferencesDto>(
+      method: 'PATCH',
+      path: '/api/v1/notification-preferences',
+      data: {
+        'user_id': ?userId,
+        ...preferences.toJson(),
+      },
+      parser: (data) => NotificationPreferencesDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<List<SavedPlaceDto>>> getSavedPlaces({String? userId}) async {
+    return _send<List<SavedPlaceDto>>(
+      method: 'GET',
+      path: '/api/v1/saved-places',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((item) => SavedPlaceDto.fromJson(item as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  Future<ApiResponse<SavedPlaceDto>> addSavedPlace({
+    String? userId,
+    required String label,
+    required String address,
+    required SavedPlaceType type,
+    required double latitude,
+    required double longitude,
+    String? additionalInstructions,
+  }) async {
+    return _send<SavedPlaceDto>(
+      method: 'POST',
+      path: '/api/v1/saved-places',
+      data: {
+        'user_id': ?userId,
+        'label': label,
+        'address': address,
+        'type': type.code,
+        'latitude': latitude,
+        'longitude': longitude,
+        'additional_instructions': ?additionalInstructions,
+      },
+      parser: (data) => SavedPlaceDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<SavedPlaceDto>> updateSavedPlace({
+    required String placeId,
+    String? userId,
+    String? label,
+    String? address,
+    SavedPlaceType? type,
+    double? latitude,
+    double? longitude,
+    String? additionalInstructions,
+  }) async {
+    return _send<SavedPlaceDto>(
+      method: 'PATCH',
+      path: '/api/v1/saved-places/$placeId',
+      data: {
+        'user_id': ?userId,
+        'label': ?label,
+        'address': ?address,
+        'type': ?type?.code,
+        'latitude': ?latitude,
+        'longitude': ?longitude,
+        'additional_instructions': ?additionalInstructions,
+      },
+      parser: (data) => SavedPlaceDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> deleteSavedPlace({
+    required String placeId,
+    String? userId,
+    bool force = false,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'DELETE',
+      path: '/api/v1/saved-places/$placeId',
+      queryParameters: {
+        'user_id': ?userId,
+        if (force) 'force': 'true',
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SAFETY & EMERGENCY (Spec Group D1-D2)
+  // ---------------------------------------------------------------------------
+
+  Future<ApiResponse<List<TrustedContactDto>>> getTrustedContacts({String? userId}) async {
+    return _send<List<TrustedContactDto>>(
+      method: 'GET',
+      path: '/api/v1/safety/trusted-contacts',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((item) => TrustedContactDto.fromJson(item as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  Future<ApiResponse<TrustedContactDto>> addTrustedContact({
+    String? userId,
+    required String name,
+    required String phoneNumber,
+    String relationship = 'Friend',
+    bool autoShareRides = false,
+  }) async {
+    return _send<TrustedContactDto>(
+      method: 'POST',
+      path: '/api/v1/safety/trusted-contacts',
+      data: {
+        'user_id': ?userId,
+        'name': name,
+        'phone_number': phoneNumber,
+        'relationship': relationship,
+        'auto_share_rides': autoShareRides,
+      },
+      parser: (data) => TrustedContactDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> deleteTrustedContact({
+    required String contactId,
+    String? userId,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'DELETE',
+      path: '/api/v1/safety/trusted-contacts/$contactId',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> reportSafetyIncident({
+    String? userId,
+    required String category,
+    required String description,
+    String? relatedBookingId,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/api/v1/safety/report-incident',
+      data: {
+        'user_id': ?userId,
+        'category': category,
+        'description': description,
+        'related_booking_id': ?relatedBookingId,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SUPPORT & FAQS (Spec Group D3-D5)
+  // ---------------------------------------------------------------------------
+
+  Future<ApiResponse<List<SupportFaqDto>>> getFaqs({String? category}) async {
+    return _send<List<SupportFaqDto>>(
+      method: 'GET',
+      path: '/api/v1/support/faqs',
+      queryParameters: {
+        'category': ?category,
+      },
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((item) => SupportFaqDto.fromJson(item as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  Future<ApiResponse<List<SupportTicketDto>>> getSupportTickets({String? userId}) async {
+    return _send<List<SupportTicketDto>>(
+      method: 'GET',
+      path: '/api/v1/support/tickets',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((item) => SupportTicketDto.fromJson(item as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  Future<ApiResponse<SupportTicketDto>> createSupportTicket({
+    String? userId,
+    required String serviceCategory,
+    required String issueType,
+    required String subject,
+    required String description,
+    String? relatedEntityId,
+  }) async {
+    return _send<SupportTicketDto>(
+      method: 'POST',
+      path: '/api/v1/support/tickets',
+      data: {
+        'user_id': ?userId,
+        'service_category': serviceCategory,
+        'issue_type': issueType,
+        'subject': subject,
+        'description': description,
+        'related_entity_id': ?relatedEntityId,
+      },
+      parser: (data) => SupportTicketDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<SupportTicketDto>> getSupportTicketDetails({
+    required String ticketId,
+    String? userId,
+  }) async {
+    return _send<SupportTicketDto>(
+      method: 'GET',
+      path: '/api/v1/support/tickets/$ticketId',
+      queryParameters: {
+        'user_id': ?userId,
+      },
+      parser: (data) => SupportTicketDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<SupportTicketDto>> replyToSupportTicket({
+    required String ticketId,
+    String? userId,
+    required String message,
+    String? senderName,
+  }) async {
+    return _send<SupportTicketDto>(
+      method: 'POST',
+      path: '/api/v1/support/tickets/$ticketId/reply',
+      data: {
+        'user_id': ?userId,
+        'message': message,
+        'sender_name': ?senderName,
+      },
+      parser: (data) {
+        final map = data as Map<String, dynamic>;
+        final ticketMap = map['ticket'] as Map<String, dynamic>? ?? map;
+        return SupportTicketDto.fromJson(ticketMap);
+      },
     );
   }
 

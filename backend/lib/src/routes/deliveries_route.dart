@@ -136,19 +136,23 @@ Router deliveriesRouter() {
       pickupLocation: LocationDto.fromJson(
         body['pickup'] as Map<String, dynamic>? ??
             const LocationDto(
-              latitude: 6.4281,
-              longitude: 3.4219,
-              address: 'Eko Hotel and Suites, Victoria Island, Lagos',
-              label: 'Eko Hotel and Suites',
+              latitude: 6.8403,
+              longitude: 3.6487,
+              address: 'Shaganu Central Hub, Shaganu, Ogun State',
+              label: 'Shaganu Central',
+              city: 'Shaganu',
+              state: 'Ogun',
             ).toJson(),
       ),
       destinationLocation: LocationDto.fromJson(
         body['dropoff'] as Map<String, dynamic>? ??
             const LocationDto(
-              latitude: 6.4357,
-              longitude: 3.4418,
-              address: 'Palms Mall, Lekki, Lagos',
-              label: 'Palms Mall',
+              latitude: 6.8450,
+              longitude: 3.6520,
+              address: 'Remo Commercial Center, Remo High Street, Ogun State',
+              label: 'Remo High Street',
+              city: 'Shaganu',
+              state: 'Ogun',
             ).toJson(),
       ),
       recipient: RecipientDetailsDto.fromJson(

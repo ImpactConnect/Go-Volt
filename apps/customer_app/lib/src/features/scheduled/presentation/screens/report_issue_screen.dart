@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   Future<void> _handleSubmit() async {
     final state = ref.read(scheduledTripsNotifierProvider);
     final notifier = ref.read(scheduledTripsNotifierProvider.notifier);
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.trips.isNotEmpty ? state.trips.first : null);
 
     if (trip == null) return;
@@ -47,7 +49,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Incident report received. Support will review shortly and contact you.'),
+            'Incident report received. Support will review shortly and contact you.',
+          ),
         ),
       );
       context.pop();
@@ -168,14 +171,10 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                                 ),
                               ),
                             ),
-                            // ignore: deprecated_member_use
                             Radio<TripIssueType>(
                               value: issue,
-                              // ignore: deprecated_member_use
                               groupValue: _selectedIssue,
-                              // ignore: deprecated_member_use
                               activeColor: GVColors.primary,
-                              // ignore: deprecated_member_use
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _selectedIssue = val);
@@ -246,4 +245,3 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     };
   }
 }
-

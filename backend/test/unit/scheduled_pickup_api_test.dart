@@ -166,7 +166,7 @@ void main() {
     test('POST /api/v1/scheduled/plans/<id>/approve transitions plan to approved_awaiting_payment', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/api/v1/scheduled/plans/plan-work-kaduna-02/approve'),
+        Uri.parse('http://localhost:8080/api/v1/scheduled/plans/plan-work-ogun-02/approve'),
       );
 
       final response = await handler(request);
@@ -182,7 +182,7 @@ void main() {
     test('POST /api/v1/scheduled/plans/<id>/pay activates plan and credits entitlements', () async {
       final request = Request(
         'POST',
-        Uri.parse('http://localhost:8080/api/v1/scheduled/plans/plan-work-kaduna-02/pay'),
+        Uri.parse('http://localhost:8080/api/v1/scheduled/plans/plan-work-ogun-02/pay'),
         body: jsonEncode({'payment_method': 'Go-Volts Wallet'}),
         headers: {'content-type': 'application/json'},
       );

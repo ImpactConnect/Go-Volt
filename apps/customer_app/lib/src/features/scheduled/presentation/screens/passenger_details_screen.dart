@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/router/app_router.dart';
 import '../../application/scheduled_booking_notifier.dart';
 
@@ -18,14 +19,25 @@ class PassengerDetailsScreen extends ConsumerStatefulWidget {
 
 class _PassengerDetailsScreenState
     extends ConsumerState<PassengerDetailsScreen> {
-  final _nameController = TextEditingController(text: 'Daniel Okafor');
-  final _phoneController = TextEditingController(text: '803 123 4567');
-  final _instructionsController = TextEditingController(
-    text: 'Pick from main gate',
-  );
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _instructionsController;
 
   bool _isMyself = true;
-  bool _savePassenger = true;
+  bool _savePassenger = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = ref.read(authNotifierProvider).profile;
+    final initialName = profile?.fullName ?? '';
+    final rawPhone = profile?.phoneNumber ?? '';
+    final initialPhone = rawPhone.replaceFirst(RegExp(r'^\+?234\s*'), '');
+
+    _nameController = TextEditingController(text: initialName);
+    _phoneController = TextEditingController(text: initialPhone);
+    _instructionsController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -37,7 +49,6 @@ class _PassengerDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(scheduledBookingNotifierProvider);
     final notifier = ref.read(scheduledBookingNotifierProvider.notifier);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -103,7 +114,10 @@ class _PassengerDetailsScreenState
                         onTap: () {
                           setState(() {
                             _isMyself = true;
-                            _nameController.text = 'Daniel Okafor';
+                            final profile = ref.read(authNotifierProvider).profile;
+                            _nameController.text = profile?.fullName ?? '';
+                            final rawPhone = profile?.phoneNumber ?? '';
+                            _phoneController.text = rawPhone.replaceFirst(RegExp(r'^\+?234\s*'), '');
                           });
                         },
                       ),
@@ -115,9 +129,8 @@ class _PassengerDetailsScreenState
                         onTap: () {
                           setState(() {
                             _isMyself = false;
-                            if (state.purpose.label.contains('School')) {
-                              _nameController.text = 'Fatima Okafor';
-                            }
+                            _nameController.clear();
+                            _phoneController.clear();
                           });
                         },
                       ),
@@ -146,9 +159,13 @@ class _PassengerDetailsScreenState
                 child: TextField(
                   controller: _nameController,
                   style: GVTypography.bodyMedium.copyWith(color: textColor),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    hintText: 'Enter full name',
+                    hintStyle: GVTypography.bodyMedium.copyWith(
+                      color: subtextColor,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
                     ),
@@ -199,9 +216,13 @@ class _PassengerDetailsScreenState
                         style: GVTypography.bodyMedium.copyWith(
                           color: textColor,
                         ),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
+                          hintText: '801 234 5678',
+                          hintStyle: GVTypography.bodyMedium.copyWith(
+                            color: subtextColor,
+                          ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 14,
                           ),

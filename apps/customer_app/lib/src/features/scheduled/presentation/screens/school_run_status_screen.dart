@@ -88,7 +88,7 @@ class SchoolRunStatusScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Passenger: ${trip?.passengerName ?? "Fatima Okafor"} (JSS 1)',
+                            'Passenger: ${(trip?.passengerName.isNotEmpty ?? false) ? trip!.passengerName : "Child Passenger"}',
                             style: GVTypography.caption.copyWith(
                               color: isDark
                                   ? const Color(0xFFD4D4D8)

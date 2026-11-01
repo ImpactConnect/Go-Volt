@@ -21,6 +21,9 @@ import 'routes/wallet_route.dart';
 import 'routes/loyalty_route.dart';
 import 'routes/coupons_route.dart';
 import 'routes/errands_route.dart';
+import 'routes/profile_route.dart';
+import 'routes/settings_route.dart';
+import 'routes/safety_support_route.dart';
 import 'shared/partner_database.dart';
 
 /// Configures and returns the root Shelf request handler with all middlewares and routes.
@@ -48,7 +51,9 @@ Handler createServerHandler({
   v1Router.mount('/rider', riderRouter().call);
   v1Router.mount('/delivery', deliveriesRouter().call);
   v1Router.mount('/deliveries', deliveriesRouter().call);
-  v1Router.mount('/operating-locations', operatingLocationsRouter().call);
+  final opLocs = operatingLocationsRouter();
+  v1Router.mount('/operating-locations', opLocs.call);
+  v1Router.get('/operating-locations', (Request req) => opLocs.call(req.change(path: '')));
   final rideCats = rideCategoriesRouter();
   v1Router.mount('/catalogue/ride-categories', rideCats.call);
   v1Router.get('/catalogue/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
@@ -67,8 +72,20 @@ Handler createServerHandler({
   v1Router.mount('/coupons', couponsRouter().call);
   final errandsRoutes = errandsRouter();
   v1Router.mount('/errands', errandsRoutes.call);
+  v1Router.mount('/profile', profileRouter().call);
+  v1Router.mount('/notification-preferences', notificationPreferencesRouter().call);
+  v1Router.mount('/saved-places', savedPlacesRouter().call);
+  v1Router.mount('/safety', safetyRouter().call);
+  v1Router.mount('/support', supportRouter().call);
 
   router.mount('/api/v1', v1Router.call);
+  router.mount('/profile', profileRouter().call);
+  router.mount('/notification-preferences', notificationPreferencesRouter().call);
+  router.mount('/saved-places', savedPlacesRouter().call);
+  router.mount('/safety', safetyRouter().call);
+  router.mount('/support', supportRouter().call);
+  router.mount('/operating-locations', opLocs.call);
+  router.get('/operating-locations', (Request req) => opLocs.call(req.change(path: '')));
   router.mount('/catalogue/ride-categories', rideCats.call);
   router.get('/catalogue/ride-categories', (Request req) => rideCats.call(req.change(path: '')));
   router.mount('/ride-categories', rideCats.call);

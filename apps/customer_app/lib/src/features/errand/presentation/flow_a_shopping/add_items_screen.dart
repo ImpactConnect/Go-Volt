@@ -339,7 +339,7 @@ class AddItemsScreen extends ConsumerWidget {
   ) {
     final nameCtrl = TextEditingController();
     final qtyCtrl = TextEditingController(text: '1');
-    final budgetCtrl = TextEditingController(text: '2000');
+    final budgetCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     String selectedUnit = 'kg';
 

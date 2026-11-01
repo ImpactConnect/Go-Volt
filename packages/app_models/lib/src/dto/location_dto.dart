@@ -28,6 +28,15 @@ class LocationDto extends Equatable {
     this.state = 'Ogun',
   });
 
+  static const LocationDto empty = LocationDto(
+    latitude: 0.0,
+    longitude: 0.0,
+    address: '',
+    label: '',
+    city: 'Shaganu',
+    state: 'Ogun',
+  );
+
   final double latitude;
   final double longitude;
   final String address;

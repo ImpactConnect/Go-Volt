@@ -71,15 +71,14 @@ class UpcomingTripTabScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: _buildTabButton(
-                        title:
-                            'Completed (${state.completedTrips.length + 12})',
+                        title: 'Completed (${state.completedTrips.length})',
                         isSelected: state.activeTabIndex == 1,
                         onTap: () => notifier.setActiveTab(1),
                       ),
                     ),
                     Expanded(
                       child: _buildTabButton(
-                        title: 'Cancelled (${state.cancelledTrips.length + 2})',
+                        title: 'Cancelled (${state.cancelledTrips.length})',
                         isSelected: state.activeTabIndex == 2,
                         onTap: () => notifier.setActiveTab(2),
                       ),
@@ -92,10 +91,42 @@ class UpcomingTripTabScreen extends ConsumerWidget {
             const SizedBox(height: GVSpacing.sm),
 
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
-                itemCount: tripList.length,
-                itemBuilder: (context, index) {
+              child: tripList.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(GVSpacing.xl),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 48,
+                              color: subtextColor,
+                            ),
+                            const SizedBox(height: GVSpacing.md),
+                            Text(
+                              'No scheduled trips',
+                              style: GVTypography.h3.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: GVSpacing.xs),
+                            Text(
+                              'Your upcoming and past scheduled trips will appear here.',
+                              textAlign: TextAlign.center,
+                              style: GVTypography.bodySmall.copyWith(
+                                color: subtextColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
+                      itemCount: tripList.length,
+                      itemBuilder: (context, index) {
                   final trip = tripList[index];
                   return _buildTripDetailCard(
                     context: context,

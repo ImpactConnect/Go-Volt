@@ -2,6 +2,7 @@
 library;
 
 export 'src/dto/active_booking_summary_dto.dart';
+export 'src/dto/account_verification_dto.dart';
 export 'src/dto/booking_dto.dart';
 export 'src/dto/campaign_banner_dto.dart';
 export 'src/dto/coupon_validation_dto.dart';
@@ -9,6 +10,7 @@ export 'src/dto/customer_notification_dto.dart';
 export 'src/dto/delivery_option_dto.dart';
 export 'src/dto/dispatch_offer_dto.dart';
 export 'src/dto/location_dto.dart';
+export 'src/dto/notification_preferences_dto.dart';
 export 'src/dto/operating_location_dto.dart';
 export 'src/dto/parcel_catalogue_dto.dart';
 export 'src/dto/parcel_category_dto.dart';
@@ -29,6 +31,9 @@ export 'src/dto/scheduled_plan_dto.dart';
 export 'src/dto/scheduled_quote_dto.dart';
 export 'src/dto/scheduled_trip_dto.dart';
 export 'src/dto/school_passenger_dto.dart';
+export 'src/dto/support_faq_dto.dart';
+export 'src/dto/support_ticket_dto.dart';
+export 'src/dto/trusted_contact_dto.dart';
 export 'src/enums/scheduled_enums.dart';
 export 'src/dto/service_area_dto.dart';
 export 'src/dto/special_handling_option_dto.dart';

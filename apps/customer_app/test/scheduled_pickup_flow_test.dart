@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final testConfig = AppConfig.dev();
   final testApiClient = ApiClient(config: testConfig);
-  final repo = ScheduledRepository(apiClient: testApiClient);
+  final repo = ScheduledRepository(apiClient: testApiClient, useSeedData: true);
 
   group('Section 21 Domain Invariants & Repository Unit Tests', () {
     test(
@@ -175,7 +175,7 @@ void main() {
     );
 
     testWidgets(
-      'Screen 25 (SP-21): Upcoming Trip Tab displays 3 tabs and driver Ahmed Ibrahim',
+      'Screen 25 (SP-21): Upcoming Trip Tab displays 3 tabs and clean state',
       (tester) async {
         await tester.pumpWidget(
           ProviderScope(
@@ -187,11 +187,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Upcoming Trip'), findsOneWidget);
-        expect(find.text('Upcoming (3)'), findsOneWidget);
-        expect(find.text('Completed (12)'), findsOneWidget);
-        expect(find.text('Cancelled (2)'), findsOneWidget);
-        expect(find.text('School Run'), findsOneWidget);
-        expect(find.text('Ahmed Ibrahim'), findsOneWidget);
+        expect(find.text('Upcoming (0)'), findsOneWidget);
+        expect(find.text('Completed (0)'), findsOneWidget);
+        expect(find.text('Cancelled (0)'), findsOneWidget);
+        expect(find.text('No scheduled trips'), findsOneWidget);
       },
     );
 
@@ -227,7 +226,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Handover verification'), findsOneWidget);
-        expect(find.text('Fatima Okafor'), findsOneWidget);
+        expect(find.text('Child Passenger'), findsOneWidget);
         expect(find.text('Confirm handover'), findsOneWidget);
         expect(find.text("Can't verify? Contact support"), findsOneWidget);
       },

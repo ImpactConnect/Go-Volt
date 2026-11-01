@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/gps_location_service.dart';
 import '../../booking/presentation/map_picker_screen.dart';
@@ -49,10 +48,8 @@ class _ParcelDeliveryLocationScreenState
   Future<void> _openMapPicker() async {
     final result = await Navigator.of(context).push<LocationDto>(
       MaterialPageRoute(
-        builder: (context) => MapPickerScreen(
-          isPickup: false,
-          initialLocation: _currentLocation,
-        ),
+        builder: (context) =>
+            MapPickerScreen(isPickup: false, initialLocation: _currentLocation),
       ),
     );
 
@@ -142,29 +139,8 @@ class _ParcelDeliveryLocationScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Live Google Map for Destination
-          Positioned.fill(
-            child: LiveGoogleMapView(
-              initialLatitude: _currentLocation.latitude,
-              initialLongitude: _currentLocation.longitude,
-              initialZoom: 16.0,
-              isPicker: false,
-              showZoomControls: true,
-              showMyLocationButton: false,
-              onPositionChanged: (newCoord) {
-                setState(() {
-                  _currentLocation = LocationDto(
-                    latitude: double.parse(newCoord.latitude.toStringAsFixed(5)),
-                    longitude: double.parse(newCoord.longitude.toStringAsFixed(5)),
-                    address:
-                        '${newCoord.latitude.toStringAsFixed(4)}°N, ${newCoord.longitude.toStringAsFixed(4)}°E',
-                    label: 'Destination Location',
-                  );
-                });
-                ref.read(parcelBookingNotifierProvider.notifier).setDestinationLocation(_currentLocation);
-              },
-            ),
-          ),
+          // 1. Interactive Vector Map Canvas for Lekki Area
+          Positioned.fill(child: _ParcelDestinationMapCanvas(isDark: isDark)),
 
           // 2. Centered Red Pin Marker with Callout Bubble
           Center(
@@ -207,11 +183,7 @@ class _ParcelDeliveryLocationScreenState
                 const SizedBox(height: 2),
 
                 // Map Pin Marker (Red for Destination)
-                Icon(
-                  Icons.location_on_rounded,
-                  size: 44,
-                  color: pinColor,
-                ),
+                Icon(Icons.location_on_rounded, size: 44, color: pinColor),
                 const SizedBox(height: 38), // Center offset
               ],
             ),
@@ -262,32 +234,26 @@ class _ParcelDeliveryLocationScreenState
                           tooltip: 'Recenter GPS',
                           isDark: isDark,
                           onTap: () async {
-                            try {
-                              final gpsPos =
-                                  await GpsLocationService.getCurrentPosition(
-                                label: 'Destination (Current GPS)',
-                              );
-                              if (!mounted) return;
-                              setState(() {
-                                _currentLocation = gpsPos;
-                              });
-                              ref
-                                  .read(parcelBookingNotifierProvider.notifier)
-                                  .setDestinationLocation(gpsPos);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'GPS coordinates set: ${gpsPos.latitude.toStringAsFixed(4)}°N, ${gpsPos.longitude.toStringAsFixed(4)}°E',
-                                    ),
-                                    backgroundColor: GVColors.brandGreen,
-                                    duration: const Duration(seconds: 2),
-                                  ),
+                            final gpsPos =
+                                await GpsLocationService.getCurrentPosition(
+                                  label: 'Destination (Current GPS)',
                                 );
-                              }
-                            } catch (e) {
-                              debugPrint('GPS ERROR: $e');
-                            }
+                            if (!mounted || !context.mounted) return;
+                            setState(() {
+                              _currentLocation = gpsPos;
+                            });
+                            ref
+                                .read(parcelBookingNotifierProvider.notifier)
+                                .setDestinationLocation(gpsPos);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'GPS coordinates set: ${gpsPos.latitude.toStringAsFixed(4)}°N, ${gpsPos.longitude.toStringAsFixed(4)}°E',
+                                ),
+                                backgroundColor: GVColors.brandGreen,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(width: GVSpacing.xs),
@@ -415,7 +381,10 @@ class _ParcelDeliveryLocationScreenState
                     const SizedBox(height: GVSpacing.xs),
 
                     for (final place in [
-                      ...ref.watch(homeNotifierProvider).savedPlaces.map(
+                      ...ref
+                          .watch(homeNotifierProvider)
+                          .savedPlaces
+                          .map(
                             (p) => LocationDto(
                               latitude: p.latitude,
                               longitude: p.longitude,
@@ -429,8 +398,8 @@ class _ParcelDeliveryLocationScreenState
                         icon: place.label == 'Home'
                             ? Icons.home_rounded
                             : (place.label == 'Work'
-                                ? Icons.work_rounded
-                                : Icons.location_on_outlined),
+                                  ? Icons.work_rounded
+                                  : Icons.location_on_outlined),
                         title: place.label ?? 'Saved place',
                         subtitle: place.address,
                         isSelected: _currentLocation.label == place.label,
@@ -453,10 +422,7 @@ class _ParcelDeliveryLocationScreenState
                     const SizedBox(height: GVSpacing.lg),
 
                     // Sticky Primary CTA
-                    GVPrimaryButton(
-                      label: 'Continue',
-                      onPressed: _onConfirm,
-                    ),
+                    GVPrimaryButton(label: 'Continue', onPressed: _onConfirm),
                   ],
                 ),
               ),
@@ -551,8 +517,9 @@ class _ParcelSavedPlaceTile extends StatelessWidget {
                   Text(
                     title,
                     style: GVTypography.bodyMedium.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w600,
                       color: isDark ? Colors.white : GVColors.textPrimary,
                     ),
                   ),
@@ -603,4 +570,100 @@ class _BubbleTrianglePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BubbleTrianglePainter oldDelegate) =>
       oldDelegate.color != color;
+}
+
+class _ParcelDestinationMapCanvas extends StatelessWidget {
+  const _ParcelDestinationMapCanvas({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
+    final streetColor = isDark
+        ? const Color(0xFF1E2822)
+        : const Color(0xFFFCFDFD);
+    final waterColor = isDark
+        ? const Color(0xFF0D1D22)
+        : const Color(0xFFD0E3EA);
+
+    return CustomPaint(
+      painter: _ParcelDestinationMapPainter(
+        bgColor: bgColor,
+        streetColor: streetColor,
+        waterColor: waterColor,
+      ),
+    );
+  }
+}
+
+class _ParcelDestinationMapPainter extends CustomPainter {
+  _ParcelDestinationMapPainter({
+    required this.bgColor,
+    required this.streetColor,
+    required this.waterColor,
+  });
+
+  final Color bgColor;
+  final Color streetColor;
+  final Color waterColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = bgColor,
+    );
+
+    // Lekki Coastal Waterway
+    final waterPaint = Paint()..color = waterColor;
+    final waterPath = Path()
+      ..moveTo(0, size.height * 0.12)
+      ..quadraticBezierTo(
+        size.width * 0.45,
+        size.height * 0.20,
+        size.width,
+        size.height * 0.08,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+    canvas.drawPath(waterPath, waterPaint);
+
+    final streetPaint = Paint()
+      ..color = streetColor
+      ..strokeWidth = 14
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final secondaryStreetPaint = Paint()
+      ..color = streetColor.withValues(alpha: 0.8)
+      ..strokeWidth = 6
+      ..style = PaintingStyle.stroke;
+
+    // Lekki-Epe expressway line & arterials
+    canvas.drawLine(
+      Offset(0, size.height * 0.48),
+      Offset(size.width, size.height * 0.38),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.68),
+      Offset(size.width, size.height * 0.60),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.42, size.height * 0.18),
+      Offset(size.width * 0.38, size.height),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.76, size.height * 0.15),
+      Offset(size.width * 0.72, size.height),
+      secondaryStreetPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParcelDestinationMapPainter oldDelegate) =>
+      false;
 }

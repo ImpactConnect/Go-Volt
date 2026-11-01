@@ -10,14 +10,14 @@ const _uuid = Uuid();
 // In-memory store for active and historical errands
 final Map<String, ErrandDto> _errandsStore = {};
 
-// Reference shops in Kaduna / Lagos
+// Reference shops in Shaganu / Sagamu / Ogun State
 final List<ShopDto> _defaultShops = [
   const ShopDto(
     id: 'shop_01',
-    name: 'Kakuri Main Market',
-    address: 'Kakuri, Kaduna',
-    latitude: 10.4682,
-    longitude: 7.4201,
+    name: 'Shaganu Central Market',
+    address: 'Central Market Road, Shaganu, Ogun State',
+    latitude: 6.8403,
+    longitude: 3.6487,
     category: 'Open Market',
     distanceKm: 1.2,
     isPopular: true,
@@ -28,12 +28,12 @@ final List<ShopDto> _defaultShops = [
   ),
   const ShopDto(
     id: 'shop_02',
-    name: 'Murtala Supermarket',
-    address: 'Murtala Square, Kaduna',
-    latitude: 10.5185,
-    longitude: 7.4382,
+    name: 'Remo Mega Supermarket',
+    address: 'Remo High Street, Shaganu, Ogun State',
+    latitude: 6.8450,
+    longitude: 3.6520,
     category: 'Supermarket',
-    distanceKm: 2.4,
+    distanceKm: 2.1,
     isPopular: true,
     isSaved: false,
     phoneNumber: '+234 802 333 4455',
@@ -42,12 +42,12 @@ final List<ShopDto> _defaultShops = [
   ),
   const ShopDto(
     id: 'shop_03',
-    name: 'De-West Stores',
-    address: 'Agwa, Kaduna',
-    latitude: 10.4921,
-    longitude: 7.4112,
+    name: 'Babcock Mart & Stores',
+    address: 'University Corridor, Ilishan-Remo, Ogun State',
+    latitude: 6.8920,
+    longitude: 3.7190,
     category: 'Grocery Store',
-    distanceKm: 3.1,
+    distanceKm: 3.5,
     isPopular: false,
     isSaved: false,
     phoneNumber: '+234 809 555 6677',
@@ -56,10 +56,10 @@ final List<ShopDto> _defaultShops = [
   ),
   const ShopDto(
     id: 'shop_04',
-    name: 'Barnawa Central Market',
-    address: 'Barnawa, Kaduna',
-    latitude: 10.4850,
-    longitude: 7.4420,
+    name: 'Sagamu Central Food Market',
+    address: 'Akarigbo Road, Sagamu, Ogun State',
+    latitude: 6.8320,
+    longitude: 3.6390,
     category: 'Open Market',
     distanceKm: 4.0,
     isPopular: true,
@@ -70,12 +70,12 @@ final List<ShopDto> _defaultShops = [
   ),
   const ShopDto(
     id: 'shop_05',
-    name: 'Kasuwan Barchi Market',
-    address: 'Tudun Wada, Kaduna',
-    latitude: 10.5312,
-    longitude: 7.4089,
+    name: 'Ogun Green Stores',
+    address: 'High Street, Shaganu, Ogun State',
+    latitude: 6.8415,
+    longitude: 3.6500,
     category: 'Textile & Goods Market',
-    distanceKm: 5.5,
+    distanceKm: 1.8,
     isPopular: false,
     isSaved: false,
     phoneNumber: '+234 806 888 9900',
@@ -390,10 +390,12 @@ Router errandsRouter() {
       deliveryLocation: LocationDto.fromJson(
         body['delivery_location'] as Map<String, dynamic>? ??
             const LocationDto(
-              latitude: 10.5185,
-              longitude: 7.4382,
-              address: '3, Ahmadu Bello Way, Bayero University, Kaduna',
-              label: 'Bayero University',
+              latitude: 6.8403,
+              longitude: 3.6487,
+              address: 'Shaganu Central Hub, Shaganu, Ogun State',
+              label: 'Shaganu Central',
+              city: 'Shaganu',
+              state: 'Ogun',
             ).toJson(),
       ),
       recipient: RecipientDetailsDto.fromJson(
@@ -401,7 +403,7 @@ Router errandsRouter() {
             const RecipientDetailsDto(
               fullName: 'Omotayo Kehinde',
               phoneNumber: '0803 456 7890',
-              deliveryAddress: '3, Ahmadu Bello Way, Bayero University, Kaduna',
+              deliveryAddress: 'Shaganu Central Hub, Shaganu, Ogun State',
             ).toJson(),
       ),
       deliveryTimeStr: body['delivery_time_str'] as String? ?? 'As soon as possible',
@@ -639,8 +641,18 @@ Router errandsRouter() {
       }
     }
 
+    final newTimeline = [
+      ...errand.statusTimeline,
+      {
+        'status': nextStatus.code,
+        'title': nextStatus.label,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      },
+    ];
+
     final updated = errand.copyWith(
       status: nextStatus,
+      statusTimeline: newTimeline,
       completedAt: nextStatus == ErrandStatus.completed ? DateTime.now().toUtc() : null,
     );
     _errandsStore[id] = updated;

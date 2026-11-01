@@ -71,6 +71,9 @@ dev_dependencies:
     sdk: flutter
   testing_support:
     path: ../../packages/testing_support
+  backend:
+    path: ../../backend
+  shelf: ^1.4.1
   flutter_lints: ^6.0.0
   build_runner: ^2.4.13
   freezed: ^2.5.7

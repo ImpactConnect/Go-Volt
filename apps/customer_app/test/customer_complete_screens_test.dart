@@ -52,15 +52,17 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SavedPlacesScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: SavedPlacesScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.text('Saved Places'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Work'), findsOneWidget);
+      expect(find.textContaining('Work'), findsOneWidget);
       expect(find.text('Corona School Victoria Island'), findsOneWidget);
       expect(find.text('ACTIVE PLAN'), findsWidgets);
 
@@ -85,8 +87,13 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EditProfileScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: EditProfileScreen(
+              initialName: 'Amina Yusuf',
+              initialPhone: '+234 801 234 5678',
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -127,7 +134,7 @@ void main() {
 
       expect(find.text('Trip receipt'), findsOneWidget);
       expect(find.text('Here are the details of your trip.'), findsOneWidget);
-      expect(find.text('Daniel Okafor'), findsWidgets);
+      expect(find.text('Assigned Driver'), findsWidgets);
       expect(find.textContaining('TRP123456789'), findsWidgets);
       expect(find.text('Download receipt'), findsOneWidget);
 

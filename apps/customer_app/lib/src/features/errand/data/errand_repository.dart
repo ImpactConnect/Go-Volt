@@ -39,10 +39,10 @@ class ErrandRepositoryImpl implements ErrandRepository {
       shops: [
         ShopDto(
           id: 'shop_01',
-          name: 'Kakuri Main Market',
-          address: 'Kakuri, Kaduna',
-          latitude: 10.4682,
-          longitude: 7.4201,
+          name: 'Shaganu Central Market',
+          address: 'Central Market Road, Shaganu, Ogun State',
+          latitude: 6.8403,
+          longitude: 3.6487,
           category: 'Open Market',
           distanceKm: 1.2,
           isPopular: true,
@@ -50,23 +50,23 @@ class ErrandRepositoryImpl implements ErrandRepository {
         ),
         ShopDto(
           id: 'shop_02',
-          name: 'Murtala Supermarket',
-          address: 'Murtala Square, Kaduna',
-          latitude: 10.5185,
-          longitude: 7.4382,
+          name: 'Remo Mega Supermarket',
+          address: 'Remo High Street, Shaganu, Ogun State',
+          latitude: 6.8450,
+          longitude: 3.6520,
           category: 'Supermarket',
-          distanceKm: 2.4,
+          distanceKm: 2.1,
           isPopular: true,
           isSaved: false,
         ),
         ShopDto(
           id: 'shop_03',
-          name: 'De-West Stores',
-          address: 'Agwa, Kaduna',
-          latitude: 10.4921,
-          longitude: 7.4112,
+          name: 'Babcock Mart & Stores',
+          address: 'University Corridor, Ilishan-Remo, Ogun State',
+          latitude: 6.8920,
+          longitude: 3.7190,
           category: 'Grocery Store',
-          distanceKm: 3.1,
+          distanceKm: 3.5,
           isPopular: false,
           isSaved: false,
         ),
@@ -186,18 +186,16 @@ class ErrandRepositoryImpl implements ErrandRepository {
       deliveryLocation: LocationDto.fromJson(
         errandPayload['delivery_location'] as Map<String, dynamic>? ??
             const LocationDto(
-              latitude: 10.5185,
-              longitude: 7.4382,
-              address: '3, Ahmadu Bello Way, Bayero University, Kaduna',
+              latitude: 6.8403,
+              longitude: 3.6487,
+              address: 'Shaganu Central Hub, Shaganu, Ogun State',
+              city: 'Shaganu',
+              state: 'Ogun',
             ).toJson(),
       ),
       recipient: RecipientDetailsDto.fromJson(
         errandPayload['recipient'] as Map<String, dynamic>? ??
-            const RecipientDetailsDto(
-              fullName: 'Omotayo Kehinde',
-              phoneNumber: '0803 456 7890',
-              deliveryAddress: '3, Ahmadu Bello Way, Bayero University, Kaduna',
-            ).toJson(),
+            RecipientDetailsDto.defaultRecipient.toJson(),
       ),
       quote: ErrandQuoteDto.fromJson(
         errandPayload['quote'] as Map<String, dynamic>? ??
@@ -209,16 +207,7 @@ class ErrandRepositoryImpl implements ErrandRepository {
               totalKobo: 200000,
             ).toJson(),
       ),
-      assignedRider: const RiderDto(
-        id: 'rider_01',
-        profileId: 'prof_ahmed',
-        fullName: 'Ahmed Ibrahim',
-        phoneNumber: '+234 803 456 7890',
-        vehicleModel: 'Yamaha EV',
-        vehiclePlate: 'ABC-123KY',
-        rating: 4.8,
-        totalTripsCompleted: 320,
-      ),
+      assignedRider: null,
       createdAt: DateTime.now(),
     );
   }

@@ -318,8 +318,9 @@ class _CreateDestinationsPopSheetState
                 // Quick locations from operating areas
                 Consumer(
                   builder: (context, ref, _) {
-                    final locationsAsync =
-                        ref.watch(operatingLocationsProvider);
+                    final locationsAsync = ref.watch(
+                      operatingLocationsProvider,
+                    );
                     return locationsAsync.when(
                       data: (locations) {
                         if (locations.isEmpty) return const SizedBox.shrink();
@@ -328,8 +329,9 @@ class _CreateDestinationsPopSheetState
                           children: [
                             Text(
                               'Quick popular locations:',
-                              style: GVTypography.caption
-                                  .copyWith(color: textSecondary),
+                              style: GVTypography.caption.copyWith(
+                                color: textSecondary,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Wrap(
@@ -348,22 +350,22 @@ class _CreateDestinationsPopSheetState
                                   ),
                                   backgroundColor: isDark
                                       ? const Color(0xFF1F2B24)
-                                      : GVColors.brandGreen
-                                          .withValues(alpha: 0.08),
+                                      : GVColors.brandGreen.withValues(
+                                          alpha: 0.08,
+                                        ),
                                   side: BorderSide(
                                     color: isDark
                                         ? const Color(0xFF2A3A30)
-                                        : GVColors.brandGreen
-                                            .withValues(alpha: 0.25),
+                                        : GVColors.brandGreen.withValues(
+                                            alpha: 0.25,
+                                          ),
                                   ),
                                   onPressed: () {
                                     setState(() {
                                       _addressController.text =
                                           '${loc.city}, ${loc.state}';
-                                      _selectedLat =
-                                          loc.centerLat ?? 6.8403;
-                                      _selectedLng =
-                                          loc.centerLng ?? 3.6487;
+                                      _selectedLat = loc.centerLat ?? 6.8403;
+                                      _selectedLng = loc.centerLng ?? 3.6487;
                                       _errorText = null;
                                     });
                                   },

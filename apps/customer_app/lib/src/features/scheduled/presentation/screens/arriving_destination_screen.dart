@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../../core/router/app_router.dart';
 import '../../application/scheduled_trips_notifier.dart';
 
@@ -25,7 +24,8 @@ class ArrivingDestinationScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
     final driver = trip?.assignedDriver;
     final isSchoolRun = trip?.purpose == TripPurpose.schoolRun;
@@ -75,62 +75,60 @@ class ArrivingDestinationScreen extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Positioned.fill(
-                    child: LiveGoogleMapView(
-                      initialLatitude: trip?.destinationLocation.latitude ?? 6.8403,
-                      initialLongitude: trip?.destinationLocation.longitude ?? 3.6487,
-                      initialZoom: 15.5,
-                      showZoomControls: true,
-                      showMyLocationButton: false,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1F2937),
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 10,
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? const Color(0xFF1E2822)
+                        : const Color(0xFFE5EDE8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1F2937),
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.full,
                               ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.near_me_rounded,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                '2 min away',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.near_me_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  '2 min away',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 48,
-                          color: Color(0xFFEF4444),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          const Icon(
+                            Icons.location_on_rounded,
+                            size: 48,
+                            color: Color(0xFFEF4444),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -143,8 +141,9 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(GVSpacing.md),
                       decoration: BoxDecoration(
                         color: cardBg,
-                        borderRadius:
-                            BorderRadius.circular(GVBorderRadius.card),
+                        borderRadius: BorderRadius.circular(
+                          GVBorderRadius.card,
+                        ),
                         border: Border.all(color: borderColor),
                         boxShadow: [
                           BoxShadow(
@@ -162,7 +161,9 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: GVColors.primary.withValues(alpha: 0.2),
+                                backgroundColor: GVColors.primary.withValues(
+                                  alpha: 0.2,
+                                ),
                                 child: Text(
                                   driver != null && driver.name.isNotEmpty
                                       ? driver.name[0]
@@ -179,7 +180,7 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      driver?.name ?? 'Ahmed Ibrahim',
+                                      driver?.name ?? 'Assigned Captain',
                                       style: GVTypography.bodyLarge.copyWith(
                                         color: textColor,
                                         fontWeight: FontWeight.bold,
@@ -208,10 +209,9 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                                           child: Text(
                                             driver != null
                                                 ? '${driver.vehicleModel} • ${driver.vehiclePlate}'
-                                                : 'Toyota Corolla • ABC-123XY',
-                                            style: GVTypography.caption.copyWith(
-                                              color: subtextColor,
-                                            ),
+                                                : 'Electric Vehicle',
+                                            style: GVTypography.caption
+                                                .copyWith(color: subtextColor),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -285,7 +285,7 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Destination: ${trip?.destinationAddress ?? "Remo High Street, Shaganu, Ogun State"}',
+                                  'Destination: ${trip?.destinationAddress ?? "Bayero University, Kaduna"}',
                                   style: GVTypography.bodySmall.copyWith(
                                     color: subtextColor,
                                   ),
@@ -313,12 +313,14 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                       if (isSchoolRun) {
                         // School run requires vertical milestone view & gated PIN verification
                         notifier.advanceTripStatus(
-                            ScheduledTripStatus.handoverPending);
+                          ScheduledTripStatus.handoverPending,
+                        );
                         context.push(AppRoutes.scheduledSchoolRunStatus);
                       } else {
                         // Standard trip completes upon arrival
                         notifier.advanceTripStatus(
-                            ScheduledTripStatus.completed);
+                          ScheduledTripStatus.completed,
+                        );
                         context.push(AppRoutes.scheduledTripCompleted);
                       }
                     },
@@ -341,7 +343,8 @@ class ArrivingDestinationScreen extends ConsumerWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                              'Live location link copied to clipboard.'),
+                            'Live location link copied to clipboard.',
+                          ),
                         ),
                       );
                     },

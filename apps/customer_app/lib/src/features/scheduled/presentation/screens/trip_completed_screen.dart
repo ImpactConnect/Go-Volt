@@ -30,7 +30,8 @@ class _ScheduledTripCompletedScreenState
     final cardBg = isDark ? const Color(0xFF1C2420) : GVColors.neutral50;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.completedTrips.isNotEmpty
             ? state.completedTrips.first
             : (state.trips.isNotEmpty ? state.trips.first : null));
@@ -42,11 +43,7 @@ class _ScheduledTripCompletedScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            size: 24,
-            color: textColor,
-          ),
+          icon: Icon(Icons.close_rounded, size: 24, color: textColor),
           onPressed: () => context.go(AppRoutes.home),
         ),
       ),
@@ -155,7 +152,7 @@ class _ScheduledTripCompletedScreenState
                         Expanded(
                           child: Text(
                             trip?.pickupAddress ??
-                                'Central Roundabout, Shaganu, Ogun State',
+                                '3, Ahmadu Bello Way, Kaduna',
                             style: GVTypography.bodyMedium.copyWith(
                               color: textColor,
                             ),
@@ -183,7 +180,7 @@ class _ScheduledTripCompletedScreenState
                         Expanded(
                           child: Text(
                             trip?.destinationAddress ??
-                                'Remo High Street, Shaganu, Ogun State',
+                                'Bayero University, Kaduna',
                             style: GVTypography.bodyMedium.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.w600,
@@ -273,7 +270,7 @@ class _ScheduledTripCompletedScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            driver?.name ?? 'Ahmed Ibrahim',
+                            driver?.name ?? 'Assigned Captain',
                             style: GVTypography.bodyLarge.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.bold,

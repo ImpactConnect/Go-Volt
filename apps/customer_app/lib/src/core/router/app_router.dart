@@ -69,10 +69,21 @@ import '../../features/wallet/presentation/saved_payment_methods_screen.dart';
 import '../../features/wallet/presentation/coupons_screen.dart';
 import '../../features/activity/presentation/activity_hub_screen.dart';
 import '../../features/account/presentation/account_screen.dart';
+import '../../features/account/presentation/account_verification_screen.dart';
+import '../../features/account/presentation/create_support_ticket_screen.dart';
 import '../../features/account/presentation/edit_profile_screen.dart';
+import '../../features/account/presentation/help_centre_screen.dart';
+import '../../features/account/presentation/notification_settings_screen.dart';
+import '../../features/account/presentation/personal_info_screen.dart';
 import '../../features/account/presentation/preferences_screen.dart';
+import '../../features/account/presentation/privacy_security_screen.dart';
+import '../../features/account/presentation/safety_centre_screen.dart';
 import '../../features/account/presentation/saved_places_screen.dart';
+import '../../features/account/presentation/settings_home_screen.dart';
 import '../../features/account/presentation/support_screen.dart';
+import '../../features/account/presentation/support_tickets_list_screen.dart';
+import '../../features/account/presentation/ticket_details_screen.dart';
+import '../../features/account/presentation/trusted_contacts_screen.dart';
 import '../../features/home/presentation/notifications_screen.dart';
 import '../../features/scheduled/presentation/plan_modification_screen.dart';
 import '../../features/scheduled/presentation/screens/screens.dart';
@@ -189,6 +200,10 @@ abstract final class AppRoutes {
   static const walletPaymentMethods = '/wallet-payment-methods';
   static const walletCoupons = '/wallet-coupons';
   static const support = '/support';
+  static const helpCentre = '/help-centre';
+  static const createSupportTicket = '/support/create-ticket';
+  static const supportTicketsList = '/support/tickets';
+  static const supportTicketDetails = '/support/tickets/:id';
 
   // Secondary & Settings Screens
   static const notifications = '/notifications';
@@ -198,6 +213,13 @@ abstract final class AppRoutes {
   static const rateTrip = '/rate-trip';
   static const preferences = '/preferences';
   static const planModify = '/plan-modify';
+  static const personalInfo = '/profile/personal-info';
+  static const settings = '/settings';
+  static const notificationSettings = '/settings/notifications';
+  static const privacySecurity = '/settings/privacy-security';
+  static const safetyCentre = '/safety-centre';
+  static const trustedContacts = '/safety/trusted-contacts';
+  static const accountVerification = '/profile/verification';
 
   // Bottom Nav Branches
   static const home = '/home';
@@ -510,6 +532,53 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.preferences,
         builder: (context, state) => const PreferencesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.personalInfo,
+        builder: (context, state) => const PersonalInfoScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountVerification,
+        builder: (context, state) => const AccountVerificationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.notificationSettings,
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.privacySecurity,
+        builder: (context, state) => const PrivacySecurityScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.safetyCentre,
+        builder: (context, state) => const SafetyCentreScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.trustedContacts,
+        builder: (context, state) => const TrustedContactsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.helpCentre,
+        builder: (context, state) => const HelpCentreScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.createSupportTicket,
+        builder: (context, state) => const CreateSupportTicketScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.supportTicketsList,
+        builder: (context, state) => const SupportTicketsListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.supportTicketDetails,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? 'tkt_001';
+          return TicketDetailsScreen(ticketId: id);
+        },
       ),
       GoRoute(
         path: AppRoutes.planModify,

@@ -39,7 +39,7 @@ List<Map<String, dynamic>> _couponsStore = [
   {
     'id': 'cp_eco_04',
     'code': 'ECOSEND',
-    'title': '20% Off Eco-Parcel Delivery Across Lagos',
+    'title': '20% Off Eco-Parcel Delivery Across Ogun State',
     'discount_amount': 400.0,
     'min_order_amount': 1000.0,
     'expiry_date': DateTime.now().add(const Duration(days: 45)).toIso8601String(),
@@ -87,7 +87,7 @@ void resetCouponsStateForTest() {
     {
       'id': 'cp_eco_04',
       'code': 'ECOSEND',
-      'title': '20% Off Eco-Parcel Delivery Across Lagos',
+      'title': '20% Off Eco-Parcel Delivery Across Ogun State',
       'discount_amount': 400.0,
       'min_order_amount': 1000.0,
       'expiry_date': DateTime.now().add(const Duration(days: 45)).toIso8601String(),

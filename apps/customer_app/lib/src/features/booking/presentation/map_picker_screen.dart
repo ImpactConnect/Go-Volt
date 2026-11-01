@@ -2,9 +2,7 @@ import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/services/gps_location_service.dart';
 import '../application/booking_notifier.dart';
 
@@ -25,7 +23,6 @@ class MapPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
-  final GlobalKey<LiveGoogleMapViewState> _mapKey = GlobalKey();
   late LocationDto _currentSelectedLocation;
   bool _isLocating = false;
   late final List<LocationDto> _landmarks;
@@ -61,10 +58,6 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
         setState(() {
           _currentSelectedLocation = detected;
         });
-        _mapKey.currentState?.animateTo(
-          LatLng(detected.latitude, detected.longitude),
-          zoom: 16.5,
-        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -82,49 +75,29 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
     }
   }
 
-  LocationDto? _findClosestLandmark(double lat, double lng) {
-    for (final lm in _landmarks) {
-      final dLat = (lm.latitude - lat).abs();
-      final dLng = (lm.longitude - lng).abs();
-      if (dLat < 0.0015 && dLng < 0.0015) {
-        return lm;
-      }
-    }
-    return null;
+  void _onMapTapped(TapDownDetails details, Size mapSize) {
+    // Map screen tap to approximate GPS offset around the current coordinate
+    final dx = details.localPosition.dx - (mapSize.width / 2);
+    final dy = details.localPosition.dy - (mapSize.height / 2);
+
+    // Subtle coordinate offset: ~0.005 degrees per 100 pixels
+    final newLat = _currentSelectedLocation.latitude - (dy * 0.00005);
+    final newLng = _currentSelectedLocation.longitude + (dx * 0.00005);
+
+    setState(() {
+      _currentSelectedLocation = LocationDto(
+        latitude: double.parse(newLat.toStringAsFixed(5)),
+        longitude: double.parse(newLng.toStringAsFixed(5)),
+        label: widget.isPickup ? 'Exact Pickup Pin' : 'Exact Delivery Pin',
+        address:
+            '${newLat.toStringAsFixed(4)}°N, ${newLng.toStringAsFixed(4)}°E (Map Pin)',
+      );
+    });
   }
 
   void _selectLandmark(LocationDto landmark) {
     setState(() {
       _currentSelectedLocation = landmark;
-    });
-    _mapKey.currentState?.animateTo(
-      LatLng(landmark.latitude, landmark.longitude),
-      zoom: 16.5,
-    );
-  }
-
-  void _onPositionChanged(LatLng newCoord) {
-    setState(() {
-      final closest =
-          _findClosestLandmark(newCoord.latitude, newCoord.longitude);
-      if (closest != null) {
-        _currentSelectedLocation = LocationDto(
-          latitude: newCoord.latitude,
-          longitude: newCoord.longitude,
-          label: closest.label,
-          address: closest.address,
-        );
-      } else {
-        _currentSelectedLocation = LocationDto(
-          latitude: double.parse(newCoord.latitude.toStringAsFixed(5)),
-          longitude: double.parse(newCoord.longitude.toStringAsFixed(5)),
-          label: widget.isPickup
-              ? 'Selected Pickup Point'
-              : 'Selected Destination',
-          address:
-              '${newCoord.latitude.toStringAsFixed(4)}°N, ${newCoord.longitude.toStringAsFixed(4)}°E, Shaganu, Ogun',
-        );
-      }
     });
   }
 
@@ -187,31 +160,71 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
         ? 'Confirm pickup location'
         : 'Confirm destination';
 
+    final mediaSize = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Live Google Map with Animated Center Crosshair Pin
+          // Interactive Map Canvas with Tap Handler
           Positioned.fill(
-            child: LiveGoogleMapView(
-              key: _mapKey,
-              initialLatitude: _currentSelectedLocation.latitude,
-              initialLongitude: _currentSelectedLocation.longitude,
-              initialZoom: 16.0,
-              isPicker: true,
-              pickerTitle:
-                  widget.isPickup ? 'Pick-up point' : 'Destination point',
-              pickerAddress: _currentSelectedLocation.label ??
-                  _currentSelectedLocation.address,
-              pinColor: pinColor,
-              showZoomControls: true,
-              showMyLocationButton: true,
-              onMyLocationTapped: _fetchCurrentGps,
-              onPositionChanged: _onPositionChanged,
+            child: GestureDetector(
+              onTapDown: (details) => _onMapTapped(details, mediaSize),
+              behavior: HitTestBehavior.opaque,
+              child: _MapCanvas(isDark: isDark, isPickup: widget.isPickup),
             ),
           ),
 
-          // Top Action Controls (Back & Header Pill)
+          // Center Pin with Floating Callout Bubble
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1A221E) : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _currentSelectedLocation.label ??
+                            _currentSelectedLocation.address.split(',').first,
+                        style: GVTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: isDark ? Colors.white : GVColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                CustomPaint(
+                  size: const Size(12, 6),
+                  painter: _BubbleTrianglePainter(
+                    color: isDark ? const Color(0xFF1A221E) : Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Icon(Icons.location_on_rounded, size: 44, color: pinColor),
+                const SizedBox(height: 38),
+              ],
+            ),
+          ),
+
+          // Top Action Controls (Back & GPS Recenter)
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -219,6 +232,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                 vertical: GVSpacing.sm,
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _FloatingCircularButton(
                     icon: Icons.arrow_back_rounded,
@@ -226,62 +240,13 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                     onTap: () => Navigator.of(context).maybePop(),
                     isDark: isDark,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E2822) : Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.14),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: pinColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.isPickup
-                                  ? 'Set your pickup spot'
-                                  : 'Set your destination',
-                              style: GVTypography.bodySmall.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? Colors.white
-                                    : GVColors.textPrimary,
-                                fontSize: 13,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (_isLocating)
-                            const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: GVColors.brandGreen,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                  _FloatingCircularButton(
+                    icon: _isLocating
+                        ? Icons.hourglass_top_rounded
+                        : Icons.my_location_rounded,
+                    tooltip: 'Locate me via GPS',
+                    onTap: _isLocating ? () {} : _fetchCurrentGps,
+                    isDark: isDark,
                   ),
                 ],
               ),
@@ -290,13 +255,15 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
 
           // Hint badge near top center
           Positioned(
-            top: 72,
+            top: 100,
             left: 20,
             right: 20,
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.black.withValues(alpha: 0.75)
@@ -312,14 +279,14 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.pan_tool_alt_rounded,
-                      size: 15,
-                      color: pinColor,
+                    const Icon(
+                      Icons.touch_app_rounded,
+                      size: 16,
+                      color: GVColors.brandGreen,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Drag map to adjust ${widget.isPickup ? 'pickup' : 'destination'} point',
+                      'Tap anywhere on map to set exact GPS pin',
                       style: GVTypography.caption.copyWith(
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white70 : GVColors.textPrimary,
@@ -409,8 +376,8 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                                 color: isSelected
                                     ? GVColors.deepGreen
                                     : (isDark
-                                        ? Colors.white70
-                                        : GVColors.textPrimary),
+                                          ? Colors.white70
+                                          : GVColors.textPrimary),
                               ),
                             ),
                             selected: isSelected,
@@ -497,10 +464,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                     const SizedBox(height: GVSpacing.md),
 
                     // Confirm Action Button
-                    GVPrimaryButton(
-                      label: buttonLabel,
-                      onPressed: _onConfirm,
-                    ),
+                    GVPrimaryButton(label: buttonLabel, onPressed: _onConfirm),
                   ],
                 ),
               ),
@@ -549,4 +513,128 @@ class _FloatingCircularButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BubbleTrianglePainter extends CustomPainter {
+  const _BubbleTrianglePainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleTrianglePainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// Stylized map canvas preview
+class _MapCanvas extends StatelessWidget {
+  const _MapCanvas({required this.isDark, required this.isPickup});
+  final bool isDark;
+  final bool isPickup;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9);
+    final streetColor = isDark
+        ? const Color(0xFF1E2822)
+        : const Color(0xFFFCFDFD);
+    final waterColor = isDark
+        ? const Color(0xFF0D1D22)
+        : const Color(0xFFD0E3EA);
+
+    return CustomPaint(
+      painter: _MapCanvasPainter(
+        bgColor: bgColor,
+        streetColor: streetColor,
+        waterColor: waterColor,
+        isPickup: isPickup,
+      ),
+    );
+  }
+}
+
+class _MapCanvasPainter extends CustomPainter {
+  _MapCanvasPainter({
+    required this.bgColor,
+    required this.streetColor,
+    required this.waterColor,
+    required this.isPickup,
+  });
+
+  final Color bgColor;
+  final Color streetColor;
+  final Color waterColor;
+  final bool isPickup;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = bgColor,
+    );
+
+    // River / waterway feature
+    final waterPaint = Paint()..color = waterColor;
+    final waterPath = Path()
+      ..moveTo(0, size.height * 0.18)
+      ..quadraticBezierTo(
+        size.width * 0.45,
+        size.height * 0.25,
+        size.width,
+        size.height * 0.16,
+      )
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+    canvas.drawPath(waterPath, waterPaint);
+
+    final streetPaint = Paint()
+      ..color = streetColor
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final secondaryStreetPaint = Paint()
+      ..color = streetColor.withValues(alpha: 0.8)
+      ..strokeWidth = 6
+      ..style = PaintingStyle.stroke;
+
+    // Road network
+    canvas.drawLine(
+      Offset(0, size.height * 0.45),
+      Offset(size.width, size.height * 0.42),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.65),
+      Offset(size.width, size.height * 0.70),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.35, size.height * 0.2),
+      Offset(size.width * 0.30, size.height),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.68, size.height * 0.2),
+      Offset(size.width * 0.72, size.height),
+      secondaryStreetPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _MapCanvasPainter oldDelegate) => false;
 }

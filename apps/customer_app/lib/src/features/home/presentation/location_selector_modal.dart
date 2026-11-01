@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
-import '../../../core/services/google_places_service.dart';
-import 'current_location_map_screen.dart';
 import '../application/home_notifier.dart';
 import '../application/home_state.dart';
 
@@ -37,57 +34,23 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   ServiceAreaDto? _selectedArea;
-  Timer? _debounceTimer;
-  String? _placesSessionToken;
-  List<PlacePrediction> _livePredictions = [];
-  bool _isLoadingPredictions = false;
+  bool _isLocating = false;
 
   @override
   void initState() {
     super.initState();
     _selectedArea = ref.read(homeNotifierProvider).currentLocation;
-    _placesSessionToken = GooglePlacesService.generateSessionToken();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query.trim().toLowerCase();
-    });
-
-    _debounceTimer?.cancel();
-    if (query.trim().isEmpty) {
-      setState(() {
-        _livePredictions = [];
-        _isLoadingPredictions = false;
-      });
-      return;
-    }
-
-    _debounceTimer = Timer(const Duration(milliseconds: 250), () async {
-      setState(() => _isLoadingPredictions = true);
-      try {
-        final predictions = await ref
-            .read(googlePlacesServiceProvider)
-            .searchPredictions(query, sessionToken: _placesSessionToken);
-        if (mounted) {
-          setState(() {
-            _livePredictions = predictions;
-            _isLoadingPredictions = false;
-          });
-        }
-      } catch (_) {
-        if (mounted) {
-          setState(() => _isLoadingPredictions = false);
-        }
-      }
-    });
   }
 
   @override
@@ -100,19 +63,23 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
     final filteredAreas = _searchQuery.isEmpty
         ? homeState.serviceAreas
         : homeState.serviceAreas
-            .where((a) =>
-                a.name.toLowerCase().contains(_searchQuery) ||
-                a.state.toLowerCase().contains(_searchQuery) ||
-                a.displayName.toLowerCase().contains(_searchQuery))
-            .toList();
+              .where(
+                (a) =>
+                    a.name.toLowerCase().contains(_searchQuery) ||
+                    a.state.toLowerCase().contains(_searchQuery) ||
+                    a.displayName.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
 
     final filteredPlaces = _searchQuery.isEmpty
         ? homeState.savedPlaces
         : homeState.savedPlaces
-            .where((p) =>
-                p.label.toLowerCase().contains(_searchQuery) ||
-                p.address.toLowerCase().contains(_searchQuery))
-            .toList();
+              .where(
+                (p) =>
+                    p.label.toLowerCase().contains(_searchQuery) ||
+                    p.address.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
 
     return Container(
       constraints: BoxConstraints(
@@ -158,8 +125,9 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   IconButton(
                     icon: Icon(
                       Icons.close_rounded,
-                      color:
-                          isDark ? GVColors.neutral400 : GVColors.textSecondary,
+                      color: isDark
+                          ? GVColors.neutral400
+                          : GVColors.textSecondary,
                     ),
                     onPressed: () {
                       if (Navigator.of(context).canPop()) {
@@ -194,23 +162,6 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   // GPS Tile
                   _buildGpsOptionTile(isDark, homeState),
                   const SizedBox(height: 20),
-
-                  // Live Google Places Address Predictions
-                  if (_livePredictions.isNotEmpty) ...[
-                    Text(
-                      'Address suggestions',
-                      style: GVTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : GVColors.textPrimary,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ..._livePredictions.map(
-                      (prediction) => _buildPredictionTile(isDark, prediction),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
 
                   // Saved Locations Section
                   if (filteredPlaces.isNotEmpty) ...[
@@ -291,8 +242,9 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
 
   /// Segmented tabs matching Screen 14 design
   Widget _buildSegmentedTabs(bool isDark) {
-    final containerBg =
-        isDark ? const Color(0xFF1C2420) : GVColors.softBackground;
+    final containerBg = isDark
+        ? const Color(0xFF1C2420)
+        : GVColors.softBackground;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
     return Container(
@@ -317,14 +269,7 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
               title: 'Search address',
               isSelected: _selectedTab == 1,
               isDark: isDark,
-              onTap: () {
-                setState(() => _selectedTab = 1);
-                if (_searchController.text.isNotEmpty) {
-                  _onSearchChanged(_searchController.text);
-                } else {
-                  _onSearchChanged('Shaganu');
-                }
-              },
+              onTap: () => setState(() => _selectedTab = 1),
             ),
           ),
         ],
@@ -373,7 +318,6 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
 
     return TextField(
       controller: _searchController,
-      onChanged: _onSearchChanged,
       style: TextStyle(color: isDark ? Colors.white : GVColors.textPrimary),
       decoration: InputDecoration(
         hintText: 'Search for an address',
@@ -386,31 +330,18 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
           color: isDark ? GVColors.neutral400 : GVColors.textSecondary,
           size: 20,
         ),
-        suffixIcon: _isLoadingPredictions
-            ? const Padding(
-                padding: EdgeInsets.all(12),
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: GVColors.brandGreen,
-                  ),
-                ),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear_rounded, size: 18),
+                onPressed: () => _searchController.clear(),
               )
-            : (_searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 18),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  )
-                : null),
+            : null,
         filled: true,
         fillColor: fieldBg,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: borderColor),
@@ -418,118 +349,6 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: GVColors.brandGreen, width: 1.5),
-        ),
-      ),
-    );
-  }
-
-  /// Live Google Places Prediction Item
-  Widget _buildPredictionTile(bool isDark, PlacePrediction prediction) {
-    final tileBg = isDark ? const Color(0xFF1C2420) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
-    final isSelected = _selectedArea?.name == prediction.mainText;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: tileBg,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () async {
-            final placesService = ref.read(googlePlacesServiceProvider);
-            LocationDto? loc;
-            try {
-              loc = await placesService.getPlaceDetails(
-                prediction.placeId,
-                sessionToken: _placesSessionToken,
-              );
-            } catch (_) {}
-
-            final area = ServiceAreaDto(
-              id: 'place_${prediction.placeId}',
-              name: loc?.label ?? prediction.mainText,
-              state: loc?.state ?? 'Ogun',
-              status: ServiceAreaStatus.fullySupported,
-              statusDescription: 'Operating Service Area',
-              availableServices: const [
-                ServiceCode.instantRide,
-                ServiceCode.instantDelivery,
-                ServiceCode.scheduledRide,
-                ServiceCode.scheduledPickup,
-              ],
-            );
-            setState(() {
-              _selectedArea = area;
-            });
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? GVColors.brandGreen : borderColor,
-                width: isSelected ? 1.5 : 1.0,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF131A16)
-                        : GVColors.softBackground,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: GVColors.brandGreen,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        prediction.mainText,
-                        style: GVTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : GVColors.textPrimary,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        prediction.secondaryText.isNotEmpty
-                            ? prediction.secondaryText
-                            : prediction.description,
-                        style: GVTypography.caption.copyWith(
-                          color: isDark
-                              ? GVColors.neutral400
-                              : GVColors.textSecondary,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  isSelected
-                      ? Icons.check_circle_rounded
-                      : Icons.north_west_rounded,
-                  color:
-                      isSelected ? GVColors.brandGreen : GVColors.neutral400,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -544,7 +363,7 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
       color: tileBg,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: () => _openCurrentLocationMap(homeState),
+        onTap: _isLocating ? null : () => _detectGpsLocation(homeState),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -561,11 +380,19 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   color: GVColors.brandGreen.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.my_location_rounded,
-                  color: GVColors.brandGreen,
-                  size: 20,
-                ),
+                child: _isLocating
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: GVColors.brandGreen,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.my_location_rounded,
+                        color: GVColors.brandGreen,
+                        size: 20,
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -796,8 +623,9 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                   child: Text(
                     area.displayName,
                     style: GVTypography.bodyMedium.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                       color: isDark ? Colors.white : GVColors.textPrimary,
                       fontSize: 14,
                     ),
@@ -805,8 +633,10 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
                 ),
                 // Status pill badge
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: isFullySupported
                         ? GVColors.brandGreen.withValues(alpha: 0.15)
@@ -838,30 +668,72 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
     );
   }
 
-  /// Opens the Live Google Map screen for real-time GPS coordinate selection.
-  Future<void> _openCurrentLocationMap(HomeState homeState) async {
-    final loc = await CurrentLocationMapScreen.open(context);
-    if (loc != null && mounted) {
-      final matchingArea = homeState.serviceAreas.firstWhere(
-        (a) =>
-            a.name.toLowerCase().contains('shaganu') ||
-            a.state.toLowerCase().contains('ogun'),
-        orElse: () => homeState.currentLocation,
-      );
-      setState(() => _selectedArea = matchingArea);
-      ref.read(homeNotifierProvider.notifier).selectLocation(matchingArea);
-
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(matchingArea);
+  /// GPS resolution action
+  Future<void> _detectGpsLocation(HomeState homeState) async {
+    setState(() => _isLocating = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enable GPS location services'),
+            ),
+          );
+        }
+        return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Current location confirmed: ${loc.label ?? loc.address} (${loc.latitude.toStringAsFixed(4)}°N, ${loc.longitude.toStringAsFixed(4)}°E)',
-          ),
-          backgroundColor: GVColors.brandGreen,
-        ),
-      );
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        final position =
+            await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 5),
+              ),
+            ).catchError(
+              (_) => Position(
+                latitude: 6.8403,
+                longitude: 3.6487,
+                timestamp: DateTime.now(),
+                accuracy: 5.0,
+                altitude: 0.0,
+                altitudeAccuracy: 0.0,
+                heading: 0.0,
+                headingAccuracy: 0.0,
+                speed: 0.0,
+                speedAccuracy: 0.0,
+              ),
+            );
+
+        final detected = homeState.serviceAreas.isNotEmpty
+            ? homeState.serviceAreas.first
+            : homeState.currentLocation;
+        if (mounted) {
+          setState(() => _selectedArea = detected);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Location detected: ${detected.displayName} (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _selectedArea = homeState.serviceAreas.first);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
     }
   }
 
@@ -879,7 +751,9 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
           children: [
             TextField(
               controller: labelCtrl,
-              decoration: const InputDecoration(labelText: 'Label (e.g. Gym, School)'),
+              decoration: const InputDecoration(
+                labelText: 'Label (e.g. Gym, School)',
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -898,7 +772,9 @@ class _LocationSelectorModalState extends ConsumerState<LocationSelectorModal> {
               final label = labelCtrl.text.trim();
               final address = addressCtrl.text.trim();
               if (label.isNotEmpty && address.isNotEmpty) {
-                ref.read(homeNotifierProvider.notifier).addSavedPlace(
+                ref
+                    .read(homeNotifierProvider.notifier)
+                    .addSavedPlace(
                       SavedPlaceDto(
                         id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
                         label: label,

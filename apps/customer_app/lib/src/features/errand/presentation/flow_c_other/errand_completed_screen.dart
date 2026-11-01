@@ -15,6 +15,7 @@ class ErrandCompletedScreen extends ConsumerWidget {
 
   void _showRatingDialog(BuildContext context, WidgetRef ref) {
     double selectedRating = 5.0;
+    final riderName = ref.read(otherErrandNotifierProvider).activeErrand?.assignedRider?.fullName ?? 'your rider';
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -29,10 +30,10 @@ class ErrandCompletedScreen extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'How was your errand experience with Ahmed Ibrahim?',
+              Text(
+                'How was your errand experience with $riderName?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
               ),
               const SizedBox(height: 18),
               Row(

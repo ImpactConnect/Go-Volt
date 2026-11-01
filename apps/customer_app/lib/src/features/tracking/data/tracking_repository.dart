@@ -10,15 +10,11 @@ class TrackingRepository {
 
   /// Fetches latest status of a booking.
   Future<BookingDto> getBookingStatus(String bookingId) async {
-    try {
-      final response = await _apiClient.getBooking(bookingId);
-      if (response.isSuccess && response.data != null) {
-        return response.data!;
-      }
-    } catch (_) {
-      // Return local simulated state when running offline/preview
+    final response = await _apiClient.getBooking(bookingId);
+    if (response.isSuccess && response.data != null) {
+      return response.data!;
     }
-    return _buildMockActiveBooking(bookingId);
+    throw Exception('Failed to load booking status for $bookingId: ${response.error?.message ?? "Booking not found"}');
   }
 
   /// Cancels an active booking with validated cancellation policy.
@@ -83,41 +79,5 @@ class TrackingRepository {
       }
     } catch (_) {}
     return 'CASE-${DateTime.now().millisecondsSinceEpoch % 100000}';
-  }
-
-  /// Fallback mock booking for previews and testing.
-  BookingDto _buildMockActiveBooking(String bookingId) {
-    return BookingDto(
-      id: bookingId,
-      bookingReference: 'GV-TRK-$bookingId',
-      serviceCode: ServiceCode.instantRide,
-      status: BookingStatus.assigned,
-      pickupLocation: const LocationDto(
-        latitude: 6.5244,
-        longitude: 3.3792,
-        address: '14 Marina Street, Lagos Island',
-        label: 'Marina Terminal',
-      ),
-      dropoffLocation: const LocationDto(
-        latitude: 6.4474,
-        longitude: 3.4723,
-        address: 'Admiralty Way, Lekki Phase 1',
-        label: 'Lekki Phase 1',
-      ),
-      priceBreakdown: const PriceBreakdownDto(
-        baseFare: 500.0,
-        distanceFare: 1200.0,
-        timeFare: 300.0,
-        totalFare: 2200.0,
-      ),
-      createdAt: DateTime.now(),
-      riderId: 'rider-001',
-      riderName: 'Babatunde Raji',
-      riderPhone: '+2348039281742',
-      riderRating: 4.9,
-      vehicleType: VehicleType.electricBike,
-      vehiclePlate: 'LAG-428-EV',
-      vehicleModel: 'Volt-Bike 200 EV',
-    );
   }
 }

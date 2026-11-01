@@ -19,18 +19,15 @@ class HandoverVerificationScreen extends ConsumerStatefulWidget {
 
 class _HandoverVerificationScreenState
     extends ConsumerState<HandoverVerificationScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
   @override
   void initState() {
     super.initState();
-    // Default mock seed code matching technical spec / design board (4219)
-    _controllers[0].text = '4';
-    _controllers[1].text = '2';
-    _controllers[2].text = '1';
-    _controllers[3].text = '9';
   }
 
   @override
@@ -59,7 +56,8 @@ class _HandoverVerificationScreenState
 
     final state = ref.read(scheduledTripsNotifierProvider);
     final notifier = ref.read(scheduledTripsNotifierProvider.notifier);
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
 
     if (trip == null) return;
@@ -76,13 +74,11 @@ class _HandoverVerificationScreenState
     if (success) {
       context.push(AppRoutes.scheduledHandoverConfirmed);
     } else {
-      final msg = ref.read(scheduledTripsNotifierProvider).errorMessage ??
+      final msg =
+          ref.read(scheduledTripsNotifierProvider).errorMessage ??
           'Invalid verification code. Please check with recipient.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: const Color(0xFFEF4444),
-        ),
+        SnackBar(content: Text(msg), backgroundColor: const Color(0xFFEF4444)),
       );
     }
   }
@@ -90,6 +86,9 @@ class _HandoverVerificationScreenState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(scheduledTripsNotifierProvider);
+    final trip =
+        state.selectedTrip ??
+        (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF131A16) : Colors.white;
     final textColor = isDark ? Colors.white : GVColors.textPrimary;
@@ -167,8 +166,7 @@ class _HandoverVerificationScreenState
                     margin: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
                       color: cardBg,
-                      borderRadius:
-                          BorderRadius.circular(GVBorderRadius.card),
+                      borderRadius: BorderRadius.circular(GVBorderRadius.card),
                       border: Border.all(
                         color: _controllers[index].text.isNotEmpty
                             ? GVColors.primary
@@ -237,7 +235,9 @@ class _HandoverVerificationScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Fatima Okafor',
+                            (trip?.passengerName.isNotEmpty ?? false)
+                                ? trip!.passengerName
+                                : 'Child Passenger',
                             style: GVTypography.bodyLarge.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.bold,
@@ -245,15 +245,9 @@ class _HandoverVerificationScreenState
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Age 10 • JSS 1',
-                            style: GVTypography.caption.copyWith(
-                              color: subtextColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Remo High Street, Shaganu, Ogun State',
+                            trip?.destinationLocation.label?.isNotEmpty == true
+                                ? trip!.destinationLocation.label!
+                                : (trip?.destinationLocation.address ?? 'School Destination'),
                             style: GVTypography.caption.copyWith(
                               color: subtextColor,
                             ),

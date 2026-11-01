@@ -132,6 +132,7 @@ enum UserRole {
 enum SavedPlaceType {
   home('HOME', 'Home'),
   work('WORK', 'Work'),
+  school('SCHOOL', 'School'),
   custom('CUSTOM', 'Custom');
 
   const SavedPlaceType(this.code, this.displayName);

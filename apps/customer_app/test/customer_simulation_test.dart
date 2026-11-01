@@ -164,10 +164,17 @@ class _SimulatedBookingRepository implements BookingRepository {
   }
 }
 
+class _SimulatedScheduledRepository extends ScheduledRepository {
+  _SimulatedScheduledRepository({required super.apiClient, this.plans = const []});
+  final List<ScheduledPlanDto> plans;
+
+  @override
+  Future<List<ScheduledPlanDto>> getCustomerPlans() async => plans;
+}
+
 void main() {
   final testConfig = AppConfig.dev();
   final testApiClient = ApiClient(config: testConfig);
-  final testScheduledRepo = ScheduledRepository(apiClient: testApiClient);
   final testTrackingRepo = TrackingRepository(apiClient: testApiClient);
   final testWalletRepo =
       WalletRepository(apiClient: testApiClient, useSeedData: true);
@@ -218,6 +225,9 @@ void main() {
       ),
     ],
   );
+
+  final testScheduledRepo =
+      _SimulatedScheduledRepository(apiClient: testApiClient, plans: [testSchoolRunPlan]);
 
   group('Simulation 1: Ride Order Full Lifecycle (R01 - R11)', () {
     final testBooking = BookingDto(
@@ -424,6 +434,12 @@ void main() {
             appConfigProvider.overrideWithValue(testConfig),
             apiClientProvider.overrideWithValue(testApiClient),
             trackingRepositoryProvider.overrideWithValue(testTrackingRepo),
+            liveTrackingNotifierProvider.overrideWith(
+              (ref) => LiveTrackingNotifier(
+                repository: testTrackingRepo,
+                initialBooking: testBooking,
+              ),
+            ),
           ],
           child: const MaterialApp(
             home: TripCompletedScreen(),
@@ -447,9 +463,17 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
+          overrides: [
+            liveTrackingNotifierProvider.overrideWith(
+              (ref) => LiveTrackingNotifier(
+                repository: testTrackingRepo,
+                initialBooking: testBooking,
+              ),
+            ),
+          ],
           child: MaterialApp(
-            home: ReceiptScreen(),
+            home: ReceiptScreen(tripReference: testBooking.bookingReference),
           ),
         ),
       );
@@ -457,8 +481,8 @@ void main() {
 
       expect(find.text('Trip receipt'), findsOneWidget);
       expect(find.text('Here are the details of your trip.'), findsOneWidget);
-      expect(find.text('Daniel Okafor'), findsWidgets);
-      expect(find.textContaining('TRP123456789'), findsWidgets);
+      expect(find.text('Babatunde Raji'), findsWidgets);
+      expect(find.textContaining('GV-TRK-8392'), findsWidgets);
       expect(find.text('Download receipt'), findsOneWidget);
 
       await tester.tap(find.text('Download receipt'));
@@ -796,6 +820,10 @@ void main() {
       expect(find.text('₦5k'), findsOneWidget);
       expect(find.text('₦10k'), findsOneWidget);
       expect(find.text('Debit / Credit Card (Paystack)'), findsOneWidget);
+
+      // Select preset amount ₦2k
+      await tester.tap(find.text('₦2k'));
+      await tester.pumpAndSettle();
       expect(find.text('Proceed to Pay ₦2000'), findsOneWidget);
 
       // Tap Proceed to Pay ₦2000
@@ -854,7 +882,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: EditProfileScreen(),
+          home: EditProfileScreen(initialPhone: '+234 801 234 5678'),
         ),
       );
       await tester.pumpAndSettle();
@@ -955,27 +983,19 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Help & Support Center'), findsOneWidget);
-      expect(find.text('24/7 Operations Support'), findsOneWidget);
-      expect(find.text('Call +234 1 800 4686'), findsOneWidget);
-      expect(find.text('Frequently Asked Questions'), findsOneWidget);
-      expect(find.text('Send a Message to Support'), findsOneWidget);
-      expect(find.text('Submit Support Ticket'), findsOneWidget);
+      expect(find.text('Help & Support Centre'), findsOneWidget);
+      expect(find.text('Create Ticket'), findsOneWidget);
+      expect(find.text('My Tickets'), findsOneWidget);
+      expect(find.text('Still Need Direct Assistance?'), findsOneWidget);
+      expect(find.text('0700-GOVOLTS'), findsOneWidget);
 
-      // Enter message and submit
+      // Search FAQ
       await tester.enterText(
         find.byType(TextField),
-        'Question regarding morning pickup window at Lekki Phase 1',
+        'wallet',
       );
-      await tester.pump();
-
-      await tester.tap(find.text('Submit Support Ticket'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
-
-      expect(find.text('Inquiry Logged Successfully'), findsOneWidget);
-      expect(find.textContaining('CASE-SUP-'), findsOneWidget);
+      expect(find.textContaining('top up my wallet'), findsOneWidget);
     });
   });
 }

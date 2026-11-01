@@ -15,15 +15,15 @@ class RecipientDetailsDto extends Equatable {
 
   factory RecipientDetailsDto.fromJson(Map<String, dynamic> json) {
     return RecipientDetailsDto(
-      fullName: json['full_name'] as String? ?? 'John Doe',
-      phoneNumber: json['phone_number'] as String? ?? '0803 123 4567',
+      fullName: json['full_name'] as String? ?? '',
+      phoneNumber: json['phone_number'] as String? ?? '',
       countryCode: json['country_code'] as String? ?? '+234',
       deliveryAddress:
-          json['delivery_address'] as String? ?? 'Palms Mall, Lekki, Lagos',
+          json['delivery_address'] as String? ?? '',
       additionalAddressInfo: json['additional_address_info'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      saveAsRecipient: json['save_as_recipient'] as bool? ?? true,
+      saveAsRecipient: json['save_as_recipient'] as bool? ?? false,
     );
   }
 
@@ -76,30 +76,15 @@ class RecipientDetailsDto extends Equatable {
   }
 
   static const RecipientDetailsDto defaultRecipient = RecipientDetailsDto(
-    fullName: 'John Doe',
-    phoneNumber: '0803 123 4567',
+    fullName: '',
+    phoneNumber: '',
     countryCode: '+234',
-    deliveryAddress: 'Palms Mall, Lekki, Lagos',
-    additionalAddressInfo: 'Shop B12, Second floor',
-    saveAsRecipient: true,
+    deliveryAddress: '',
+    additionalAddressInfo: '',
+    saveAsRecipient: false,
   );
 
-  static const List<RecipientDetailsDto> recentRecipients = [
-    RecipientDetailsDto(
-      fullName: 'Sarah Ahmed',
-      phoneNumber: '0802 345 6789',
-      countryCode: '+234',
-      deliveryAddress: 'Lekki Phase 1, Lagos',
-      saveAsRecipient: true,
-    ),
-    RecipientDetailsDto(
-      fullName: 'Michael Brown',
-      phoneNumber: '0809 876 5432',
-      countryCode: '+234',
-      deliveryAddress: 'Victoria Island, Lagos',
-      saveAsRecipient: true,
-    ),
-  ];
+  static const List<RecipientDetailsDto> recentRecipients = [];
 
   @override
   List<Object?> get props => [

@@ -374,8 +374,12 @@ class _ScheduledPickupLocationScreenState
                   Positioned.fill(
                     child: LiveGoogleMapView(
                       key: _mapKey,
-                      initialLatitude: state.pickupLocation.latitude,
-                      initialLongitude: state.pickupLocation.longitude,
+                      initialLatitude: state.pickupLocation.latitude != 0.0
+                          ? state.pickupLocation.latitude
+                          : GooglePlacesService.operatingLat,
+                      initialLongitude: state.pickupLocation.longitude != 0.0
+                          ? state.pickupLocation.longitude
+                          : GooglePlacesService.operatingLng,
                       initialZoom: 16.0,
                       showZoomControls: true,
                       showMyLocationButton: false,
@@ -406,7 +410,9 @@ class _ScheduledPickupLocationScreenState
                             ],
                           ),
                           child: Text(
-                            state.pickupLocation.label ?? 'Pickup Location',
+                            state.pickupLocation.label?.isNotEmpty == true
+                                ? state.pickupLocation.label!
+                                : 'Pickup Location',
                             style: GVTypography.labelSmall.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.bold,

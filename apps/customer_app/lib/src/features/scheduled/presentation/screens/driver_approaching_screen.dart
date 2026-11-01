@@ -155,7 +155,7 @@ class DriverApproachingScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              driver?.name ?? 'Ahmed Ibrahim',
+                              driver?.name ?? 'Assigned Captain',
                               style: GVTypography.labelLarge.copyWith(
                                 color: textColor,
                                 fontWeight: FontWeight.bold,
@@ -163,23 +163,32 @@ class DriverApproachingScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.star_rounded,
-                                  size: 16,
-                                  color: Color(0xFFFFB800),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${driver?.rating.toStringAsFixed(1) ?? "4.8"} • ${driver?.vehicleModel ?? "Toyota Corolla"}',
-                                  style: GVTypography.bodySmall.copyWith(
-                                    color: subtextColor,
-                                    fontSize: 12,
+                            if (driver != null)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    size: 16,
+                                    color: Color(0xFFFFB800),
                                   ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${driver.rating.toStringAsFixed(1)} • ${driver.vehicleModel}',
+                                    style: GVTypography.bodySmall.copyWith(
+                                      color: subtextColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Text(
+                                'Awaiting vehicle assignment',
+                                style: GVTypography.bodySmall.copyWith(
+                                  color: subtextColor,
+                                  fontSize: 12,
                                 ),
-                              ],
-                            ),
+                              ),
                           ],
                         ),
                       ),
@@ -233,7 +242,7 @@ class DriverApproachingScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           trip?.pickupLocation.address ??
-                              '3, Ahmadu Bello Way, Kaduna',
+                              'Shaganu Central Hub, Ogun State',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GVTypography.bodySmall.copyWith(

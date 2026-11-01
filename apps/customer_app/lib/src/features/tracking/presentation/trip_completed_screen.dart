@@ -46,25 +46,23 @@ class _TripCompletedScreenState extends ConsumerState<TripCompletedScreen> {
     final booking = trackingState?.booking;
     final breakdown = booking?.priceBreakdown;
 
-    final driverName = booking?.riderName ?? 'Daniel Okafor';
-    final vehiclePlate = booking?.vehiclePlate ?? 'KJA 123 AB';
-    final vehicleModel = booking?.vehicleModel ?? 'Toyota Corolla - Black';
-    final totalFareLabel = breakdown?.formattedTotalAmount ?? '₦3,200';
-    final promoDiscount = breakdown?.discountAmountKobo ?? 30000;
+    final driverName = booking?.riderName ?? 'Assigned Driver';
+    final vehiclePlate = booking?.vehiclePlate ?? '';
+    final vehicleModel = booking?.vehicleModel ?? 'Go-Volt EV';
+    final totalFareLabel = breakdown?.formattedTotalAmount ?? '';
+    final promoDiscount = breakdown?.discountAmountKobo ?? 0;
     final promoSavingsLabel = promoDiscount > 0
         ? 'You saved ₦${(promoDiscount / 100).round()} with promo'
         : null;
 
-    final pickupAddress = booking?.pickupLocation.address ??
-        'Eko Hotel and Suites, Victoria Island, Lagos';
-    final destinationAddress =
-        booking?.dropoffLocation.address ?? 'Palms Mall, Lekki, Lagos';
+    final pickupAddress = booking?.pickupLocation.address ?? '';
+    final destinationAddress = booking?.dropoffLocation.address ?? '';
     final distanceLabel = booking?.distanceKm != null
         ? '${booking!.distanceKm!.toStringAsFixed(1)} km'
-        : '8.4 km';
+        : '';
     final durationLabel = booking?.durationMinutes != null
         ? '${booking!.durationMinutes} min'
-        : '12 min';
+        : '';
     final rideTypeName = booking?.rideCategoryName ?? 'GoRide Standard';
 
     final theme = Theme.of(context);

@@ -58,10 +58,10 @@ class _ParcelRatingScreenState extends ConsumerState<ParcelRatingScreen> {
     setState(() => _isSubmitting = true);
 
     final state = ref.read(parcelBookingNotifierProvider);
-    final tracking = state.activeDelivery?.trackingNumber ?? 'DVL12345678';
-    final riderName = state.activeDelivery?.riderName ?? 'Daniel Okafor';
+    final tracking = state.activeDelivery?.trackingNumber ?? '';
+    final riderName = state.activeDelivery?.riderName ?? 'Courier';
     final riderVehicle =
-        state.activeDelivery?.riderVehicle ?? 'Yamaha Bike - ABC-123XY';
+        state.activeDelivery?.riderVehicle ?? 'Go-Volt Delivery';
 
     final ratingDto = ParcelRatingDto(
       trackingNumber: tracking,
@@ -92,9 +92,9 @@ class _ParcelRatingScreenState extends ConsumerState<ParcelRatingScreen> {
     final state = ref.watch(parcelBookingNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final riderName = state.activeDelivery?.riderName ?? 'Daniel Okafor';
+    final riderName = state.activeDelivery?.riderName ?? 'Courier';
     final riderVehicle =
-        state.activeDelivery?.riderVehicle ?? 'Yamaha Bike - ABC-123XY';
+        state.activeDelivery?.riderVehicle ?? 'Go-Volt Delivery';
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F1512) : GVColors.white,

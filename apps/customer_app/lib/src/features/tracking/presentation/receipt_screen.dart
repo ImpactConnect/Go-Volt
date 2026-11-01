@@ -31,27 +31,25 @@ class ReceiptScreen extends ConsumerWidget {
     final booking = trackingState?.booking;
     final breakdown = booking?.priceBreakdown;
 
-    final driverName = booking?.riderName ?? 'Daniel Okafor';
-    final vehiclePlate = booking?.vehiclePlate ?? 'KJA 123 AB';
-    final vehicleModel = booking?.vehicleModel ?? 'Toyota Corolla - Black';
-    final rating = booking?.riderRating ?? 4.8;
-    final tripsCount = booking?.driverTripsCount ?? 320;
+    final driverName = booking?.riderName ?? 'Assigned Driver';
+    final vehiclePlate = booking?.vehiclePlate ?? '';
+    final vehicleModel = booking?.vehicleModel ?? 'Go-Volt EV';
+    final rating = booking?.riderRating ?? 5.0;
+    final tripsCount = booking?.driverTripsCount ?? 0;
 
-    final pickupAddress = booking?.pickupLocation.address ??
-        'Eko Hotel and Suites, Victoria Island, Lagos';
-    final destinationAddress =
-        booking?.dropoffLocation.address ?? 'Palms Mall, Lekki, Lagos';
+    final pickupAddress = booking?.pickupLocation.address ?? '';
+    final destinationAddress = booking?.dropoffLocation.address ?? '';
 
-    final totalPaidLabel = breakdown?.formattedTotalAmount ?? '₦3,200';
-    final baseFareLabel = breakdown?.formattedBaseAmount ?? '₦1,500';
-    final distanceFareLabel = breakdown?.formattedDistanceAmount ?? '₦1,100';
-    final timeFareLabel = breakdown?.formattedTimeAmount ?? '₦300';
-    final serviceFeeLabel = breakdown?.formattedServiceFee ?? '₦200';
-    final subtotalLabel = breakdown?.formattedSubtotalNaira ?? '₦3,100';
+    final totalPaidLabel = breakdown?.formattedTotalAmount ?? '';
+    final baseFareLabel = breakdown?.formattedBaseAmount ?? '';
+    final distanceFareLabel = breakdown?.formattedDistanceAmount ?? '';
+    final timeFareLabel = breakdown?.formattedTimeAmount ?? '';
+    final serviceFeeLabel = breakdown?.formattedServiceFee ?? '';
+    final subtotalLabel = breakdown?.formattedSubtotalNaira ?? '';
     final promoDiscountLabel = breakdown?.discountAmountKobo != null &&
             breakdown!.discountAmountKobo > 0
         ? '- ₦${(breakdown.discountAmountKobo / 100).round()}'
-        : '- ₦300';
+        : '- ₦0';
 
     final fareItems = [
       GVFareItem(label: 'Base fare', amountLabel: baseFareLabel),

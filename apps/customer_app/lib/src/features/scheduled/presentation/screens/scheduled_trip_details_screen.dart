@@ -103,7 +103,9 @@ class _ScheduledTripDetailsScreenState
                       isSelected:
                           state.journeyDirection == JourneyDirection.roundTrip,
                       onTap: () {
-                        notifier.setJourneyDirection(JourneyDirection.roundTrip);
+                        notifier.setJourneyDirection(
+                          JourneyDirection.roundTrip,
+                        );
                       },
                       cardBg: cardBg,
                       borderColor: borderColor,
@@ -136,16 +138,15 @@ class _ScheduledTripDetailsScreenState
                   );
                   if (picked != null) {
                     setState(() => _selectedDate = picked);
-                    notifier.setDateAndTime(
-                      date: _selectedDate,
-                      time: timeStr,
-                    );
+                    notifier.setDateAndTime(date: _selectedDate, time: timeStr);
                   }
                 },
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -153,8 +154,11 @@ class _ScheduledTripDetailsScreenState
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         dateStr,
@@ -190,7 +194,9 @@ class _ScheduledTripDetailsScreenState
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -198,8 +204,11 @@ class _ScheduledTripDetailsScreenState
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.access_time_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         timeStr,
@@ -277,11 +286,7 @@ class _ScheduledTripDetailsScreenState
                     time: timeStr,
                     returnLater: _returnLater,
                   );
-                  if (state.isRecurring) {
-                    context.push(AppRoutes.scheduledCalendar);
-                  } else {
-                    context.push(AppRoutes.scheduledPassengerDetails);
-                  }
+                  context.push(AppRoutes.scheduledPassengerDetails);
                 },
               ),
               const SizedBox(height: GVSpacing.lg),
@@ -364,4 +369,3 @@ class _ScheduledTripDetailsScreenState
     };
   }
 }
-

@@ -51,22 +51,26 @@ void _ensureSeedData() {
     title: 'School Run',
     purpose: TripPurpose.schoolRun,
     pickupLocation: const LocationDto(
-      latitude: 10.5105,
-      longitude: 7.4165,
-      address: '3, Ahmadu Bello Way, Kaduna',
+      latitude: 6.8403,
+      longitude: 3.6487,
+      address: 'Shaganu Central, Ogun State',
       label: 'Home',
+      city: 'Shaganu',
+      state: 'Ogun',
     ),
     dropoffLocation: const LocationDto(
-      latitude: 10.5235,
-      longitude: 7.4385,
-      address: 'Bayero University, Kaduna',
+      latitude: 6.8920,
+      longitude: 3.7190,
+      address: 'Babcock Staff School, Ilishan-Remo, Ogun State',
       label: 'School',
+      city: 'Ilishan-Remo',
+      state: 'Ogun',
     ),
     scheduledDays: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     pickupTime: '08:00 AM',
     passengerName: 'Zainab Adeleke',
     passengerPhone: '+234 803 123 4567',
-    schoolName: 'Bayero University Staff School',
+    schoolName: 'Babcock Staff School',
     totalTrips: 60,
     usedTrips: 18,
     remainingTrips: 42,
@@ -93,22 +97,26 @@ void _ensureSeedData() {
 
   // Seed Work Commute Plan
   final workPlan = ScheduledPlanDto(
-    id: 'plan-work-kaduna-02',
+    id: 'plan-work-ogun-02',
     planReference: 'SP-20261105-002',
     planType: 'COMMUTE_PLAN',
     title: 'Work Commute',
     purpose: TripPurpose.workCommute,
     pickupLocation: const LocationDto(
-      latitude: 10.5105,
-      longitude: 7.4165,
-      address: '3, Ahmadu Bello Way, Kaduna',
+      latitude: 6.8403,
+      longitude: 3.6487,
+      address: 'Shaganu Central, Ogun State',
       label: 'Home',
+      city: 'Shaganu',
+      state: 'Ogun',
     ),
     dropoffLocation: const LocationDto(
-      latitude: 10.5280,
-      longitude: 7.4420,
-      address: 'Murtala Square, Kaduna',
+      latitude: 6.8450,
+      longitude: 3.6520,
+      address: 'Remo Commercial Plaza, Shaganu, Ogun State',
       label: 'Office',
+      city: 'Shaganu',
+      state: 'Ogun',
     ),
     scheduledDays: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     pickupTime: '08:00 AM',
@@ -136,16 +144,20 @@ void _ensureSeedData() {
     tripPurpose: TripPurpose.schoolRun,
     journeyDirection: JourneyDirection.oneWay,
     pickupLocation: const LocationDto(
-      latitude: 10.5105,
-      longitude: 7.4165,
-      address: '3, Ahmadu Bello Way, Kaduna',
+      latitude: 6.8403,
+      longitude: 3.6487,
+      address: 'Shaganu Central, Ogun State',
       label: 'Home',
+      city: 'Shaganu',
+      state: 'Ogun',
     ),
     destinationLocation: const LocationDto(
-      latitude: 10.5235,
-      longitude: 7.4385,
-      address: 'Bayero University, Kaduna',
+      latitude: 6.8920,
+      longitude: 3.7190,
+      address: 'Babcock Staff School, Ilishan-Remo, Ogun State',
       label: 'School',
+      city: 'Ilishan-Remo',
+      state: 'Ogun',
     ),
     scheduledPickupAt: tomorrow8Am,
     scheduledDateStr: 'Tomorrow, Mon 6 Nov',
@@ -190,10 +202,12 @@ Future<Response> handleCalculateQuote(Request request, {SupabaseClient? supabase
     pickup = LocationDto.fromJson(body['pickup_location'] as Map<String, dynamic>);
   } else {
     pickup = const LocationDto(
-      latitude: 10.5105,
-      longitude: 7.4165,
-      address: '3, Ahmadu Bello Way, Kaduna',
+      latitude: 6.8403,
+      longitude: 3.6487,
+      address: 'Shaganu Central, Ogun State',
       label: 'Home',
+      city: 'Shaganu',
+      state: 'Ogun',
     );
   }
 
@@ -202,10 +216,12 @@ Future<Response> handleCalculateQuote(Request request, {SupabaseClient? supabase
     destination = LocationDto.fromJson(body['destination_location'] as Map<String, dynamic>);
   } else {
     destination = const LocationDto(
-      latitude: 10.5235,
-      longitude: 7.4385,
-      address: 'Bayero University, Kaduna',
+      latitude: 6.8920,
+      longitude: 3.7190,
+      address: 'Babcock Staff School, Ilishan-Remo, Ogun State',
       label: 'School',
+      city: 'Ilishan-Remo',
+      state: 'Ogun',
     );
   }
 
@@ -342,10 +358,12 @@ Router scheduledPlansRouter({SupabaseClient? supabaseClient}) {
       pickup = LocationDto.fromJson(body['pickup_location'] as Map<String, dynamic>);
     } else {
       pickup = const LocationDto(
-        latitude: 10.5105,
-        longitude: 7.4165,
-        address: '3, Ahmadu Bello Way, Kaduna',
+        latitude: 6.8403,
+        longitude: 3.6487,
+        address: 'Shaganu Central, Ogun State',
         label: 'Home',
+        city: 'Shaganu',
+        state: 'Ogun',
       );
     }
 
@@ -356,10 +374,12 @@ Router scheduledPlansRouter({SupabaseClient? supabaseClient}) {
       dropoff = LocationDto.fromJson(body['dropoff_location'] as Map<String, dynamic>);
     } else {
       dropoff = const LocationDto(
-        latitude: 10.5235,
-        longitude: 7.4385,
-        address: 'Bayero University, Kaduna',
+        latitude: 6.8920,
+        longitude: 3.7190,
+        address: 'Babcock Staff School, Ilishan-Remo, Ogun State',
         label: 'School',
+        city: 'Ilishan-Remo',
+        state: 'Ogun',
       );
     }
 

@@ -21,7 +21,8 @@ class HandoverConfirmedScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : GVColors.neutral50;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.completedTrips.isNotEmpty ? state.completedTrips.first : null);
 
     return Scaffold(
@@ -30,11 +31,7 @@ class HandoverConfirmedScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            size: 24,
-            color: textColor,
-          ),
+          icon: Icon(Icons.close_rounded, size: 24, color: textColor),
           onPressed: () => context.go(AppRoutes.home),
         ),
       ),
@@ -123,7 +120,9 @@ class HandoverConfirmedScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Fatima Okafor',
+                            (trip?.passengerName.isNotEmpty ?? false)
+                                ? trip!.passengerName
+                                : 'Child Passenger',
                             style: GVTypography.bodyLarge.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.bold,
@@ -131,7 +130,9 @@ class HandoverConfirmedScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'JSS 1 • Age 10',
+                            trip?.destinationLocation.label?.isNotEmpty == true
+                                ? trip!.destinationLocation.label!
+                                : (trip?.destinationLocation.address ?? 'School'),
                             style: GVTypography.caption.copyWith(
                               color: subtextColor,
                               fontWeight: FontWeight.w500,
@@ -160,7 +161,9 @@ class HandoverConfirmedScreen extends ConsumerWidget {
                       children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: GVColors.primary.withValues(alpha: 0.2),
+                          backgroundColor: GVColors.primary.withValues(
+                            alpha: 0.2,
+                          ),
                           child: const Icon(
                             Icons.person_rounded,
                             color: GVColors.primary,
@@ -228,7 +231,7 @@ class HandoverConfirmedScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             trip?.destinationAddress ??
-                                'Remo High Street, Shaganu, Ogun State',
+                                'Bayero University, Kaduna',
                             style: GVTypography.bodySmall.copyWith(
                               color: textColor,
                               fontWeight: FontWeight.w500,

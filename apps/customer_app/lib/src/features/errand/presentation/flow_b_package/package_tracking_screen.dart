@@ -20,14 +20,14 @@ class PackageTrackingScreen extends ConsumerWidget {
         state.activeErrand?.status ?? ErrandStatus.outForDelivery;
     final rider = state.activeErrand?.assignedRider ??
         const RiderDto(
-          id: 'rider_01',
-          profileId: 'prof_ahmed',
-          fullName: 'Ahmed Ibrahim',
-          phoneNumber: '+234 803 456 7890',
-          vehicleModel: 'Yamaha EV',
-          vehiclePlate: 'ABC-123KY',
-          rating: 4.8,
-          totalTripsCompleted: 320,
+          id: 'unassigned',
+          profileId: '',
+          fullName: 'Assigning Rider...',
+          phoneNumber: '',
+          vehicleModel: 'Electric Courier',
+          vehiclePlate: 'Go-Volt EV',
+          rating: 5.0,
+          totalTripsCompleted: 0,
         );
 
     return Scaffold(

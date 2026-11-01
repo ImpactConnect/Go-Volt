@@ -4,25 +4,14 @@ import 'package:equatable/equatable.dart';
 /// Immutable state container for Flow C: Other Errand (Screens C1 to C6).
 class OtherErrandFlowState extends Equatable {
   const OtherErrandFlowState({
-    this.taskDescription =
-        'Please collect my documents from the university registrar\'s office and deliver them to my home.',
-    this.category = 'Document Collection',
+    this.taskDescription = '',
+    this.category = '',
     this.urgency = ErrandUrgency.standard,
-    this.pickupLocation = const LocationDto(
-      latitude: 10.5185,
-      longitude: 7.4382,
-      address: 'Bayero University, Registrar\'s Office',
-      label: 'Bayero University',
-    ),
-    this.contactPerson = 'Mrs. Amina Yusuf',
-    this.phoneNumber = '0806 765 4321',
-    this.deliveryLocation = const LocationDto(
-      latitude: 10.4682,
-      longitude: 7.4201,
-      address: 'My Home - Kakuri, Kaduna',
-      label: 'Home Kakuri',
-    ),
-    this.additionalInstructions = 'Collect the sealed document and deliver to me.',
+    this.pickupLocation = LocationDto.empty,
+    this.contactPerson = '',
+    this.phoneNumber = '',
+    this.deliveryLocation = LocationDto.empty,
+    this.additionalInstructions = '',
     this.quote,
     this.paymentMethod = PaymentMethod.wallet,
     this.activeErrand,

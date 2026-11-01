@@ -154,9 +154,13 @@ class GVRecipientFormCard extends StatelessWidget {
                 const SizedBox(width: GVSpacing.sm),
                 Expanded(
                   child: Text(
-                    deliveryAddress,
+                    deliveryAddress.isNotEmpty
+                        ? deliveryAddress
+                        : 'Tap to select delivery address',
                     style: GVTypography.bodyMedium.copyWith(
-                      color: isDark ? GVColors.white : GVColors.textPrimary,
+                      color: deliveryAddress.isNotEmpty
+                          ? (isDark ? GVColors.white : GVColors.textPrimary)
+                          : (isDark ? GVColors.neutral400 : GVColors.neutral500),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

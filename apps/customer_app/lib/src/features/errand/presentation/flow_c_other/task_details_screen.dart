@@ -147,7 +147,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       TextFormField(
                         controller: _deliveryController,
                         decoration: _buildInputDecoration(
-                          hintText: 'e.g. My Home - Kakuri, Kaduna',
+                          hintText: 'e.g. My Home - Shaganu Central, Ogun State',
                           prefixIcon: Icons.home_outlined,
                         ),
                         validator: (value) =>

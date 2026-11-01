@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,8 +17,8 @@ class TopUpScreen extends ConsumerStatefulWidget {
 }
 
 class _TopUpScreenState extends ConsumerState<TopUpScreen> {
-  final _amountController = TextEditingController(text: '2000');
-  double _selectedAmount = 2000;
+  final _amountController = TextEditingController();
+  double _selectedAmount = 0;
   String _selectedPaymentMethod = 'Debit / Credit Card (Paystack)';
   bool _isSuccess = false;
   double? _creditedAmount;
@@ -272,6 +273,38 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
     final refCode = authUrl.contains('/') ? authUrl.split('/').last : 'PSTK-TOP-${DateTime.now().millisecondsSinceEpoch}';
     bool isVerifying = false;
     String? verificationError;
+    Timer? autoPollTimer;
+    int pollAttempts = 0;
+
+    void startAutoPoll(BuildContext ctx, StateSetter setModalState) {
+      autoPollTimer?.cancel();
+      pollAttempts = 0;
+      autoPollTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
+        pollAttempts++;
+        if (pollAttempts > 25 || !mounted) {
+          timer.cancel();
+          return;
+        }
+
+        final profile = ref.read(authNotifierProvider).profile;
+        final ok = await ref
+            .read(walletNotifierProvider.notifier)
+            .completeTopUp(refCode, amount, userId: profile?.id);
+
+        if (ok) {
+          timer.cancel();
+          if (ctx.mounted) {
+            Navigator.pop(ctx);
+          }
+          if (mounted) {
+            setState(() {
+              _isSuccess = true;
+              _creditedAmount = amount;
+            });
+          }
+        }
+      });
+    }
 
     showModalBottomSheet<void>(
       context: context,
@@ -305,7 +338,10 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: () {
+                      autoPollTimer?.cancel();
+                      Navigator.pop(ctx);
+                    },
                     icon: const Icon(Icons.close),
                   ),
                 ],
@@ -370,6 +406,9 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                   final uri = Uri.parse(authUrl);
                   try {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    if (ctx.mounted) {
+                      startAutoPoll(ctx, setModalState);
+                    }
                   } catch (_) {}
                 },
               ),
@@ -397,6 +436,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                             .completeTopUp(refCode, amount, userId: profile?.id);
 
                         if (ok && mounted) {
+                          autoPollTimer?.cancel();
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
                           }
@@ -408,7 +448,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                           setModalState(() {
                             isVerifying = false;
                             verificationError = ref.read(walletNotifierProvider).error ??
-                                'Payment has not been confirmed by Paystack. Please ensure you complete payment in the checkout window before verifying.';
+                                'Payment has not been confirmed by Paystack or your bank yet. Please complete payment before verifying.';
                           });
                         }
                       },
@@ -429,13 +469,18 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
               const SizedBox(height: GVSpacing.sm),
               GVSecondaryButton(
                 label: 'Cancel Payment',
-                onPressed: () => Navigator.pop(ctx),
+                onPressed: () {
+                  autoPollTimer?.cancel();
+                  Navigator.pop(ctx);
+                },
               ),
             ],
           ),
         ),
       ),
-    );
+    ).then((_) {
+      autoPollTimer?.cancel();
+    });
   }
 
   @override

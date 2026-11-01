@@ -24,9 +24,9 @@ class ParcelDeliveryDto extends Equatable {
     this.paymentMethod = PaymentMethod.wallet,
     this.riderName,
     this.riderPhone,
-    this.riderRating = 4.9,
-    this.riderTotalTrips = 320,
-    this.riderVehicle = 'Yamaha Bike - ABC-123XY',
+    this.riderRating,
+    this.riderTotalTrips,
+    this.riderVehicle,
     this.riderAvatarUrl,
     this.proofOfDelivery,
     required this.createdAt,
@@ -74,12 +74,11 @@ class ParcelDeliveryDto extends Equatable {
           : ParcelPriceBreakdownDto.defaultBreakdown,
       paymentMethod: PaymentMethod.fromString(
           json['payment_method'] as String? ?? 'WALLET'),
-      riderName: json['rider_name'] as String? ?? 'Daniel Okafor',
-      riderPhone: json['rider_phone'] as String? ?? '+234 802 000 1122',
-      riderRating: (json['rider_rating'] as num?)?.toDouble() ?? 4.9,
-      riderTotalTrips: (json['rider_total_trips'] as num?)?.toInt() ?? 320,
-      riderVehicle:
-          json['rider_vehicle'] as String? ?? 'Yamaha Bike - ABC-123XY',
+      riderName: json['rider_name'] as String?,
+      riderPhone: json['rider_phone'] as String?,
+      riderRating: (json['rider_rating'] as num?)?.toDouble(),
+      riderTotalTrips: (json['rider_total_trips'] as num?)?.toInt(),
+      riderVehicle: json['rider_vehicle'] as String?,
       riderAvatarUrl: json['rider_avatar_url'] as String?,
       proofOfDelivery: json['proof_of_delivery'] != null
           ? ProofOfDeliveryDto.fromJson(
@@ -107,9 +106,9 @@ class ParcelDeliveryDto extends Equatable {
   final PaymentMethod paymentMethod;
   final String? riderName;
   final String? riderPhone;
-  final double riderRating;
-  final int riderTotalTrips;
-  final String riderVehicle;
+  final double? riderRating;
+  final int? riderTotalTrips;
+  final String? riderVehicle;
   final String? riderAvatarUrl;
   final ProofOfDeliveryDto? proofOfDelivery;
   final DateTime createdAt;
@@ -212,11 +211,11 @@ class ParcelDeliveryDto extends Equatable {
     packageDetails: ParcelDetailsDto.defaultFragile,
     priceBreakdown: ParcelPriceBreakdownDto.defaultBreakdown,
     paymentMethod: PaymentMethod.wallet,
-    riderName: 'Daniel Okafor',
-    riderPhone: '+234 802 000 1122',
-    riderRating: 4.9,
-    riderTotalTrips: 320,
-    riderVehicle: 'Yamaha Bike - ABC-123XY',
+    riderName: null,
+    riderPhone: null,
+    riderRating: null,
+    riderTotalTrips: null,
+    riderVehicle: null,
     createdAt: DateTime(2026, 10, 29, 9, 30),
     pickupTimestamp: DateTime(2026, 10, 29, 10, 5),
     etaMinutes: 6,

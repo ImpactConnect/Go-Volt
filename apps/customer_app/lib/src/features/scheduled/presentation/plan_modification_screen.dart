@@ -5,22 +5,40 @@ import 'package:flutter/material.dart';
 class PlanModificationScreen extends StatefulWidget {
   const PlanModificationScreen({
     super.key,
-    this.planReference = 'PLN-SCH-2026-092',
-    this.planTitle = 'Weekday Work Commute (Lekki to VI)',
+    this.planReference = '',
+    this.planTitle = 'Modify Scheduled Plan',
+    this.initialPickup = '',
+    this.initialDropoff = '',
   });
 
   final String planReference;
   final String planTitle;
+  final String initialPickup;
+  final String initialDropoff;
 
   @override
   State<PlanModificationScreen> createState() => _PlanModificationScreenState();
 }
 
 class _PlanModificationScreenState extends State<PlanModificationScreen> {
-  final _pickupController = TextEditingController(text: '14 Admiralty Way, Lekki Phase 1');
-  final _dropoffController = TextEditingController(text: '18 Adeola Odeku St, Victoria Island');
+  late final TextEditingController _pickupController;
+  late final TextEditingController _dropoffController;
   TimeOfDay _pickupTime = const TimeOfDay(hour: 7, minute: 45);
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pickupController = TextEditingController(text: widget.initialPickup);
+    _dropoffController = TextEditingController(text: widget.initialDropoff);
+  }
+
+  @override
+  void dispose() {
+    _pickupController.dispose();
+    _dropoffController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +114,9 @@ class _PlanModificationScreenState extends State<PlanModificationScreen> {
 
             Text('Updated Journey Route', style: GVTypography.h3.copyWith(color: Colors.white)),
             const SizedBox(height: GVSpacing.xs),
-            _buildInputField('Pickup Location', _pickupController, Icons.circle, GVColors.brandGreen),
+            _buildInputField('Pickup Location', _pickupController, Icons.circle, GVColors.brandGreen, 'Enter pickup address'),
             const SizedBox(height: GVSpacing.md),
-            _buildInputField('Drop-off Destination', _dropoffController, Icons.location_on, Colors.redAccent),
+            _buildInputField('Drop-off Destination', _dropoffController, Icons.location_on, Colors.redAccent, 'Enter destination address'),
             const SizedBox(height: GVSpacing.lg),
 
             Text('Updated Pickup Schedule', style: GVTypography.h3.copyWith(color: Colors.white)),
@@ -160,8 +178,9 @@ class _PlanModificationScreenState extends State<PlanModificationScreen> {
     String label,
     TextEditingController controller,
     IconData icon,
-    Color iconColor,
-  ) {
+    Color iconColor, [
+    String? hintText,
+  ]) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -182,10 +201,12 @@ class _PlanModificationScreenState extends State<PlanModificationScreen> {
                 child: TextField(
                   controller: controller,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    hintText: hintText,
+                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 14),
                   ),
                 ),
               ),

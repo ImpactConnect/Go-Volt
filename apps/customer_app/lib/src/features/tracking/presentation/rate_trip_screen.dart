@@ -112,10 +112,10 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
 
     final driverName = widget.driverName ??
         booking?.riderName ??
-        'Daniel Okafor';
-    final vehiclePlate = booking?.vehiclePlate ?? 'KJA 123 AB';
-    final vehicleModel = booking?.vehicleModel?.split(' - ').first ?? 'Toyota Corolla';
-    final vehicleInfo = widget.vehicleInfo ?? '$vehicleModel - $vehiclePlate';
+        'Assigned Driver';
+    final vehiclePlate = booking?.vehiclePlate ?? '';
+    final vehicleModel = booking?.vehicleModel?.split(' - ').first ?? 'Go-Volt EV';
+    final vehicleInfo = widget.vehicleInfo ?? (vehiclePlate.isNotEmpty ? '$vehicleModel - $vehiclePlate' : vehicleModel);
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

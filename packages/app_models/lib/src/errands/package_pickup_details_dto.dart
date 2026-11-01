@@ -26,6 +26,15 @@ class PackagePickupDetailsDto extends Equatable {
     );
   }
 
+  static const PackagePickupDetailsDto empty = PackagePickupDetailsDto(
+    pickupBusinessName: '',
+    address: '',
+    latitude: 0.0,
+    longitude: 0.0,
+    contactPerson: '',
+    phoneNumber: '',
+  );
+
   final String pickupBusinessName;
   final String address;
   final double latitude;

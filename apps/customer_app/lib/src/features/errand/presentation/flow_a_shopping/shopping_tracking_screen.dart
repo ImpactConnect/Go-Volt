@@ -23,14 +23,14 @@ class ShoppingTrackingScreen extends ConsumerWidget {
     final status = errand?.status ?? ErrandStatus.shoppingInProgress;
     final rider = errand?.assignedRider ??
         const RiderDto(
-          id: 'rider_ahmed_01',
-          profileId: 'prof_01',
-          fullName: 'Ahmed Ibrahim',
-          phoneNumber: '0803 456 7890',
-          vehicleModel: 'Yamaha EV',
-          vehiclePlate: 'ABC-123KY',
-          rating: 4.8,
-          totalTripsCompleted: 320,
+          id: 'unassigned',
+          profileId: '',
+          fullName: 'Assigning Rider...',
+          phoneNumber: '',
+          vehicleModel: 'Electric Courier',
+          vehiclePlate: 'Go-Volt EV',
+          rating: 5.0,
+          totalTripsCompleted: 0,
         );
 
     final shopName = state.selectedShop?.name ?? 'Kakuri Main Market';

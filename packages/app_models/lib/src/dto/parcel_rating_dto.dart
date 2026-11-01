@@ -7,22 +7,22 @@ class ParcelRatingDto extends Equatable {
     required this.ratingStars,
     this.compliments = const [],
     this.comment,
-    this.riderName = 'Daniel Okafor',
-    this.riderVehicle = 'Yamaha Bike - ABC-123XY',
+    this.riderName = 'Courier',
+    this.riderVehicle = 'Go-Volt Delivery',
     required this.submittedAt,
   });
 
   factory ParcelRatingDto.fromJson(Map<String, dynamic> json) {
     return ParcelRatingDto(
-      trackingNumber: json['tracking_number'] as String? ?? 'DVL12345678',
+      trackingNumber: json['tracking_number'] as String? ?? '',
       ratingStars: (json['rating_stars'] as num?)?.toInt() ?? 5,
       compliments: (json['compliments'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
       comment: json['comment'] as String?,
-      riderName: json['rider_name'] as String? ?? 'Daniel Okafor',
-      riderVehicle: json['rider_vehicle'] as String? ?? 'Yamaha Bike - ABC-123XY',
+      riderName: json['rider_name'] as String? ?? 'Courier',
+      riderVehicle: json['rider_vehicle'] as String? ?? 'Go-Volt Delivery',
       submittedAt: json['submitted_at'] != null
           ? DateTime.parse(json['submitted_at'] as String)
           : DateTime.now(),

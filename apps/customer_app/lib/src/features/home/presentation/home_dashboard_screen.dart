@@ -12,6 +12,7 @@ import '../../../core/auth/auth_notifier.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/gps_location_service.dart';
 import '../../booking/application/booking_notifier.dart';
+import '../../errand/application/active_errand_provider.dart';
 import '../application/home_notifier.dart';
 import '../application/notifications_notifier.dart';
 import 'create_destinations_pop_sheet.dart';
@@ -90,6 +91,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     final authState = ref.watch(authNotifierProvider);
     final homeState = ref.watch(homeNotifierProvider);
     final notificationsState = ref.watch(notificationsNotifierProvider);
+    final activeErrand = ref.watch(activeErrandSummaryProvider);
 
     final user = authState.profile;
     final userName = user?.firstName ?? 'Customer';
@@ -191,8 +193,14 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   isParcelAvailable: isParcelAvailable,
                 ),
 
+                // 5b. Persistent Errand Live Tracker Card
+                if (activeErrand != null) ...[
+                  const SizedBox(height: GVSpacing.lg),
+                  _buildActiveErrandCard(context, activeErrand, isDark: isDark),
+                ],
+
                 // 6. Active Booking Hero Card (Screen 12: HOME-02-ACTIVE-BOOKING)
-                if (homeState.hasActiveBooking) ...[
+                if (homeState.hasActiveBooking && activeErrand == null) ...[
                   const SizedBox(height: GVSpacing.lg),
                   GVActiveBookingCard(
                     serviceTitle: homeState.activeBooking!.serviceTitle,
@@ -446,6 +454,193 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     );
   }
 
+  /// Persistent high-priority Errand Live Tracker Hero Card (Track 3)
+  Widget _buildActiveErrandCard(
+    BuildContext context,
+    ActiveErrandSummary errand, {
+    required bool isDark,
+  }) {
+    final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
+    final borderColor = isDark
+        ? GVColors.brandGreen.withValues(alpha: 0.4)
+        : GVColors.brandGreen.withValues(alpha: 0.35);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.5),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: GVColors.brandGreen.withValues(alpha: 0.08),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      padding: const EdgeInsets.all(GVSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row: Pulsing Active indicator + Status badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: GVColors.brandGreen,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Active Errand',
+                    style: GVTypography.bodySmall.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : GVColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: GVColors.brandGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: GVColors.brandGreen.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Text(
+                  errand.statusBadge,
+                  style: GVTypography.caption.copyWith(
+                    color: GVColors.brandGreen,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Title & Status
+          Text(
+            errand.title,
+            style: GVTypography.h3.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: isDark ? Colors.white : GVColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                size: 14,
+                color: isDark ? Colors.white70 : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  errand.statusMessage,
+                  style: GVTypography.bodySmall.copyWith(
+                    color: isDark ? Colors.white70 : Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Rider Info (if assigned)
+          if (errand.rider != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(height: 1),
+            ),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: GVColors.brandGreen.withValues(alpha: 0.15),
+                  child: const Icon(Icons.person, color: GVColors.brandGreen, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        errand.rider!.fullName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '★ ${errand.rider!.rating} • ${errand.rider!.vehiclePlate}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A3630) : GVColors.softBackground,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'ETA ${errand.etaMinutes}m',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : GVColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: 14),
+
+          // Track Button
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push(errand.targetRoute),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GVColors.brandGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.navigation_rounded, size: 16),
+              label: const Text(
+                'Track Errand Live',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Top navigation header matching Screen 11/12/13
   Widget _buildHeader(
     BuildContext context, {
@@ -641,17 +836,16 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
             const SizedBox(width: GVSpacing.sm),
             Expanded(
               child: GVServiceCard(
-                title: 'Send a Parcel',
-                description: 'Send items to another location',
-                icon: Icons.inventory_2_outlined,
+                title: 'Market Errand',
+                description: 'Buy items, send or pick up packages',
+                icon: Icons.shopping_basket_outlined,
                 isDisabled: !isParcelAvailable,
                 disabledReason: 'Not available in this area',
                 onTap: () {
                   ref
                       .read(bookingNotifierProvider.notifier)
                       .selectService(ServiceCode.instantDelivery);
-                  context.push(AppRoutes.packageDetails);
-                  context.push(AppRoutes.parcelDeliveryType);
+                  context.push(AppRoutes.errandHome);
                 },
               ),
             ),

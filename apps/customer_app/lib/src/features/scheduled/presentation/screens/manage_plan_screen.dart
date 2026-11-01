@@ -23,7 +23,8 @@ class ManagePlanScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : const Color(0xFFF6F8F7);
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final plan = state.selectedPlan ??
+    final plan =
+        state.selectedPlan ??
         (state.plans.isNotEmpty ? state.plans.first : null);
 
     return Scaffold(
@@ -50,7 +51,10 @@ class ManagePlanScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg, vertical: GVSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: GVSpacing.lg,
+            vertical: GVSpacing.sm,
+          ),
           children: [
             Container(
               decoration: BoxDecoration(
@@ -150,8 +154,10 @@ class ManagePlanScreen extends ConsumerWidget {
                               ),
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Cancel Plan',
-                                    style: TextStyle(color: GVColors.error)),
+                                child: const Text(
+                                  'Cancel Plan',
+                                  style: TextStyle(color: GVColors.error),
+                                ),
                               ),
                             ],
                           ),
@@ -230,8 +236,11 @@ class ManagePlanScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: subtextColor),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: subtextColor,
+            ),
           ],
         ),
       ),

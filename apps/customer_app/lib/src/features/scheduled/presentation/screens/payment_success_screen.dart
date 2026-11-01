@@ -22,7 +22,8 @@ class PaymentSuccessScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : const Color(0xFFF6F8F7);
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final amountStr = bookingState.createdPlan != null &&
+    final amountStr =
+        bookingState.createdPlan != null &&
             bookingState.createdPlan!.totalAmountNgn > 0
         ? '₦${bookingState.createdPlan!.totalAmountNgn.toStringAsFixed(0)}'
         : '₦150,000';
@@ -33,11 +34,7 @@ class PaymentSuccessScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            size: 24,
-            color: textColor,
-          ),
+          icon: Icon(Icons.close_rounded, size: 24, color: textColor),
           onPressed: () => context.go(AppRoutes.scheduledMyPlans),
         ),
       ),

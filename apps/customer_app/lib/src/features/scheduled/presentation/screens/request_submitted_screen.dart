@@ -134,8 +134,11 @@ class RequestSubmittedScreen extends ConsumerWidget {
                     const Divider(height: 20),
                     Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded,
-                            size: 16, color: GVColors.primary),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 16,
+                          color: GVColors.primary,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

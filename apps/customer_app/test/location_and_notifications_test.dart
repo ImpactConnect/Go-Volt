@@ -39,18 +39,17 @@ void main() {
       ],
     );
     notificationsNotifier = NotificationsNotifier(
-        initialNotifications: NotificationsNotifier.defaultNotifications);
+      initialNotifications: NotificationsNotifier.defaultNotifications,
+    );
   });
 
-  Widget buildTestWidget({
-    required Widget child,
-    ThemeData? theme,
-  }) {
+  Widget buildTestWidget({required Widget child, ThemeData? theme}) {
     return ProviderScope(
       overrides: [
         homeNotifierProvider.overrideWith((ref) => homeNotifier),
-        notificationsNotifierProvider
-            .overrideWith((ref) => notificationsNotifier),
+        notificationsNotifierProvider.overrideWith(
+          (ref) => notificationsNotifier,
+        ),
       ],
       child: MaterialApp(
         theme: theme ?? GVTheme.light,
@@ -60,8 +59,9 @@ void main() {
   }
 
   group('Screen 14: HOME-06-LOCATION-SELECTOR (LocationSelectorModal)', () {
-    testWidgets('renders all modal components matching Screen 14 design',
-        (tester) async {
+    testWidgets('renders all modal components matching Screen 14 design', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -104,8 +104,9 @@ void main() {
       expect(find.text('Confirm location'), findsOneWidget);
     });
 
-    testWidgets('search filters saved places and service areas in real time',
-        (tester) async {
+    testWidgets('search filters saved places and service areas in real time', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -127,33 +128,36 @@ void main() {
       expect(find.text('Shaganu, Ogun'), findsWidgets);
     });
 
-    testWidgets('selecting a service area and confirming updates homeNotifier',
-        (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'selecting a service area and confirming updates homeNotifier',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        buildTestWidget(child: const LocationSelectorModal()),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestWidget(child: const LocationSelectorModal()),
+        );
+        await tester.pumpAndSettle();
 
-      // Tap on Shaganu area tile
-      await tester.tap(find.text('Shaganu, Ogun').first);
-      await tester.pumpAndSettle();
+        // Tap on Shaganu area tile
+        await tester.tap(find.text('Shaganu, Ogun').first);
+        await tester.pumpAndSettle();
 
-      // Tap Confirm location
-      await tester.tap(find.text('Confirm location'));
-      await tester.pumpAndSettle();
+        // Tap Confirm location
+        await tester.tap(find.text('Confirm location'));
+        await tester.pumpAndSettle();
 
-      // Verify HomeNotifier state updated
-      expect(homeNotifier.state.currentLocation.id, 'ogun-shaganu');
-      expect(homeNotifier.state.currentLocation.name, 'Shaganu');
-    });
+        // Verify HomeNotifier state updated
+        expect(homeNotifier.state.currentLocation.id, 'ogun-shaganu');
+        expect(homeNotifier.state.currentLocation.name, 'Shaganu');
+      },
+    );
 
-    testWidgets('renders cleanly in dark theme without overflow',
-        (tester) async {
+    testWidgets('renders cleanly in dark theme without overflow', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -173,8 +177,9 @@ void main() {
   });
 
   group('Screen 15: HOME-07-NOTIFICATIONS (NotificationsScreen)', () {
-    testWidgets('renders all initial notifications and unread badge status',
-        (tester) async {
+    testWidgets('renders all initial notifications and unread badge status', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -206,8 +211,9 @@ void main() {
       expect(notificationsNotifier.state.unreadCount, 3);
     });
 
-    testWidgets('filters notifications by category tab correctly',
-        (tester) async {
+    testWidgets('filters notifications by category tab correctly', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -250,8 +256,9 @@ void main() {
       expect(find.text('Special offer'), findsOneWidget);
     });
 
-    testWidgets('tapping an unread notification marks it as read',
-        (tester) async {
+    testWidgets('tapping an unread notification marks it as read', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -272,8 +279,9 @@ void main() {
       expect(notificationsNotifier.state.unreadCount, 2);
     });
 
-    testWidgets('tapping "Mark all read" marks all notifications as read',
-        (tester) async {
+    testWidgets('tapping "Mark all read" marks all notifications as read', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -294,8 +302,9 @@ void main() {
       expect(notificationsNotifier.state.unreadCount, 0);
     });
 
-    testWidgets('renders cleanly in dark theme without overflow',
-        (tester) async {
+    testWidgets('renders cleanly in dark theme without overflow', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);

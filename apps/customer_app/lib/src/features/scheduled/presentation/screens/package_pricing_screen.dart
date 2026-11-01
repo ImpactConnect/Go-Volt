@@ -116,9 +116,7 @@ class PackagePricingScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF8E6),
                   borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                  border: Border.all(
-                    color: const Color(0xFFFFE082),
-                  ),
+                  border: Border.all(color: const Color(0xFFFFE082)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

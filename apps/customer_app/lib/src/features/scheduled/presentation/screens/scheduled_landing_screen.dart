@@ -123,14 +123,23 @@ class ScheduledLandingScreen extends ConsumerWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.person_rounded,
-                                  size: 24, color: GVColors.primary),
+                              Icon(
+                                Icons.person_rounded,
+                                size: 24,
+                                color: GVColors.primary,
+                              ),
                               const SizedBox(width: 4),
-                              Icon(Icons.electric_car_rounded,
-                                  size: 38, color: GVColors.primary),
+                              Icon(
+                                Icons.electric_car_rounded,
+                                size: 38,
+                                color: GVColors.primary,
+                              ),
                               const SizedBox(width: 4),
-                              Icon(Icons.person_rounded,
-                                  size: 24, color: GVColors.primary),
+                              Icon(
+                                Icons.person_rounded,
+                                size: 24,
+                                color: GVColors.primary,
+                              ),
                             ],
                           ),
                         ],

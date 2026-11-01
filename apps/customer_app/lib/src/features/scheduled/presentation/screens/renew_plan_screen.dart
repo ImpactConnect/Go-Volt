@@ -21,8 +21,7 @@ class _RenewPlanScreenState extends ConsumerState<RenewPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bookingNotifier =
-        ref.read(scheduledBookingNotifierProvider.notifier);
+    final bookingNotifier = ref.read(scheduledBookingNotifierProvider.notifier);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF131A16) : Colors.white;
@@ -125,7 +124,9 @@ class _RenewPlanScreenState extends ConsumerState<RenewPlanScreen> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -133,8 +134,11 @@ class _RenewPlanScreenState extends ConsumerState<RenewPlanScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         startStr,
@@ -180,7 +184,9 @@ class _RenewPlanScreenState extends ConsumerState<RenewPlanScreen> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -188,8 +194,11 @@ class _RenewPlanScreenState extends ConsumerState<RenewPlanScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         endStr,

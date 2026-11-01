@@ -68,11 +68,17 @@ void main() {
 
       // Trip at 3:00 PM (7 hours away -> preserves entitlement)
       final earlyTrip = DateTime(2026, 10, 24, 15, 0);
-      expect(testSchoolRunPlan.canSkipWithoutPenalty(earlyTrip, now: now), isTrue);
+      expect(
+        testSchoolRunPlan.canSkipWithoutPenalty(earlyTrip, now: now),
+        isTrue,
+      );
 
       // Trip at 12:00 PM (4 hours away -> late skip forfeits entitlement)
       final lateTrip = DateTime(2026, 10, 24, 12, 0);
-      expect(testSchoolRunPlan.canSkipWithoutPenalty(lateTrip, now: now), isFalse);
+      expect(
+        testSchoolRunPlan.canSkipWithoutPenalty(lateTrip, now: now),
+        isFalse,
+      );
     });
 
     test('notifier skips trip and refreshes handover OTP', () async {
@@ -87,14 +93,16 @@ void main() {
       final futureTrip = DateTime.now().add(const Duration(hours: 18));
       await notifier.skipNextTrip(initialPlan.id, futureTrip);
 
-      final updatedPlan =
-          notifier.state.plans.firstWhere((p) => p.id == initialPlan.id);
+      final updatedPlan = notifier.state.plans.firstWhere(
+        (p) => p.id == initialPlan.id,
+      );
       expect(updatedPlan.remainingTrips, equals(initialRemaining));
 
       // Refresh handover OTP
       await notifier.refreshHandoverOtp(initialPlan.id);
-      final refreshedPlan =
-          notifier.state.plans.firstWhere((p) => p.id == initialPlan.id);
+      final refreshedPlan = notifier.state.plans.firstWhere(
+        (p) => p.id == initialPlan.id,
+      );
       expect(refreshedPlan.handoverOtp, isNotNull);
     });
 
@@ -114,67 +122,67 @@ void main() {
   });
 
   group('Phase 1C Scheduled Plans Widget Tests', () {
-    testWidgets('ScheduledPlansScreen renders plans, entitlements, and upcoming trip',
-        (tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 900));
+    testWidgets(
+      'ScheduledPlansScreen renders plans, entitlements, and upcoming trip',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(400, 900));
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            appConfigProvider.overrideWithValue(testConfig),
-            apiClientProvider.overrideWithValue(testApiClient),
-            scheduledRepositoryProvider.overrideWithValue(testScheduledRepo),
-          ],
-          child: const MaterialApp(
-            home: ScheduledPlansScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appConfigProvider.overrideWithValue(testConfig),
+              apiClientProvider.overrideWithValue(testApiClient),
+              scheduledRepositoryProvider.overrideWithValue(testScheduledRepo),
+            ],
+            child: const MaterialApp(home: ScheduledPlansScreen()),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Scheduled Plans'), findsOneWidget);
-      expect(find.text('🎒 School Run'), findsOneWidget);
-      expect(find.text('Trip Entitlements'), findsOneWidget);
-      expect(find.text('Next Upcoming Trip'), findsOneWidget);
-      expect(find.text('Skip Trip'), findsOneWidget);
-      expect(find.text('Manage Subscription'), findsOneWidget);
+        expect(find.text('Scheduled Plans'), findsOneWidget);
+        expect(find.text('🎒 School Run'), findsOneWidget);
+        expect(find.text('Trip Entitlements'), findsOneWidget);
+        expect(find.text('Next Upcoming Trip'), findsOneWidget);
+        expect(find.text('Skip Trip'), findsOneWidget);
+        expect(find.text('Manage Subscription'), findsOneWidget);
 
-      await tester.binding.setSurfaceSize(null);
-    });
+        await tester.binding.setSurfaceSize(null);
+      },
+    );
 
-    testWidgets('SchoolRunSafetyScreen renders 6-digit OTP and authorized contacts',
-        (tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 1400));
+    testWidgets(
+      'SchoolRunSafetyScreen renders 6-digit OTP and authorized contacts',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(400, 1400));
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            appConfigProvider.overrideWithValue(testConfig),
-            apiClientProvider.overrideWithValue(testApiClient),
-            scheduledRepositoryProvider.overrideWithValue(testScheduledRepo),
-          ],
-          child: const MaterialApp(
-            home: SchoolRunSafetyScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appConfigProvider.overrideWithValue(testConfig),
+              apiClientProvider.overrideWithValue(testApiClient),
+              scheduledRepositoryProvider.overrideWithValue(testScheduledRepo),
+            ],
+            child: const MaterialApp(home: SchoolRunSafetyScreen()),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('School Run Safety & Handover'), findsOneWidget);
-      expect(find.text('School Pickup Verification OTP'), findsOneWidget);
-      expect(find.textContaining('849'), findsOneWidget);
-      expect(find.text('Passenger Profile'), findsOneWidget);
-      expect(find.textContaining('Zainab Adeleke'), findsOneWidget);
-      expect(find.text('Authorized Guardians'), findsOneWidget);
-      expect(find.textContaining('Dr. Aisha Adeleke'), findsOneWidget);
-      expect(find.text('Custody & Handover Policy'), findsOneWidget);
-      expect(find.text('Call Operations Safety Officer'), findsOneWidget);
+        expect(find.text('School Run Safety & Handover'), findsOneWidget);
+        expect(find.text('School Pickup Verification OTP'), findsOneWidget);
+        expect(find.textContaining('849'), findsOneWidget);
+        expect(find.text('Passenger Profile'), findsOneWidget);
+        expect(find.textContaining('Zainab Adeleke'), findsOneWidget);
+        expect(find.text('Authorized Guardians'), findsOneWidget);
+        expect(find.textContaining('Dr. Aisha Adeleke'), findsOneWidget);
+        expect(find.text('Custody & Handover Policy'), findsOneWidget);
+        expect(find.text('Call Operations Safety Officer'), findsOneWidget);
 
-      await tester.binding.setSurfaceSize(null);
-    });
+        await tester.binding.setSurfaceSize(null);
+      },
+    );
   });
 }

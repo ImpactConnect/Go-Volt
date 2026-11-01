@@ -243,12 +243,11 @@ class RiderDto extends Equatable {
               ?.map((d) => RiderDocumentDto.fromJson(d as Map<String, dynamic>))
               .toList() ??
           const [],
-      guarantor:
-          json['guarantor'] != null
-              ? RiderGuarantorDto.fromJson(
-                json['guarantor'] as Map<String, dynamic>,
-              )
-              : null,
+      guarantor: json['guarantor'] != null
+          ? RiderGuarantorDto.fromJson(
+              json['guarantor'] as Map<String, dynamic>,
+            )
+          : null,
       trainingCompleted: json['training_completed'] as bool? ?? false,
     );
   }
@@ -276,7 +275,8 @@ class RiderDto extends Equatable {
   int get completedTrips => totalTripsCompleted;
 
   bool get canGoOnline {
-    if (status == RiderStatus.suspended || status == RiderStatus.pendingApproval) {
+    if (status == RiderStatus.suspended ||
+        status == RiderStatus.pendingApproval) {
       return false;
     }
     if (batteryLevelPercent < 15) return false;
@@ -340,8 +340,7 @@ class RiderShiftDto extends Equatable {
 
   factory RiderShiftDto.fromJson(Map<String, dynamic> json) {
     return RiderShiftDto(
-      onlineHoursToday:
-          (json['online_hours_today'] as num?)?.toDouble() ?? 0.0,
+      onlineHoursToday: (json['online_hours_today'] as num?)?.toDouble() ?? 0.0,
       earningsTodayKobo: (json['earnings_today_kobo'] as num?)?.toInt() ?? 0,
       jobsCompletedToday: (json['jobs_completed_today'] as num?)?.toInt() ?? 0,
       acceptanceRatePercent:

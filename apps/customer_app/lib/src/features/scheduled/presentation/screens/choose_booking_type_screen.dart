@@ -61,7 +61,8 @@ class ChooseBookingTypeScreen extends ConsumerWidget {
                 subtitle: 'Schedule a single future trip',
                 icon: Icons.calendar_today_rounded,
                 isSelected: state.bookingType == ScheduledBookingType.oneOff,
-                onTap: () => notifier.setBookingType(ScheduledBookingType.oneOff),
+                onTap: () =>
+                    notifier.setBookingType(ScheduledBookingType.oneOff),
                 cardBg: cardBg,
                 borderColor: borderColor,
                 textColor: textColor,
@@ -76,7 +77,8 @@ class ChooseBookingTypeScreen extends ConsumerWidget {
                 subtitle: 'Set up a weekly or monthly schedule',
                 icon: Icons.sync_rounded,
                 isSelected: state.bookingType == ScheduledBookingType.recurring,
-                onTap: () => notifier.setBookingType(ScheduledBookingType.recurring),
+                onTap: () =>
+                    notifier.setBookingType(ScheduledBookingType.recurring),
                 cardBg: cardBg,
                 borderColor: borderColor,
                 textColor: textColor,

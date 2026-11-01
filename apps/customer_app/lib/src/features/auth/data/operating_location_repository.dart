@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Falls back to the seed location (Ogun/Shagamu) when Supabase is unavailable.
 class OperatingLocationRepository {
   OperatingLocationRepository({SupabaseClient? client})
-      : _client = client ?? _tryGetClient();
+    : _client = client ?? _tryGetClient();
 
   final SupabaseClient? _client;
 
@@ -51,8 +51,9 @@ class OperatingLocationRepository {
           .order('city');
 
       final list = (response as List<dynamic>)
-          .map((row) =>
-              OperatingLocationDto.fromJson(row as Map<String, dynamic>))
+          .map(
+            (row) => OperatingLocationDto.fromJson(row as Map<String, dynamic>),
+          )
           .toList();
       return list.isEmpty ? _fallback : list;
     } catch (_) {
@@ -82,8 +83,9 @@ class OperatingLocationRepository {
           .order('city');
 
       final list = (response as List<dynamic>)
-          .map((row) =>
-              OperatingLocationDto.fromJson(row as Map<String, dynamic>))
+          .map(
+            (row) => OperatingLocationDto.fromJson(row as Map<String, dynamic>),
+          )
           .toList();
       return list.isEmpty
           ? _fallback.where((l) => l.state == state).toList()
@@ -98,12 +100,13 @@ class OperatingLocationRepository {
 
 final operatingLocationRepositoryProvider =
     Provider<OperatingLocationRepository>((ref) {
-  return OperatingLocationRepository();
-});
+      return OperatingLocationRepository();
+    });
 
 /// All active operating locations.
-final operatingLocationsProvider =
-    FutureProvider<List<OperatingLocationDto>>((ref) {
+final operatingLocationsProvider = FutureProvider<List<OperatingLocationDto>>((
+  ref,
+) {
   return ref.read(operatingLocationRepositoryProvider).getActiveLocations();
 });
 
@@ -115,7 +118,7 @@ final operatingStatesProvider = FutureProvider<List<String>>((ref) {
 /// Cities for a specific state (family provider).
 final operatingCitiesProvider =
     FutureProvider.family<List<OperatingLocationDto>, String>((ref, state) {
-  return ref
-      .read(operatingLocationRepositoryProvider)
-      .getCitiesForState(state);
-});
+      return ref
+          .read(operatingLocationRepositoryProvider)
+          .getCitiesForState(state);
+    });

@@ -1,4 +1,3 @@
-import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,10 +26,6 @@ class ReviewQuoteScreen extends ConsumerWidget {
     final dateDisplay = state.isRecurring
         ? '${state.selectedDays.join(', ')} (${state.pickupTime})'
         : '${state.scheduledDate?.day ?? 5} Nov 2026, ${state.pickupTime}';
-
-    final estimatedPriceStr = state.journeyDirection == JourneyDirection.roundTrip
-        ? (state.isRecurring ? '₦5,000 / day' : '₦5,000')
-        : (state.isRecurring ? '₦2,500 / trip' : '₦2,500');
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -76,7 +71,8 @@ class ReviewQuoteScreen extends ConsumerWidget {
                       icon: Icons.school_rounded,
                       title: 'Trip purpose',
                       value: state.purpose.label,
-                      onEdit: () => context.push(AppRoutes.scheduledTripPurpose),
+                      onEdit: () =>
+                          context.push(AppRoutes.scheduledTripPurpose),
                       textColor: textColor,
                       subtextColor: subtextColor,
                     ),
@@ -112,7 +108,8 @@ class ReviewQuoteScreen extends ConsumerWidget {
                       iconColor: Colors.redAccent,
                       title: 'Destination',
                       value: state.destinationLocation.address,
-                      onEdit: () => context.push(AppRoutes.scheduledDestination),
+                      onEdit: () =>
+                          context.push(AppRoutes.scheduledDestination),
                       textColor: textColor,
                       subtextColor: subtextColor,
                     ),
@@ -157,8 +154,11 @@ class ReviewQuoteScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.payments_outlined,
-                        size: 20, color: GVColors.primary),
+                    Icon(
+                      Icons.payments_outlined,
+                      size: 20,
+                      color: GVColors.primary,
+                    ),
                     const SizedBox(width: GVSpacing.md),
                     Text(
                       'Estimated price',
@@ -169,7 +169,7 @@ class ReviewQuoteScreen extends ConsumerWidget {
                     ),
                     const Spacer(),
                     Text(
-                      estimatedPriceStr,
+                      '₦2,500',
                       style: GVTypography.labelLarge.copyWith(
                         color: textColor,
                         fontWeight: FontWeight.bold,

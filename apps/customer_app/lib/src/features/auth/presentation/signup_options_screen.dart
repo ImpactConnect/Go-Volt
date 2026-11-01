@@ -92,9 +92,7 @@ class SignUpOptionsScreen extends ConsumerWidget {
                       Container(
                         width: 22,
                         height: 22,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
                         child: const Center(
                           child: Text(
                             'G',
@@ -164,20 +162,28 @@ class SignUpOptionsScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Divider(
-                      color: isDark ? const Color(0xFF2E3D35) : GVColors.divider,
+                      color: isDark
+                          ? const Color(0xFF2E3D35)
+                          : GVColors.divider,
                       thickness: 1,
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: GVSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: GVSpacing.md,
+                    ),
                     child: Text(
                       'or',
-                      style: GVTypography.bodySmall.copyWith(color: subtextColor),
+                      style: GVTypography.bodySmall.copyWith(
+                        color: subtextColor,
+                      ),
                     ),
                   ),
                   Expanded(
                     child: Divider(
-                      color: isDark ? const Color(0xFF2E3D35) : GVColors.divider,
+                      color: isDark
+                          ? const Color(0xFF2E3D35)
+                          : GVColors.divider,
                       thickness: 1,
                     ),
                   ),
@@ -194,7 +200,9 @@ class SignUpOptionsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Already have an account? ',
-                        style: GVTypography.bodySmall.copyWith(color: subtextColor),
+                        style: GVTypography.bodySmall.copyWith(
+                          color: subtextColor,
+                        ),
                       ),
                       Text(
                         'Log in',

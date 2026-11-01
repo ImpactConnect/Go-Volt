@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/auth/auth_state.dart';
+import '../../errand/application/active_errand_provider.dart';
 import '../domain/activity_item.dart';
 import '../domain/activity_state.dart';
 
@@ -14,7 +15,15 @@ final activityNotifierProvider =
       authState.profile!.ecoPointsBalance == 0 &&
       authState.profile!.carbonAvoidedKg == 0.0;
 
-  return ActivityNotifier(initialItems: isNewUser ? const [] : null);
+  final notifier = ActivityNotifier(initialItems: isNewUser ? const [] : null);
+
+  ref.listen<ErrandDto?>(activeErrandProvider, (prev, next) {
+    if (next != null) {
+      notifier.addOrUpdateErrand(next);
+    }
+  });
+
+  return notifier;
 });
 
 class ActivityNotifier extends StateNotifier<ActivityState> {
@@ -47,6 +56,20 @@ class ActivityNotifier extends StateNotifier<ActivityState> {
     Future.delayed(const Duration(milliseconds: 300), () {
       state = state.copyWith(isLoading: false);
     });
+  }
+
+  void addOrUpdateErrand(ErrandDto errand) {
+    final newItem = ActivityItem.fromErrand(errand);
+    final existingIndex = state.items.indexWhere(
+      (i) => i.id == errand.id || i.reference == errand.referenceNumber,
+    );
+    if (existingIndex >= 0) {
+      final updated = List<ActivityItem>.from(state.items);
+      updated[existingIndex] = newItem;
+      state = state.copyWith(items: updated);
+    } else {
+      state = state.copyWith(items: [newItem, ...state.items]);
+    }
   }
 
   static List<ActivityItem> _generateInitialActivities() {

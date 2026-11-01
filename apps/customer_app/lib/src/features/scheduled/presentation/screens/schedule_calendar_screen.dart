@@ -200,7 +200,9 @@ class _ScheduleCalendarScreenState
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -208,8 +210,11 @@ class _ScheduleCalendarScreenState
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         startStr,
@@ -257,7 +262,9 @@ class _ScheduleCalendarScreenState
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -265,8 +272,11 @@ class _ScheduleCalendarScreenState
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         endStr,
@@ -290,7 +300,9 @@ class _ScheduleCalendarScreenState
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -298,8 +310,11 @@ class _ScheduleCalendarScreenState
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.event_busy_rounded,
-                          size: 20, color: subtextColor),
+                      Icon(
+                        Icons.event_busy_rounded,
+                        size: 20,
+                        color: subtextColor,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Expanded(
                         child: Column(
@@ -322,8 +337,11 @@ class _ScheduleCalendarScreenState
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: subtextColor),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: subtextColor,
+                      ),
                     ],
                   ),
                 ),

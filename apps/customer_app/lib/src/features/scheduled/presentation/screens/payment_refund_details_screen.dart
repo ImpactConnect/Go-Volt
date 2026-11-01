@@ -20,7 +20,8 @@ class PaymentRefundDetailsScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : GVColors.neutral50;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.completedTrips.isNotEmpty
             ? state.completedTrips.first
             : (state.trips.isNotEmpty ? state.trips.first : null));
@@ -108,9 +109,7 @@ class PaymentRefundDetailsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'Total amount',
-                      style: GVTypography.caption.copyWith(
-                        color: subtextColor,
-                      ),
+                      style: GVTypography.caption.copyWith(color: subtextColor),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -142,8 +141,9 @@ class PaymentRefundDetailsScreen extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFE8F5E9),
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
+                            borderRadius: BorderRadius.circular(
+                              GVBorderRadius.full,
+                            ),
                           ),
                           child: const Text(
                             'Paid',
@@ -213,7 +213,8 @@ class PaymentRefundDetailsScreen extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                                'Receipt receipt_GVD12345678.pdf saved to downloads.'),
+                              'Receipt receipt_GVD12345678.pdf saved to downloads.',
+                            ),
                           ),
                         );
                       },
@@ -409,7 +410,8 @@ class PaymentRefundDetailsScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      'Refund request submitted. You will be notified within 24 hours.'),
+                    'Refund request submitted. You will be notified within 24 hours.',
+                  ),
                 ),
               );
             },

@@ -48,7 +48,10 @@ class UpcomingTripsScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg, vertical: GVSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: GVSpacing.lg,
+            vertical: GVSpacing.sm,
+          ),
           children: [
             ...state.upcomingTrips.map((trip) {
               return Padding(
@@ -104,8 +107,9 @@ class UpcomingTripsScreen extends ConsumerWidget {
     final badgeBg = isDriverAssigned
         ? GVColors.primary.withValues(alpha: 0.12)
         : const Color(0xFFE3F2FD);
-    final badgeTextColor =
-        isDriverAssigned ? GVColors.primary : const Color(0xFF1976D2);
+    final badgeTextColor = isDriverAssigned
+        ? GVColors.primary
+        : const Color(0xFF1976D2);
     final badgeText = isDriverAssigned ? 'Driver assigned' : 'Scheduled';
 
     return InkWell(
@@ -122,8 +126,11 @@ class UpcomingTripsScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.access_time_rounded,
-                    size: 18, color: GVColors.primary),
+                Icon(
+                  Icons.access_time_rounded,
+                  size: 18,
+                  color: GVColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   trip.scheduledTimeStr,
@@ -135,8 +142,10 @@ class UpcomingTripsScreen extends ConsumerWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.full),
@@ -151,15 +160,21 @@ class UpcomingTripsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: subtextColor),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: subtextColor,
+                ),
               ],
             ),
             const Divider(height: 18),
             Row(
               children: [
-                Icon(Icons.location_on_rounded,
-                    size: 16, color: GVColors.primary),
+                Icon(
+                  Icons.location_on_rounded,
+                  size: 16,
+                  color: GVColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -177,8 +192,11 @@ class UpcomingTripsScreen extends ConsumerWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.location_on_rounded,
-                    size: 16, color: Colors.redAccent),
+                const Icon(
+                  Icons.location_on_rounded,
+                  size: 16,
+                  color: Colors.redAccent,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

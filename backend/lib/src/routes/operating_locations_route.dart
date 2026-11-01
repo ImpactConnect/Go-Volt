@@ -47,8 +47,9 @@ Router operatingLocationsRouter() {
       );
     }
     final locations = _getLocations()
-        .where((l) =>
-            (l['state'] as String).toLowerCase() == state.toLowerCase())
+        .where(
+          (l) => (l['state'] as String).toLowerCase() == state.toLowerCase(),
+        )
         .toList();
     return Response.ok(
       jsonEncode({'data': locations}),

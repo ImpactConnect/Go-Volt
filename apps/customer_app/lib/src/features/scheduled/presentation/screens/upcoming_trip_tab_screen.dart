@@ -49,7 +49,10 @@ class UpcomingTripTabScreen extends ConsumerWidget {
           children: [
             // Tabs: [Upcoming (3)] [Completed (12)] [Cancelled (2)]
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GVSpacing.lg, vertical: GVSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: GVSpacing.lg,
+                vertical: GVSpacing.xs,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -68,7 +71,8 @@ class UpcomingTripTabScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: _buildTabButton(
-                        title: 'Completed (${state.completedTrips.length + 12})',
+                        title:
+                            'Completed (${state.completedTrips.length + 12})',
                         isSelected: state.activeTabIndex == 1,
                         onTap: () => notifier.setActiveTab(1),
                       ),
@@ -107,7 +111,9 @@ class UpcomingTripTabScreen extends ConsumerWidget {
                     onContactDriver: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Calling ${trip.assignedDriver?.name ?? "driver"}...'),
+                          content: Text(
+                            'Calling ${trip.assignedDriver?.name ?? "driver"}...',
+                          ),
                           backgroundColor: GVColors.primary,
                         ),
                       );
@@ -194,8 +200,10 @@ class UpcomingTripTabScreen extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: GVColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(GVBorderRadius.full),
@@ -217,7 +225,11 @@ class UpcomingTripTabScreen extends ConsumerWidget {
           // Route
           Row(
             children: [
-              Icon(Icons.location_on_rounded, size: 16, color: GVColors.primary),
+              Icon(
+                Icons.location_on_rounded,
+                size: 16,
+                color: GVColors.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -235,7 +247,11 @@ class UpcomingTripTabScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, size: 16, color: Colors.redAccent),
+              const Icon(
+                Icons.location_on_rounded,
+                size: 16,
+                color: Colors.redAccent,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

@@ -18,8 +18,7 @@ class PreferredDriverScreen extends ConsumerStatefulWidget {
       _PreferredDriverScreenState();
 }
 
-class _PreferredDriverScreenState
-    extends ConsumerState<PreferredDriverScreen> {
+class _PreferredDriverScreenState extends ConsumerState<PreferredDriverScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -98,12 +97,15 @@ class _PreferredDriverScreenState
                   style: GVTypography.bodyMedium.copyWith(color: textColor),
                   decoration: InputDecoration(
                     hintText: 'Search drivers by name',
-                    hintStyle:
-                        GVTypography.bodyMedium.copyWith(color: subtextColor),
+                    hintStyle: GVTypography.bodyMedium.copyWith(
+                      color: subtextColor,
+                    ),
                     prefixIcon: Icon(Icons.search_rounded, color: subtextColor),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   onChanged: (val) {
                     setState(() => _searchQuery = val);
@@ -117,8 +119,7 @@ class _PreferredDriverScreenState
                 child: ListView(
                   children: [
                     ...drivers.map((driver) {
-                      final isSelected =
-                          state.preferredDriver?.id == driver.id;
+                      final isSelected = state.preferredDriver?.id == driver.id;
                       return _buildDriverCard(
                         driver: driver,
                         isSelected: isSelected,
@@ -209,8 +210,11 @@ class _PreferredDriverScreenState
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded,
-                            size: 16, color: Color(0xFFFFB800)),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 16,
+                          color: Color(0xFFFFB800),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           driver.rating.toStringAsFixed(1),

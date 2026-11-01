@@ -20,8 +20,9 @@ class _PassengerDetailsScreenState
     extends ConsumerState<PassengerDetailsScreen> {
   final _nameController = TextEditingController(text: 'Daniel Okafor');
   final _phoneController = TextEditingController(text: '803 123 4567');
-  final _instructionsController =
-      TextEditingController(text: 'Pick from main gate');
+  final _instructionsController = TextEditingController(
+    text: 'Pick from main gate',
+  );
 
   bool _isMyself = true;
   bool _savePassenger = true;
@@ -147,8 +148,10 @@ class _PassengerDetailsScreenState
                   style: GVTypography.bodyMedium.copyWith(color: textColor),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
@@ -193,12 +196,15 @@ class _PassengerDetailsScreenState
                       child: TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
-                        style:
-                            GVTypography.bodyMedium.copyWith(color: textColor),
+                        style: GVTypography.bodyMedium.copyWith(
+                          color: textColor,
+                        ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -253,11 +259,14 @@ class _PassengerDetailsScreenState
                   style: GVTypography.bodyMedium.copyWith(color: textColor),
                   decoration: InputDecoration(
                     hintText: 'e.g. Pick from main gate',
-                    hintStyle:
-                        GVTypography.bodyMedium.copyWith(color: subtextColor),
+                    hintStyle: GVTypography.bodyMedium.copyWith(
+                      color: subtextColor,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -268,8 +277,7 @@ class _PassengerDetailsScreenState
               GVButton(
                 text: 'Continue',
                 onPressed: () {
-                  final formattedPhone =
-                      '+234 ${_phoneController.text.trim()}';
+                  final formattedPhone = '+234 ${_phoneController.text.trim()}';
                   notifier.setPassengerDetails(
                     name: _nameController.text.trim(),
                     phone: formattedPhone,
@@ -316,4 +324,3 @@ class _PassengerDetailsScreenState
     );
   }
 }
-

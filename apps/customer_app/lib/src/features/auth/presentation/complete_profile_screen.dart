@@ -22,8 +22,7 @@ class CompleteProfileScreen extends ConsumerStatefulWidget {
       _CompleteProfileScreenState();
 }
 
-class _CompleteProfileScreenState
-    extends ConsumerState<CompleteProfileScreen> {
+class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _pageController = PageController();
   int _currentPage = 0;
@@ -54,7 +53,9 @@ class _CompleteProfileScreenState
   void initState() {
     super.initState();
     final profile = ref.read(authNotifierProvider).profile;
-    _firstNameController = TextEditingController(text: profile?.firstName ?? '');
+    _firstNameController = TextEditingController(
+      text: profile?.firstName ?? '',
+    );
     _lastNameController = TextEditingController(text: profile?.lastName ?? '');
   }
 
@@ -98,8 +99,7 @@ class _CompleteProfileScreenState
         if (_lastNameController.text.trim().isEmpty) return false;
         if (_selectedGender == null) return false;
         if (_phoneController.text.trim().isEmpty) return false;
-        final digits =
-            _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+        final digits = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
         if (digits.length < 10) return false;
         return true;
       case 1:
@@ -111,8 +111,10 @@ class _CompleteProfileScreenState
       case 2:
         // Emergency contact page
         if (_emergencyNameController.text.trim().isEmpty) return false;
-        final eDigits =
-            _emergencyPhoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+        final eDigits = _emergencyPhoneController.text.replaceAll(
+          RegExp(r'[^0-9]'),
+          '',
+        );
         if (eDigits.length < 10) return false;
         return true;
     }
@@ -146,8 +148,10 @@ class _CompleteProfileScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded,
-                  color: GVColors.brandGreen),
+              leading: const Icon(
+                Icons.camera_alt_rounded,
+                color: GVColors.brandGreen,
+              ),
               title: const Text('Take a photo'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -155,8 +159,10 @@ class _CompleteProfileScreenState
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_rounded,
-                  color: GVColors.brandGreen),
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: GVColors.brandGreen,
+              ),
               title: const Text('Choose from gallery'),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -188,17 +194,18 @@ class _CompleteProfileScreenState
         '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
             .trim();
 
-    final success =
-        await ref.read(authNotifierProvider.notifier).completeProfile(
-              fullName: fullName,
-              phoneNumber: _phoneController.text.trim(),
-              gender: _selectedGender,
-              state: _selectedState,
-              city: _selectedCity,
-              currentAddress: _addressController.text.trim(),
-              emergencyContactName: _emergencyNameController.text.trim(),
-              emergencyContactPhone: _emergencyPhoneController.text.trim(),
-            );
+    final success = await ref
+        .read(authNotifierProvider.notifier)
+        .completeProfile(
+          fullName: fullName,
+          phoneNumber: _phoneController.text.trim(),
+          gender: _selectedGender,
+          state: _selectedState,
+          city: _selectedCity,
+          currentAddress: _addressController.text.trim(),
+          emergencyContactName: _emergencyNameController.text.trim(),
+          emergencyContactPhone: _emergencyPhoneController.text.trim(),
+        );
 
     if (mounted) {
       setState(() => _isSubmitting = false);
@@ -226,8 +233,7 @@ class _CompleteProfileScreenState
             // ── Error Banner ─────────────────────────────────────────────
             if (authState.errorMessage != null)
               Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
+                margin: const EdgeInsets.symmetric(horizontal: GVSpacing.lg),
                 padding: const EdgeInsets.all(GVSpacing.sm),
                 decoration: BoxDecoration(
                   color: GVColors.error.withValues(alpha: 0.1),
@@ -235,14 +241,18 @@ class _CompleteProfileScreenState
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded,
-                        color: GVColors.error, size: 18),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: GVColors.error,
+                      size: 18,
+                    ),
                     const SizedBox(width: GVSpacing.sm),
                     Expanded(
                       child: Text(
                         authState.errorMessage!,
-                        style: GVTypography.bodySmall
-                            .copyWith(color: GVColors.error),
+                        style: GVTypography.bodySmall.copyWith(
+                          color: GVColors.error,
+                        ),
                       ),
                     ),
                   ],
@@ -277,7 +287,11 @@ class _CompleteProfileScreenState
     const steps = ['Personal', 'Location', 'Emergency'];
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          GVSpacing.lg, GVSpacing.lg, GVSpacing.lg, GVSpacing.sm),
+        GVSpacing.lg,
+        GVSpacing.lg,
+        GVSpacing.lg,
+        GVSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -295,8 +309,11 @@ class _CompleteProfileScreenState
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: GVColors.border),
                     ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        size: 20, color: GVColors.textPrimary),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      size: 20,
+                      color: GVColors.textPrimary,
+                    ),
                   ),
                 )
               else
@@ -415,8 +432,10 @@ class _CompleteProfileScreenState
             const SizedBox(height: 4),
             Text(
               'Used for driver communication and trip safety (NDPR protected)',
-              style: GVTypography.caption
-                  .copyWith(color: GVColors.textSecondary, fontSize: 11),
+              style: GVTypography.caption.copyWith(
+                color: GVColors.textSecondary,
+                fontSize: 11,
+              ),
             ),
             const SizedBox(height: GVSpacing.xl),
           ],
@@ -445,8 +464,9 @@ class _CompleteProfileScreenState
           const SizedBox(height: GVSpacing.xs),
           Text(
             'Select the state and city where you\'ll be using Go-Volt. Only cities we currently operate in are listed.',
-            style: GVTypography.bodySmall
-                .copyWith(color: GVColors.textSecondary),
+            style: GVTypography.bodySmall.copyWith(
+              color: GVColors.textSecondary,
+            ),
           ),
           const SizedBox(height: GVSpacing.lg),
 
@@ -472,8 +492,7 @@ class _CompleteProfileScreenState
               items: const ['Ogun'],
               hint: 'Select state',
               itemLabel: (s2) => s2,
-              onChanged: (val) =>
-                  setState(() => _selectedState = val),
+              onChanged: (val) => setState(() => _selectedState = val),
             ),
           ),
           const SizedBox(height: GVSpacing.md),
@@ -484,14 +503,15 @@ class _CompleteProfileScreenState
           if (_selectedState == null)
             _buildDisabledDropdown('Select a state first')
           else
-            ref.watch(operatingCitiesProvider(_selectedState!)).when(
+            ref
+                .watch(operatingCitiesProvider(_selectedState!))
+                .when(
                   data: (cities) => _buildDropdown<String>(
                     value: _selectedCity,
                     items: cities.map((c) => c.city).toList(),
                     hint: 'Select city',
                     itemLabel: (c) => c,
-                    onChanged: (val) =>
-                        setState(() => _selectedCity = val),
+                    onChanged: (val) => setState(() => _selectedCity = val),
                   ),
                   loading: () => const _LoadingDropdown(),
                   error: (e, s) => _buildDropdown<String>(
@@ -499,8 +519,7 @@ class _CompleteProfileScreenState
                     items: const ['Shagamu'],
                     hint: 'Select city',
                     itemLabel: (c) => c,
-                    onChanged: (val) =>
-                        setState(() => _selectedCity = val),
+                    onChanged: (val) => setState(() => _selectedCity = val),
                   ),
                 ),
           const SizedBox(height: GVSpacing.md),
@@ -535,13 +554,17 @@ class _CompleteProfileScreenState
               color: GVColors.brandGreen.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(GVBorderRadius.lg),
               border: Border.all(
-                  color: GVColors.brandGreen.withValues(alpha: 0.25)),
+                color: GVColors.brandGreen.withValues(alpha: 0.25),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.shield_outlined,
-                    color: GVColors.brandGreen, size: 22),
+                const Icon(
+                  Icons.shield_outlined,
+                  color: GVColors.brandGreen,
+                  size: 22,
+                ),
                 const SizedBox(width: GVSpacing.sm),
                 Expanded(
                   child: Column(
@@ -557,8 +580,9 @@ class _CompleteProfileScreenState
                       const SizedBox(height: 2),
                       Text(
                         'We\'ll only contact them if there\'s an emergency during your trip. Required for rider and passenger safety.',
-                        style: GVTypography.caption
-                            .copyWith(color: GVColors.textSecondary),
+                        style: GVTypography.caption.copyWith(
+                          color: GVColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -615,14 +639,15 @@ class _CompleteProfileScreenState
                       errorBuilder: (ctx, err, st) => _avatarInitials(initials),
                     )
                   : (networkUrl != null && networkUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: networkUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (ctx, url) => _avatarInitials(initials),
-                          errorWidget: (ctx, url, err) =>
-                              _avatarInitials(initials),
-                        )
-                      : _avatarInitials(initials)),
+                        ? CachedNetworkImage(
+                            imageUrl: networkUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (ctx, url) =>
+                                _avatarInitials(initials),
+                            errorWidget: (ctx, url, err) =>
+                                _avatarInitials(initials),
+                          )
+                        : _avatarInitials(initials)),
             ),
           ),
           Positioned(
@@ -635,8 +660,11 @@ class _CompleteProfileScreenState
                 color: GVColors.brandGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.camera_alt_rounded,
-                  size: 16, color: Colors.white),
+              child: const Icon(
+                Icons.camera_alt_rounded,
+                size: 16,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -645,14 +673,14 @@ class _CompleteProfileScreenState
   }
 
   Widget _avatarInitials(String initials) => Center(
-        child: Text(
-          initials,
-          style: GVTypography.h2.copyWith(
-            color: GVColors.brandGreen,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
+    child: Text(
+      initials,
+      style: GVTypography.h2.copyWith(
+        color: GVColors.brandGreen,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
 
   Widget _buildGoogleProfileCard(dynamic profile) {
     if (profile == null) return const SizedBox.shrink();
@@ -667,8 +695,11 @@ class _CompleteProfileScreenState
       ),
       child: Row(
         children: [
-          const Icon(Icons.verified_user_rounded,
-              color: GVColors.brandGreen, size: 22),
+          const Icon(
+            Icons.verified_user_rounded,
+            color: GVColors.brandGreen,
+            size: 22,
+          ),
           const SizedBox(width: GVSpacing.sm),
           Expanded(
             child: Column(
@@ -684,8 +715,9 @@ class _CompleteProfileScreenState
                 if (email.isNotEmpty)
                   Text(
                     email,
-                    style: GVTypography.caption
-                        .copyWith(color: GVColors.textSecondary),
+                    style: GVTypography.caption.copyWith(
+                      color: GVColors.textSecondary,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
               ],
@@ -728,9 +760,7 @@ class _CompleteProfileScreenState
                     color: isSelected
                         ? GVColors.brandGreen
                         : GVColors.textPrimary,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
               ],
@@ -752,8 +782,10 @@ class _CompleteProfileScreenState
       child: Row(
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: GVSpacing.sm, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: GVSpacing.sm,
+              vertical: 14,
+            ),
             margin: const EdgeInsets.only(right: GVSpacing.xs),
             decoration: const BoxDecoration(
               border: Border(right: BorderSide(color: GVColors.border)),
@@ -772,11 +804,15 @@ class _CompleteProfileScreenState
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 hintText: '08012345678',
-                hintStyle:
-                    TextStyle(color: GVColors.textSecondary, fontSize: 14),
+                hintStyle: TextStyle(
+                  color: GVColors.textSecondary,
+                  fontSize: 14,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: GVSpacing.sm, vertical: 14),
+                  horizontal: GVSpacing.sm,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -801,15 +837,16 @@ class _CompleteProfileScreenState
         filled: true,
         fillColor: GVColors.softBackground,
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: GVSpacing.md, vertical: 14),
+          horizontal: GVSpacing.md,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GVBorderRadius.md),
           borderSide: const BorderSide(color: GVColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GVBorderRadius.md),
-          borderSide:
-              const BorderSide(color: GVColors.brandGreen, width: 1.5),
+          borderSide: const BorderSide(color: GVColors.brandGreen, width: 1.5),
         ),
       ),
     );
@@ -834,21 +871,25 @@ class _CompleteProfileScreenState
           value: value,
           hint: Text(
             hint,
-            style:
-                TextStyle(color: GVColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: GVColors.textSecondary, fontSize: 14),
           ),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: GVColors.textSecondary),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: GVColors.textSecondary,
+          ),
           items: items
-              .map((item) => DropdownMenuItem<T>(
-                    value: item,
-                    child: Text(
-                      itemLabel(item),
-                      style: GVTypography.bodyMedium
-                          .copyWith(color: GVColors.textPrimary),
+              .map(
+                (item) => DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(
+                    itemLabel(item),
+                    style: GVTypography.bodyMedium.copyWith(
+                      color: GVColors.textPrimary,
                     ),
-                  ))
+                  ),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
         ),
@@ -859,7 +900,9 @@ class _CompleteProfileScreenState
   Widget _buildDisabledDropdown(String hint) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: GVSpacing.md, vertical: 14),
+        horizontal: GVSpacing.md,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: GVColors.softBackground.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -873,8 +916,10 @@ class _CompleteProfileScreenState
               style: TextStyle(color: GVColors.textSecondary, fontSize: 14),
             ),
           ),
-          const Icon(Icons.keyboard_arrow_down_rounded,
-              color: GVColors.textSecondary),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: GVColors.textSecondary,
+          ),
         ],
       ),
     );
@@ -917,16 +962,22 @@ class _CompleteProfileScreenState
           ),
           const Divider(height: GVSpacing.md),
           _summaryRow(Icons.person_rounded, 'Name', name.isEmpty ? '—' : name),
-          _summaryRow(Icons.wc_rounded, 'Gender',
-              _genders.firstWhere(
-                (g) => g['value'] == _selectedGender,
-                orElse: () => {'label': '—'},
-              )['label']!),
+          _summaryRow(
+            Icons.wc_rounded,
+            'Gender',
+            _genders.firstWhere(
+              (g) => g['value'] == _selectedGender,
+              orElse: () => {'label': '—'},
+            )['label']!,
+          ),
           _summaryRow(Icons.location_city_rounded, 'Location', location),
-          _summaryRow(Icons.home_rounded, 'Address',
-              _addressController.text.trim().isEmpty
-                  ? '—'
-                  : _addressController.text.trim()),
+          _summaryRow(
+            Icons.home_rounded,
+            'Address',
+            _addressController.text.trim().isEmpty
+                ? '—'
+                : _addressController.text.trim(),
+          ),
         ],
       ),
     );
@@ -949,9 +1000,7 @@ class _CompleteProfileScreenState
           Expanded(
             child: Text(
               value,
-              style: GVTypography.caption.copyWith(
-                color: GVColors.textPrimary,
-              ),
+              style: GVTypography.caption.copyWith(color: GVColors.textPrimary),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -968,7 +1017,11 @@ class _CompleteProfileScreenState
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-          GVSpacing.lg, GVSpacing.sm, GVSpacing.lg, GVSpacing.lg),
+        GVSpacing.lg,
+        GVSpacing.sm,
+        GVSpacing.lg,
+        GVSpacing.lg,
+      ),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: GVColors.border)),
       ),
@@ -1014,8 +1067,9 @@ class _CompleteProfileScreenState
             onPressed: () => context.go(AppRoutes.locationPermission),
             child: Text(
               'Skip for now',
-              style: GVTypography.bodySmall
-                  .copyWith(color: GVColors.textSecondary),
+              style: GVTypography.bodySmall.copyWith(
+                color: GVColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -1032,8 +1086,10 @@ class _LoadingDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 52,
-      padding:
-          const EdgeInsets.symmetric(horizontal: GVSpacing.md, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: GVSpacing.md,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: GVColors.softBackground,
         borderRadius: BorderRadius.circular(GVBorderRadius.md),

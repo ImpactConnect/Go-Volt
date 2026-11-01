@@ -36,6 +36,23 @@ import '../../features/parcel/presentation/parcel_live_tracking_screen.dart';
 import '../../features/parcel/presentation/parcel_delivered_screen.dart';
 import '../../features/parcel/presentation/parcel_receipt_screen.dart';
 import '../../features/parcel/presentation/parcel_rating_screen.dart';
+import '../../features/errand/presentation/home/market_errand_home_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/select_shop_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/add_items_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/shopping_preferences_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/shopping_delivery_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/shopping_review_screen.dart';
+import '../../features/errand/presentation/flow_a_shopping/shopping_tracking_screen.dart';
+import '../../features/errand/presentation/flow_b_package/package_pickup_screen.dart';
+import '../../features/errand/presentation/flow_b_package/package_details_screen.dart';
+import '../../features/errand/presentation/flow_b_package/package_delivery_screen.dart';
+import '../../features/errand/presentation/flow_b_package/package_review_screen.dart';
+import '../../features/errand/presentation/flow_b_package/package_tracking_screen.dart';
+import '../../features/errand/presentation/flow_c_other/describe_errand_screen.dart';
+import '../../features/errand/presentation/flow_c_other/task_details_screen.dart';
+import '../../features/errand/presentation/flow_c_other/quote_available_screen.dart';
+import '../../features/errand/presentation/flow_c_other/custom_errand_tracking_screen.dart';
+import '../../features/errand/presentation/flow_c_other/errand_completed_screen.dart';
 import '../../features/home/presentation/current_location_map_screen.dart';
 import '../../features/home/presentation/home_dashboard_screen.dart';
 import '../../features/home/presentation/location_selector_modal.dart';
@@ -99,6 +116,25 @@ abstract final class AppRoutes {
   static const parcelDelivered = '/parcel-delivered';
   static const parcelReceipt = '/parcel-receipt';
   static const parcelRating = '/parcel-rating';
+
+  // Market Errand Subsystem (v1.6)
+  static const errandHome = '/errand';
+  static const errandSelectShop = '/errand/select-shop';
+  static const errandAddItems = '/errand/add-items';
+  static const errandPreferences = '/errand/preferences';
+  static const errandDelivery = '/errand/delivery';
+  static const errandReview = '/errand/review';
+  static const errandTracking = '/errand/tracking';
+  static const errandPackagePickup = '/errand/package-pickup';
+  static const errandPackageDetails = '/errand/package-details';
+  static const errandPackageDelivery = '/errand/package-delivery';
+  static const errandPackageReview = '/errand/package-review';
+  static const errandPackageTracking = '/errand/package-tracking';
+  static const errandDescribeTask = '/errand/describe-task';
+  static const errandTaskDetails = '/errand/task-details';
+  static const errandQuoteAvailable = '/errand/quote-available';
+  static const errandCustomTracking = '/errand/custom-tracking';
+  static const errandCompleted = '/errand/completed';
 
   // Phase 1C: Tracking & Scheduled Subscriptions
   static const liveTracking = '/live-tracking';
@@ -315,6 +351,80 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.parcelRating,
         builder: (context, state) => const ParcelRatingScreen(),
+      ),
+
+      // Market Errand (v1.6)
+      GoRoute(
+        path: AppRoutes.errandHome,
+        builder: (context, state) => const MarketErrandHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandSelectShop,
+        builder: (context, state) => const SelectShopScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandAddItems,
+        builder: (context, state) => const AddItemsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandPreferences,
+        builder: (context, state) => const ShoppingPreferencesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandDelivery,
+        builder: (context, state) => const ShoppingDeliveryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandReview,
+        builder: (context, state) => const ShoppingReviewScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandTracking,
+        builder: (context, state) => const ShoppingTrackingScreen(),
+      ),
+
+      // Flow B: Pick Up a Package (Screens B2 to B6)
+      GoRoute(
+        path: AppRoutes.errandPackagePickup,
+        builder: (context, state) => const PackagePickupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandPackageDetails,
+        builder: (context, state) => const ErrandPackageDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandPackageDelivery,
+        builder: (context, state) => const PackageDeliveryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandPackageReview,
+        builder: (context, state) => const PackageReviewScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandPackageTracking,
+        builder: (context, state) => const PackageTrackingScreen(),
+      ),
+
+      // Flow C: Other Errand (Screens C2 to C6)
+      GoRoute(
+        path: AppRoutes.errandDescribeTask,
+        builder: (context, state) => const DescribeErrandScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandTaskDetails,
+        builder: (context, state) => const TaskDetailsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandQuoteAvailable,
+        builder: (context, state) => const QuoteAvailableScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandCustomTracking,
+        builder: (context, state) => const CustomErrandTrackingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.errandCompleted,
+        builder: (context, state) => const ErrandCompletedScreen(),
       ),
       GoRoute(
         path: AppRoutes.scheduledBooking,
@@ -580,12 +690,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Branch 1: Send (Parcel Delivery)
+          // Branch 1: Send / Market Errand
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.send,
-                builder: (context, state) => const ParcelDeliveryTypeScreen(),
+                builder: (context, state) => const MarketErrandHomeScreen(),
               ),
             ],
           ),

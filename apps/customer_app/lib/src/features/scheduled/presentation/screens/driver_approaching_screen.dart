@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../../core/router/app_router.dart';
 import '../../application/scheduled_trips_notifier.dart';
 
@@ -25,7 +24,8 @@ class DriverApproachingScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
     final driver = trip?.assignedDriver;
 
@@ -71,49 +71,49 @@ class DriverApproachingScreen extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Positioned.fill(
-                    child: LiveGoogleMapView(
-                      initialLatitude: trip?.pickupLocation.latitude ?? 6.8403,
-                      initialLongitude: trip?.pickupLocation.longitude ?? 3.6487,
-                      initialZoom: 15.5,
-                      showZoomControls: true,
-                      showMyLocationButton: false,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.electric_car_rounded,
-                          size: 48,
-                          color: GVColors.primary,
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? const Color(0xFF1E2822)
+                        : const Color(0xFFE5EDE8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.electric_car_rounded,
+                            size: 48,
                             color: GVColors.primary,
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                              ),
-                            ],
                           ),
-                          child: const Text(
-                            '5 min away',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GVColors.primary,
+                              borderRadius: BorderRadius.circular(
+                                GVBorderRadius.full,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              '5 min away',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -165,8 +165,11 @@ class DriverApproachingScreen extends ConsumerWidget {
                             const SizedBox(height: 2),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded,
-                                    size: 16, color: Color(0xFFFFB800)),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 16,
+                                  color: Color(0xFFFFB800),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${driver?.rating.toStringAsFixed(1) ?? "4.8"} • ${driver?.vehicleModel ?? "Toyota Corolla"}',
@@ -181,13 +184,17 @@ class DriverApproachingScreen extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline_rounded,
-                            color: GVColors.primary),
+                        icon: const Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          color: GVColors.primary,
+                        ),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: const Icon(Icons.call_outlined,
-                            color: GVColors.primary),
+                        icon: const Icon(
+                          Icons.call_outlined,
+                          color: GVColors.primary,
+                        ),
                         onPressed: () {},
                       ),
                     ],
@@ -198,8 +205,11 @@ class DriverApproachingScreen extends ConsumerWidget {
                   // Pickup info row
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded,
-                          size: 16, color: GVColors.primary),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 16,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Pickup time: 8:00 AM',
@@ -214,13 +224,16 @@ class DriverApproachingScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on_rounded,
-                          size: 16, color: GVColors.primary),
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           trip?.pickupLocation.address ??
-                              'Central Roundabout, Shaganu, Ogun State',
+                              '3, Ahmadu Bello Way, Kaduna',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GVTypography.bodySmall.copyWith(
@@ -239,7 +252,8 @@ class DriverApproachingScreen extends ConsumerWidget {
                     text: 'I\'m ready',
                     onPressed: () {
                       notifier.advanceTripStatus(
-                          ScheduledTripStatus.arrivedAtPickup);
+                        ScheduledTripStatus.arrivedAtPickup,
+                      );
                       context.push(AppRoutes.scheduledArrivedPickup);
                     },
                   ),
@@ -264,8 +278,9 @@ class DriverApproachingScreen extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: borderColor),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(GVBorderRadius.md),
+                          borderRadius: BorderRadius.circular(
+                            GVBorderRadius.md,
+                          ),
                         ),
                       ),
                     ),

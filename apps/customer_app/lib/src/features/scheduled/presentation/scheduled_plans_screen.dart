@@ -82,8 +82,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                   .read(scheduledNotifierProvider.notifier)
                   .skipNextTrip(plan.id, tomorrowMorning);
               if (context.mounted) {
-                final message =
-                    ref.read(scheduledNotifierProvider).actionMessage;
+                final message = ref
+                    .read(scheduledNotifierProvider)
+                    .actionMessage;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(message ?? 'Trip skipped successfully.'),
@@ -100,7 +101,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
   }
 
   void _showCancellationPolicyDialog(
-      BuildContext context, ScheduledPlanDto plan) {
+    BuildContext context,
+    ScheduledPlanDto plan,
+  ) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -116,8 +119,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
             const SizedBox(height: GVSpacing.sm),
             Text(
               'Published Refund Policy: Pro-rata refund calculated on base daily fare less a 10% administrative processing fee. Refunds are initiated within 1-3 business days back to your Go-Volts Wallet or original payment method.',
-              style:
-                  GVTypography.caption.copyWith(color: GVColors.textSecondary),
+              style: GVTypography.caption.copyWith(
+                color: GVColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -133,7 +137,8 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                      'Plan cancellation request submitted for operations review.'),
+                    'Plan cancellation request submitted for operations review.',
+                  ),
                   backgroundColor: GVColors.deepGreen,
                 ),
               );
@@ -166,7 +171,8 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
       body: SafeArea(
         child: scheduledState.isLoading && plans.isEmpty
             ? const Center(
-                child: CircularProgressIndicator(color: GVColors.brandGreen))
+                child: CircularProgressIndicator(color: GVColors.brandGreen),
+              )
             : ListView(
                 padding: const EdgeInsets.all(GVSpacing.md),
                 children: [
@@ -210,15 +216,18 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: GVSpacing.lg, vertical: GVSpacing.xxl),
+                          horizontal: GVSpacing.lg,
+                          vertical: GVSpacing.xxl,
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(GVSpacing.lg),
                               decoration: BoxDecoration(
-                                color: GVColors.brandGreen
-                                    .withValues(alpha: 0.12),
+                                color: GVColors.brandGreen.withValues(
+                                  alpha: 0.12,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -274,7 +283,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: selectedPlan.isPaused
                                       ? GVColors.warning.withValues(alpha: 0.2)
@@ -295,8 +306,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Ref: ${selectedPlan.planReference}',
-                            style: GVTypography.caption
-                                .copyWith(color: GVColors.textSecondary),
+                            style: GVTypography.caption.copyWith(
+                              color: GVColors.textSecondary,
+                            ),
                           ),
                           const Divider(height: GVSpacing.lg),
 
@@ -305,9 +317,11 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Flexible(
-                                child: Text('Trip Entitlements',
-                                    style: GVTypography.bodySmallMedium,
-                                    overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  'Trip Entitlements',
+                                  style: GVTypography.bodySmallMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: GVSpacing.xs),
                               Flexible(
@@ -325,7 +339,8 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
                             child: LinearProgressIndicator(
-                              value: selectedPlan.remainingTrips /
+                              value:
+                                  selectedPlan.remainingTrips /
                                   selectedPlan.totalTrips,
                               minHeight: 8,
                               backgroundColor: GVColors.border,
@@ -335,8 +350,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                           const SizedBox(height: GVSpacing.xs),
                           Text(
                             'Valid until ${selectedPlan.expiryDate.day}/${selectedPlan.expiryDate.month}/${selectedPlan.expiryDate.year}',
-                            style: GVTypography.caption
-                                .copyWith(color: GVColors.textSecondary),
+                            style: GVTypography.caption.copyWith(
+                              color: GVColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -356,27 +372,33 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.schedule,
-                                  color: GVColors.brandGreen),
+                              const Icon(
+                                Icons.schedule,
+                                color: GVColors.brandGreen,
+                              ),
                               const SizedBox(width: GVSpacing.xs),
                               Flexible(
-                                child: Text('Next Upcoming Trip',
-                                    style: GVTypography.h3,
-                                    overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  'Next Upcoming Trip',
+                                  style: GVTypography.h3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: GVSpacing.sm),
                           Text(
                             'Tomorrow at ${selectedPlan.pickupTime}',
-                            style: GVTypography.bodyMedium
-                                .copyWith(color: GVColors.deepGreen),
+                            style: GVTypography.bodyMedium.copyWith(
+                              color: GVColors.deepGreen,
+                            ),
                           ),
                           const SizedBox(height: GVSpacing.xs),
                           Text(
                             'From: ${selectedPlan.pickupLocation.label}\nTo: ${selectedPlan.dropoffLocation.label}',
-                            style: GVTypography.bodySmall
-                                .copyWith(color: GVColors.textSecondary),
+                            style: GVTypography.bodySmall.copyWith(
+                              color: GVColors.textSecondary,
+                            ),
                           ),
                           const SizedBox(height: GVSpacing.md),
 
@@ -387,11 +409,14 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                                 child: OutlinedButton(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: GVColors.error,
-                                    side:
-                                        const BorderSide(color: GVColors.error),
+                                    side: const BorderSide(
+                                      color: GVColors.error,
+                                    ),
                                   ),
                                   onPressed: () => _showSkipTripDialog(
-                                      context, selectedPlan),
+                                    context,
+                                    selectedPlan,
+                                  ),
                                   child: const Text('Skip Trip'),
                                 ),
                               ),
@@ -403,9 +428,8 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                                       backgroundColor: GVColors.brandGreen,
                                       foregroundColor: GVColors.deepGreen,
                                     ),
-                                    onPressed: () => context.push(
-                                      AppRoutes.schoolRunSafety,
-                                    ),
+                                    onPressed: () =>
+                                        context.push(AppRoutes.schoolRunSafety),
                                     icon: const Icon(Icons.shield, size: 16),
                                     label: const Text('Safety Hub'),
                                   ),
@@ -446,8 +470,9 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                                     : 'Pause Plan',
                                 style: GVTypography.bodyMedium,
                               ),
-                              subtitle:
-                                  const Text('Temporarily halt scheduled pickups'),
+                              subtitle: const Text(
+                                'Temporarily halt scheduled pickups',
+                              ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
                                 ref
@@ -458,30 +483,41 @@ class _ScheduledPlansScreenState extends ConsumerState<ScheduledPlansScreen> {
                             const Divider(),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.edit_calendar_outlined,
-                                  color: GVColors.deepGreen),
-                              title: Text('Change Schedule or Route',
-                                  style: GVTypography.bodyMedium),
-                              subtitle:
-                                  const Text('Modify pickup timing or destination address'),
+                              leading: const Icon(
+                                Icons.edit_calendar_outlined,
+                                color: GVColors.deepGreen,
+                              ),
+                              title: Text(
+                                'Change Schedule or Route',
+                                style: GVTypography.bodyMedium,
+                              ),
+                              subtitle: const Text(
+                                'Modify pickup timing or destination address',
+                              ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => context.push(AppRoutes.planModify),
                             ),
                             const Divider(),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.cancel_outlined,
-                                  color: GVColors.error),
+                              leading: const Icon(
+                                Icons.cancel_outlined,
+                                color: GVColors.error,
+                              ),
                               title: Text(
                                 'Cancel Subscription',
-                                style: GVTypography.bodyMedium
-                                    .copyWith(color: GVColors.error),
+                                style: GVTypography.bodyMedium.copyWith(
+                                  color: GVColors.error,
+                                ),
                               ),
-                              subtitle:
-                                  const Text('Calculate pro-rata refund & terms'),
+                              subtitle: const Text(
+                                'Calculate pro-rata refund & terms',
+                              ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _showCancellationPolicyDialog(
-                                  context, selectedPlan),
+                                context,
+                                selectedPlan,
+                              ),
                             ),
                           ],
                         ),

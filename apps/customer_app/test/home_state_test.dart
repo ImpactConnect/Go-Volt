@@ -37,9 +37,15 @@ void main() {
       expect(notifier.state.currentLocation.name, equals('Test Zone'));
       expect(notifier.state.currentLocation.isLimited, isTrue);
       // Instant ride is unavailable in limited area
-      expect(notifier.state.isServiceAvailable(ServiceCode.instantRide), isFalse);
+      expect(
+        notifier.state.isServiceAvailable(ServiceCode.instantRide),
+        isFalse,
+      );
       // Instant delivery is available
-      expect(notifier.state.isServiceAvailable(ServiceCode.instantDelivery), isTrue);
+      expect(
+        notifier.state.isServiceAvailable(ServiceCode.instantDelivery),
+        isTrue,
+      );
     });
 
     test('setActiveBooking sets and clears active booking', () {
@@ -92,13 +98,19 @@ void main() {
       );
 
       notifier.selectCategory(NotificationCategory.bookings);
-      expect(notifier.state.selectedCategory, equals(NotificationCategory.bookings));
+      expect(
+        notifier.state.selectedCategory,
+        equals(NotificationCategory.bookings),
+      );
       for (final n in notifier.state.filteredNotifications) {
         expect(n.category, equals(NotificationCategory.bookings));
       }
 
       notifier.selectCategory(NotificationCategory.promotions);
-      expect(notifier.state.selectedCategory, equals(NotificationCategory.promotions));
+      expect(
+        notifier.state.selectedCategory,
+        equals(NotificationCategory.promotions),
+      );
       for (final n in notifier.state.filteredNotifications) {
         expect(n.category, equals(NotificationCategory.promotions));
       }
@@ -112,22 +124,26 @@ void main() {
 
       notifier.markAsRead('notif_01');
       expect(notifier.state.unreadCount, equals(initialUnread - 1));
-      final item = notifier.state.notifications.firstWhere((n) => n.id == 'notif_01');
+      final item = notifier.state.notifications.firstWhere(
+        (n) => n.id == 'notif_01',
+      );
       expect(item.isRead, isTrue);
     });
 
-    test('markAllAsRead sets all items to read and resets unread count to 0', () {
-      final notifier = NotificationsNotifier(
-        initialNotifications: NotificationsNotifier.defaultNotifications,
-      );
-      expect(notifier.state.unreadCount, greaterThan(0));
+    test(
+      'markAllAsRead sets all items to read and resets unread count to 0',
+      () {
+        final notifier = NotificationsNotifier(
+          initialNotifications: NotificationsNotifier.defaultNotifications,
+        );
+        expect(notifier.state.unreadCount, greaterThan(0));
 
-      notifier.markAllAsRead();
-      expect(notifier.state.unreadCount, equals(0));
-      for (final n in notifier.state.notifications) {
-        expect(n.isRead, isTrue);
-      }
-    });
+        notifier.markAllAsRead();
+        expect(notifier.state.unreadCount, equals(0));
+        for (final n in notifier.state.notifications) {
+          expect(n.isRead, isTrue);
+        }
+      },
+    );
   });
 }
-

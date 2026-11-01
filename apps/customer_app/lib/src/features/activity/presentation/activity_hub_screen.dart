@@ -1,3 +1,4 @@
+import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,6 +61,14 @@ class _ActivityHubScreenState extends ConsumerState<ActivityHubScreen> {
           context.push(AppRoutes.liveTracking);
         } else if (item.serviceType == ActivityServiceType.delivery) {
           context.push(AppRoutes.parcelLiveTracking);
+        } else if (item.serviceType == ActivityServiceType.errand) {
+          if (item.errandType == ErrandType.pickupPackage) {
+            context.push(AppRoutes.errandPackageTracking);
+          } else if (item.errandType == ErrandType.otherErrand) {
+            context.push(AppRoutes.errandCustomTracking);
+          } else {
+            context.push(AppRoutes.errandTracking);
+          }
         } else {
           context.push(AppRoutes.scheduledTripInProgress);
         }
@@ -76,7 +85,11 @@ class _ActivityHubScreenState extends ConsumerState<ActivityHubScreen> {
         break;
 
       case ActivityStatus.completed:
-        _openReceipt(item);
+        if (item.serviceType == ActivityServiceType.errand) {
+          context.push(AppRoutes.errandCompleted);
+        } else {
+          _openReceipt(item);
+        }
         break;
 
       case ActivityStatus.cancelled:
@@ -194,6 +207,15 @@ class _ActivityHubScreenState extends ConsumerState<ActivityHubScreen> {
                           ActivityServiceType.scheduled,
                       onTap: () => notifier
                           .setServiceFilter(ActivityServiceType.scheduled),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildServicePill(
+                      label: 'Errands',
+                      icon: Icons.storefront_outlined,
+                      isSelected: state.selectedService ==
+                          ActivityServiceType.errand,
+                      onTap: () => notifier
+                          .setServiceFilter(ActivityServiceType.errand),
                     ),
                   ],
                 ),
@@ -369,6 +391,7 @@ class _ActivityHubScreenState extends ConsumerState<ActivityHubScreen> {
       ActivityServiceType.ride => Icons.directions_car,
       ActivityServiceType.delivery => Icons.local_shipping,
       ActivityServiceType.scheduled => Icons.calendar_month,
+      ActivityServiceType.errand => Icons.storefront_outlined,
     };
 
     return Container(

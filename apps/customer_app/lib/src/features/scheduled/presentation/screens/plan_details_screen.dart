@@ -14,7 +14,8 @@ class PlanDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(scheduledPlansNotifierProvider);
-    final plan = state.selectedPlan ??
+    final plan =
+        state.selectedPlan ??
         (state.plans.isNotEmpty ? state.plans.first : null);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -134,11 +135,14 @@ class PlanDetailsScreen extends ConsumerWidget {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: GVColors.primary.withValues(alpha: 0.12),
-                            borderRadius:
-                                BorderRadius.circular(GVBorderRadius.full),
+                            borderRadius: BorderRadius.circular(
+                              GVBorderRadius.full,
+                            ),
                           ),
                           child: const Text(
                             'Active',
@@ -194,7 +198,8 @@ class PlanDetailsScreen extends ConsumerWidget {
                             ? Colors.black26
                             : Colors.grey.withValues(alpha: 0.2),
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                            GVColors.primary),
+                          GVColors.primary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),

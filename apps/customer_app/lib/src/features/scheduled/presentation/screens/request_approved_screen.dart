@@ -23,7 +23,8 @@ class RequestApprovedScreen extends ConsumerWidget {
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
     final planRef = state.createdPlan?.planReference ?? 'SP-20261105-001';
-    final amountStr = state.createdPlan != null && state.createdPlan!.totalAmountNgn > 0
+    final amountStr =
+        state.createdPlan != null && state.createdPlan!.totalAmountNgn > 0
         ? '₦${state.createdPlan!.totalAmountNgn.toStringAsFixed(0)}'
         : '₦150,000';
 

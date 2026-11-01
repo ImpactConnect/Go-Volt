@@ -21,7 +21,8 @@ class SchoolRunStatusScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : GVColors.neutral50;
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
 
     return Scaffold(
@@ -49,7 +50,9 @@ class SchoolRunStatusScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(GVSpacing.md),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2E2A14) : const Color(0xFFFEF9C3),
+                  color: isDark
+                      ? const Color(0xFF2E2A14)
+                      : const Color(0xFFFEF9C3),
                   borderRadius: BorderRadius.circular(GVBorderRadius.card),
                   border: Border.all(
                     color: isDark
@@ -66,7 +69,9 @@ class SchoolRunStatusScreen extends ConsumerWidget {
                           Text(
                             'School Run',
                             style: GVTypography.h1.copyWith(
-                              color: isDark ? Colors.white : const Color(0xFF713F12),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF713F12),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -229,16 +234,16 @@ class SchoolRunStatusScreen extends ConsumerWidget {
                 color: isCompleted
                     ? GVColors.primary
                     : (isPending
-                        ? const Color(0xFFF59E0B)
-                        : GVColors.neutral300),
+                          ? const Color(0xFFF59E0B)
+                          : GVColors.neutral300),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 isCompleted
                     ? Icons.check_rounded
                     : (isPending
-                        ? Icons.access_time_rounded
-                        : Icons.circle_outlined),
+                          ? Icons.access_time_rounded
+                          : Icons.circle_outlined),
                 size: 14,
                 color: Colors.white,
               ),
@@ -271,9 +276,7 @@ class SchoolRunStatusScreen extends ConsumerWidget {
                 Text(
                   time,
                   style: GVTypography.caption.copyWith(
-                    color: isPending
-                        ? const Color(0xFFD97706)
-                        : subtextColor,
+                    color: isPending ? const Color(0xFFD97706) : subtextColor,
                     fontWeight: isPending ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),

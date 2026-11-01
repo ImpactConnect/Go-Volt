@@ -4,12 +4,14 @@ import 'package:equatable/equatable.dart';
 enum ActivityServiceType {
   ride,
   delivery,
-  scheduled;
+  scheduled,
+  errand;
 
   String get label => switch (this) {
         ActivityServiceType.ride => 'Ride',
         ActivityServiceType.delivery => 'Delivery',
         ActivityServiceType.scheduled => 'Scheduled',
+        ActivityServiceType.errand => 'Errand',
       };
 }
 
@@ -53,7 +55,49 @@ class ActivityItem extends Equatable {
     this.refundStatus,
     this.receipt,
     this.schoolPassengerName,
+    this.errandType,
   });
+
+  factory ActivityItem.fromErrand(ErrandDto errand) {
+    final status = switch (errand.status) {
+      ErrandStatus.completed => ActivityStatus.completed,
+      ErrandStatus.cancelled || ErrandStatus.rejected => ActivityStatus.cancelled,
+      _ => ActivityStatus.active,
+    };
+
+    final title = switch (errand.type) {
+      ErrandType.buyItems => 'Buy Items: ${errand.shop?.name ?? "Market"}',
+      ErrandType.pickupPackage =>
+        'Package Pickup: ${errand.pickupDetails?.pickupBusinessName.split(',').first ?? "Hub"}',
+      ErrandType.otherErrand =>
+        'Errand: ${errand.customErrandDetails?.category ?? "Custom Task"}',
+    };
+
+    final pickup = errand.shop?.address ??
+        errand.pickupDetails?.address ??
+        errand.customErrandDetails?.taskLocation.address ??
+        'Pickup point';
+
+    return ActivityItem(
+      id: errand.id,
+      reference: errand.referenceNumber,
+      serviceType: ActivityServiceType.errand,
+      status: status,
+      title: title,
+      pickupAddress: pickup,
+      dropoffAddress: errand.deliveryLocation.address,
+      timestamp: errand.createdAt,
+      fareKobo: errand.quote.totalKobo,
+      driverName: errand.assignedRider?.fullName,
+      driverRating: errand.assignedRider?.rating ?? 4.8,
+      driverTripsCount: errand.assignedRider?.totalTripsCompleted ?? 320,
+      vehicleModel: errand.assignedRider?.vehicleModel,
+      vehiclePlate: errand.assignedRider?.vehiclePlate,
+      recipientName: errand.recipient.fullName,
+      recipientPhone: errand.recipient.phoneNumber,
+      errandType: errand.type,
+    );
+  }
 
   final String id;
   final String reference;
@@ -76,6 +120,7 @@ class ActivityItem extends Equatable {
   final String? refundStatus;
   final TripReceiptDto? receipt;
   final String? schoolPassengerName;
+  final ErrandType? errandType;
 
   double get fareNaira => fareKobo / 100.0;
   String get formattedFare => '₦${(fareNaira).toStringAsFixed(0)}';
@@ -103,5 +148,6 @@ class ActivityItem extends Equatable {
         refundStatus,
         receipt,
         schoolPassengerName,
+        errandType,
       ];
 }

@@ -136,13 +136,26 @@ class QuoteResultScreen extends ConsumerWidget {
                       ),
                     ),
                     const Divider(height: 24),
-                    _buildFareRow('Base fare', baseFareStr, textColor, subtextColor),
+                    _buildFareRow(
+                      'Base fare',
+                      baseFareStr,
+                      textColor,
+                      subtextColor,
+                    ),
                     const SizedBox(height: 8),
                     _buildFareRow(
-                        'Distance (8 km)', distanceFareStr, textColor, subtextColor),
+                      'Distance (8 km)',
+                      distanceFareStr,
+                      textColor,
+                      subtextColor,
+                    ),
                     const SizedBox(height: 8),
                     _buildFareRow(
-                        'Service fee', serviceFeeStr, textColor, subtextColor),
+                      'Service fee',
+                      serviceFeeStr,
+                      textColor,
+                      subtextColor,
+                    ),
                   ],
                 ),
               ),
@@ -180,8 +193,11 @@ class QuoteResultScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.access_time_rounded,
-                            size: 16, color: GVColors.primary),
+                        const Icon(
+                          Icons.access_time_rounded,
+                          size: 16,
+                          color: GVColors.primary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Valid for 15 minutes',

@@ -53,7 +53,9 @@ class GoogleAuthConfirmationScreen extends ConsumerWidget {
                 width: 68,
                 height: 68,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1C2420) : GVColors.softBackground,
+                  color: isDark
+                      ? const Color(0xFF1C2420)
+                      : GVColors.softBackground,
                   shape: BoxShape.circle,
                   border: Border.all(color: borderColor),
                 ),
@@ -112,12 +114,17 @@ class GoogleAuthConfirmationScreen extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: GVColors.brandGreen.withValues(alpha: 0.2),
-                      backgroundImage:
-                          avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                      backgroundColor: GVColors.brandGreen.withValues(
+                        alpha: 0.2,
+                      ),
+                      backgroundImage: avatarUrl != null
+                          ? NetworkImage(avatarUrl)
+                          : null,
                       child: avatarUrl == null
                           ? Text(
-                              fullName.isNotEmpty ? fullName[0].toUpperCase() : 'G',
+                              fullName.isNotEmpty
+                                  ? fullName[0].toUpperCase()
+                                  : 'G',
                               style: GVTypography.h3.copyWith(
                                 color: GVColors.brandGreen,
                                 fontWeight: FontWeight.bold,

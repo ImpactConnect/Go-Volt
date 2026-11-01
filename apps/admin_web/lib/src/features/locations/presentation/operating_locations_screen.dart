@@ -6,30 +6,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Provider for admin operating locations management.
 final adminLocationsProvider =
     StateNotifierProvider<AdminLocationsNotifier, List<OperatingLocationDto>>(
-  (ref) => AdminLocationsNotifier(),
-);
+      (ref) => AdminLocationsNotifier(),
+    );
 
-class AdminLocationsNotifier
-    extends StateNotifier<List<OperatingLocationDto>> {
+class AdminLocationsNotifier extends StateNotifier<List<OperatingLocationDto>> {
   AdminLocationsNotifier()
-      : super([
-          const OperatingLocationDto(
-            id: 'loc_01',
-            state: 'Ogun',
-            city: 'Shaganu',
-            isActive: true,
-            status: 'fully_supported',
-            statusDescription: 'Fully supported',
-            availableServices: [
-              'instant_ride',
-              'instant_delivery',
-              'scheduled_ride',
-              'scheduled_pickup',
-            ],
-            centerLat: 6.8403,
-            centerLng: 3.6487,
-          ),
-        ]);
+    : super([
+        const OperatingLocationDto(
+          id: 'loc_01',
+          state: 'Ogun',
+          city: 'Shaganu',
+          isActive: true,
+          status: 'fully_supported',
+          statusDescription: 'Fully supported',
+          availableServices: [
+            'instant_ride',
+            'instant_delivery',
+            'scheduled_ride',
+            'scheduled_pickup',
+          ],
+          centerLat: 6.8403,
+          centerLng: 3.6487,
+        ),
+      ]);
 
   void addLocation(OperatingLocationDto location) {
     state = [...state, location];
@@ -37,8 +36,9 @@ class AdminLocationsNotifier
 
   void toggleActive(String id) {
     state = state
-        .map((loc) =>
-            loc.id == id ? loc.copyWith(isActive: !loc.isActive) : loc)
+        .map(
+          (loc) => loc.id == id ? loc.copyWith(isActive: !loc.isActive) : loc,
+        )
         .toList();
   }
 
@@ -122,14 +122,19 @@ class _OperatingLocationsScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Center Lat',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13)),
+                            const Text(
+                              'Center Lat',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             TextField(
                               controller: latCtrl,
                               decoration: const InputDecoration(
-                                  border: OutlineInputBorder()),
+                                border: OutlineInputBorder(),
+                              ),
                             ),
                           ],
                         ),
@@ -139,14 +144,19 @@ class _OperatingLocationsScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Center Lng',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13)),
+                            const Text(
+                              'Center Lng',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             TextField(
                               controller: lngCtrl,
                               decoration: const InputDecoration(
-                                  border: OutlineInputBorder()),
+                                border: OutlineInputBorder(),
+                              ),
                             ),
                           ],
                         ),
@@ -180,7 +190,9 @@ class _OperatingLocationsScreenState
                         setDialogState(() => selectedStatus = val);
                       }
                     },
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ],
               ),
@@ -200,7 +212,9 @@ class _OperatingLocationsScreenState
                 final stateName = stateCtrl.text.trim();
                 final cityName = cityCtrl.text.trim();
                 if (stateName.isNotEmpty && cityName.isNotEmpty) {
-                  ref.read(adminLocationsProvider.notifier).addLocation(
+                  ref
+                      .read(adminLocationsProvider.notifier)
+                      .addLocation(
                         OperatingLocationDto(
                           id: 'loc_${DateTime.now().millisecondsSinceEpoch}',
                           state: stateName,
@@ -210,8 +224,8 @@ class _OperatingLocationsScreenState
                           statusDescription: selectedStatus == 'fully_supported'
                               ? 'Fully supported'
                               : (selectedStatus == 'limited'
-                                  ? 'Limited services'
-                                  : 'Coming soon'),
+                                    ? 'Limited services'
+                                    : 'Coming soon'),
                           availableServices: const [
                             'instant_ride',
                             'instant_delivery',
@@ -239,10 +253,12 @@ class _OperatingLocationsScreenState
     final filtered = _searchQuery.isEmpty
         ? locations
         : locations
-            .where((l) =>
-                l.city.toLowerCase().contains(_searchQuery) ||
-                l.state.toLowerCase().contains(_searchQuery))
-            .toList();
+              .where(
+                (l) =>
+                    l.city.toLowerCase().contains(_searchQuery) ||
+                    l.state.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -258,13 +274,16 @@ class _OperatingLocationsScreenState
                 children: [
                   Text(
                     'Operating Locations & Service Cities',
-                    style: GVTypography.h2.copyWith(fontWeight: FontWeight.bold),
+                    style: GVTypography.h2.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Provision states and cities where Go-Volt offers EV ride and delivery services.',
-                    style: GVTypography.bodyMedium
-                        .copyWith(color: GVColors.textSecondary),
+                    style: GVTypography.bodyMedium.copyWith(
+                      color: GVColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -274,8 +293,10 @@ class _OperatingLocationsScreenState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GVColors.brandGreen,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
                 ),
                 onPressed: _showAddLocationDialog,
               ),
@@ -315,8 +336,10 @@ class _OperatingLocationsScreenState
                 itemBuilder: (context, index) {
                   final loc = filtered[index];
                   return ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     leading: Container(
                       width: 44,
                       height: 44,
@@ -335,13 +358,16 @@ class _OperatingLocationsScreenState
                       children: [
                         Text(
                           loc.displayName,
-                          style: GVTypography.bodyMedium
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: GVTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: loc.isFullySupported
                                 ? GVColors.brandGreen.withValues(alpha: 0.15)
@@ -363,8 +389,9 @@ class _OperatingLocationsScreenState
                     ),
                     subtitle: Text(
                       'Center: (${loc.centerLat ?? 0.0}, ${loc.centerLng ?? 0.0}) • Services: ${loc.availableServices.join(", ")}',
-                      style: GVTypography.caption
-                          .copyWith(color: GVColors.textSecondary),
+                      style: GVTypography.caption.copyWith(
+                        color: GVColors.textSecondary,
+                      ),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -379,8 +406,10 @@ class _OperatingLocationsScreenState
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: GVColors.error),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: GVColors.error,
+                          ),
                           onPressed: () {
                             ref
                                 .read(adminLocationsProvider.notifier)

@@ -132,7 +132,10 @@ class ApprovalStatusScreen extends ConsumerWidget {
               // Request ID row
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: cardBg,
                   borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -181,8 +184,11 @@ class ApprovalStatusScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.bolt_rounded,
-                          size: 18, color: GVColors.primary),
+                      const Icon(
+                        Icons.bolt_rounded,
+                        size: 18,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Simulate operations approval (Test flow)',
@@ -251,23 +257,23 @@ class ApprovalStatusScreen extends ConsumerWidget {
                 color: isCompleted
                     ? GVColors.primary
                     : isCurrent
-                        ? const Color(0xFFFFB800)
-                        : Colors.grey.withValues(alpha: 0.2),
+                    ? const Color(0xFFFFB800)
+                    : Colors.grey.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: isCompleted
                     ? const Icon(Icons.check, size: 14, color: Colors.white)
                     : isCurrent
-                        ? Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          )
-                        : null,
+                    ? Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                    : null,
               ),
             ),
             if (showConnector)
@@ -291,8 +297,8 @@ class ApprovalStatusScreen extends ConsumerWidget {
                   color: isCurrent
                       ? const Color(0xFFD97706)
                       : isCompleted
-                          ? textColor
-                          : subtextColor,
+                      ? textColor
+                      : subtextColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),

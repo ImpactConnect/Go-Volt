@@ -12,7 +12,8 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
   const CreateAccountScreen({super.key});
 
   @override
-  ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() =>
+      _CreateAccountScreenState();
 }
 
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
@@ -48,7 +49,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       return;
     }
 
-    final success = await ref.read(authNotifierProvider.notifier).register(
+    final success = await ref
+        .read(authNotifierProvider.notifier)
+        .register(
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -121,8 +124,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline_rounded,
-                            color: GVColors.error, size: 20),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: GVColors.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: GVSpacing.sm),
                         Expanded(
                           child: Text(
@@ -257,7 +263,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                 // Terms of Service and Privacy Policy Consent
                 Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: GVSpacing.sm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: GVSpacing.sm,
+                    ),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,

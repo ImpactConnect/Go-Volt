@@ -20,6 +20,7 @@ import 'routes/scheduled_routes.dart';
 import 'routes/wallet_route.dart';
 import 'routes/loyalty_route.dart';
 import 'routes/coupons_route.dart';
+import 'routes/errands_route.dart';
 import 'shared/partner_database.dart';
 
 /// Configures and returns the root Shelf request handler with all middlewares and routes.
@@ -64,6 +65,8 @@ Handler createServerHandler({
   v1Router.get('/payments/paystack-public-key', (Request req) => walletRoutes.call(req.change(path: 'payments/paystack-public-key')));
   v1Router.mount('/loyalty', loyaltyRouter().call);
   v1Router.mount('/coupons', couponsRouter().call);
+  final errandsRoutes = errandsRouter();
+  v1Router.mount('/errands', errandsRoutes.call);
 
   router.mount('/api/v1', v1Router.call);
   router.mount('/catalogue/ride-categories', rideCats.call);
@@ -77,6 +80,7 @@ Handler createServerHandler({
   router.mount('/wallet', walletRouter().call);
   router.mount('/loyalty', loyaltyRouter().call);
   router.mount('/coupons', couponsRouter().call);
+  router.mount('/errands', errandsRoutes.call);
 
   // Fallback 404
   router.all('/<ignored|.*>', (Request request) {

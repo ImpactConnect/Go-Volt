@@ -5,17 +5,19 @@ import 'notifications_state.dart';
 
 final notificationsNotifierProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
-  return NotificationsNotifier();
-});
+      return NotificationsNotifier();
+    });
 
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
   NotificationsNotifier({List<CustomerNotificationDto>? initialNotifications})
-      : super(
-          NotificationsState(
-            notifications: initialNotifications ?? defaultNotifications,
-            selectedCategory: NotificationCategory.all,
-          ),
-        );
+    : super(
+        initialNotifications != null
+            ? NotificationsState(
+                notifications: initialNotifications,
+                selectedCategory: NotificationCategory.all,
+              )
+            : _initialState,
+      );
 
   /// Clears notifications for a clean new user baseline.
   void clearForNewUser() {
@@ -70,6 +72,12 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     ),
   ];
 
+  static NotificationsState get _initialState {
+    return NotificationsState(
+      notifications: defaultNotifications,
+      selectedCategory: NotificationCategory.all,
+    );
+  }
 
   /// Sets the active notification filter category tab.
   void selectCategory(NotificationCategory category) {
@@ -89,7 +97,9 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
   /// Marks all notifications as read.
   void markAllAsRead() {
-    final updated = state.notifications.map((n) => n.copyWith(isRead: true)).toList();
+    final updated = state.notifications
+        .map((n) => n.copyWith(isRead: true))
+        .toList();
     state = state.copyWith(notifications: updated);
   }
 
@@ -100,4 +110,3 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     );
   }
 }
-

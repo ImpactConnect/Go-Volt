@@ -35,13 +35,13 @@ class ScheduledMilestoneDto extends Equatable {
   final DateTime? timestamp;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'time_str': timeStr,
-        'is_completed': isCompleted,
-        'is_current': isCurrent,
-        if (timestamp != null) 'timestamp': timestamp!.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'time_str': timeStr,
+    'is_completed': isCompleted,
+    'is_current': isCurrent,
+    if (timestamp != null) 'timestamp': timestamp!.toIso8601String(),
+  };
 
   @override
   List<Object?> get props => [id, title, timeStr, isCompleted, isCurrent];
@@ -96,8 +96,9 @@ class ScheduledTripDto extends Equatable {
       customerId: json['customer_id'] as String,
       passengerProfileId: json['passenger_profile_id'] as String?,
       tripPurpose: TripPurpose.fromString(json['trip_purpose'] as String?),
-      journeyDirection:
-          JourneyDirection.fromString(json['journey_direction'] as String?),
+      journeyDirection: JourneyDirection.fromString(
+        json['journey_direction'] as String?,
+      ),
       legSequence: (json['leg_sequence'] as num?)?.toInt() ?? 1,
       pickupLocation: LocationDto.fromJson(
         json['pickup_location'] as Map<String, dynamic>,
@@ -119,23 +120,26 @@ class ScheduledTripDto extends Equatable {
       fareNgn: (json['fare_ngn'] as num).toDouble(),
       isSchoolRun: json['is_school_run'] as bool? ?? false,
       handoverCode: json['handover_code'] as String?,
-      handoverStatus:
-          HandoverStatus.fromString(json['handover_status'] as String?),
+      handoverStatus: HandoverStatus.fromString(
+        json['handover_status'] as String?,
+      ),
       handoverRecipientName: json['handover_recipient_name'] as String?,
       handoverRecipientRole: json['handover_recipient_role'] as String?,
       handoverConfirmedAt: json['handover_confirmed_at'] != null
           ? DateTime.tryParse(json['handover_confirmed_at'] as String)
           : null,
-      milestones: (json['milestones'] as List<dynamic>?)
-              ?.map((e) =>
-                  ScheduledMilestoneDto.fromJson(e as Map<String, dynamic>))
+      milestones:
+          (json['milestones'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    ScheduledMilestoneDto.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
       waitingTimeRemainingSeconds:
           (json['waiting_time_remaining_seconds'] as num?)?.toInt(),
       paymentStatus: json['payment_status'] as String? ?? 'PAID',
-      paymentMethod:
-          json['payment_method'] as String? ?? 'Go-Volts Wallet',
+      paymentMethod: json['payment_method'] as String? ?? 'Go-Volts Wallet',
       transactionId: json['transaction_id'] as String?,
       paidAt: json['paid_at'] != null
           ? DateTime.tryParse(json['paid_at'] as String)
@@ -254,57 +258,55 @@ class ScheduledTripDto extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'trip_reference': tripReference,
-        if (planId != null) 'plan_id': planId,
-        if (planLegId != null) 'plan_leg_id': planLegId,
-        'customer_id': customerId,
-        if (passengerProfileId != null)
-          'passenger_profile_id': passengerProfileId,
-        'trip_purpose': tripPurpose.value,
-        'journey_direction': journeyDirection.value,
-        'leg_sequence': legSequence,
-        'pickup_location': pickupLocation.toJson(),
-        'destination_location': destinationLocation.toJson(),
-        'scheduled_pickup_at': scheduledPickupAt.toIso8601String(),
-        'scheduled_date_str': scheduledDateStr,
-        'scheduled_time_str': scheduledTimeStr,
-        'status': status.value,
-        if (assignedDriver != null)
-          'assigned_driver': assignedDriver!.toJson(),
-        'passenger_name': passengerName,
-        'passenger_phone': passengerPhone,
-        if (specialInstructions != null)
-          'special_instructions': specialInstructions,
-        'quote_id': quoteId,
-        'fare_ngn': fareNgn,
-        'is_school_run': isSchoolRun,
-        if (handoverCode != null) 'handover_code': handoverCode,
-        'handover_status': handoverStatus.value,
-        if (handoverRecipientName != null)
-          'handover_recipient_name': handoverRecipientName,
-        if (handoverRecipientRole != null)
-          'handover_recipient_role': handoverRecipientRole,
-        if (handoverConfirmedAt != null)
-          'handover_confirmed_at': handoverConfirmedAt!.toIso8601String(),
-        'milestones': milestones.map((m) => m.toJson()).toList(),
-        if (waitingTimeRemainingSeconds != null)
-          'waiting_time_remaining_seconds': waitingTimeRemainingSeconds,
-        'payment_status': paymentStatus,
-        'payment_method': paymentMethod,
-        if (transactionId != null) 'transaction_id': transactionId,
-        if (paidAt != null) 'paid_at': paidAt!.toIso8601String(),
-        if (skipReason != null) 'skip_reason': skipReason,
-        if (cancelledAt != null) 'cancelled_at': cancelledAt!.toIso8601String(),
-      };
+    'id': id,
+    'trip_reference': tripReference,
+    if (planId != null) 'plan_id': planId,
+    if (planLegId != null) 'plan_leg_id': planLegId,
+    'customer_id': customerId,
+    if (passengerProfileId != null) 'passenger_profile_id': passengerProfileId,
+    'trip_purpose': tripPurpose.value,
+    'journey_direction': journeyDirection.value,
+    'leg_sequence': legSequence,
+    'pickup_location': pickupLocation.toJson(),
+    'destination_location': destinationLocation.toJson(),
+    'scheduled_pickup_at': scheduledPickupAt.toIso8601String(),
+    'scheduled_date_str': scheduledDateStr,
+    'scheduled_time_str': scheduledTimeStr,
+    'status': status.value,
+    if (assignedDriver != null) 'assigned_driver': assignedDriver!.toJson(),
+    'passenger_name': passengerName,
+    'passenger_phone': passengerPhone,
+    if (specialInstructions != null)
+      'special_instructions': specialInstructions,
+    'quote_id': quoteId,
+    'fare_ngn': fareNgn,
+    'is_school_run': isSchoolRun,
+    if (handoverCode != null) 'handover_code': handoverCode,
+    'handover_status': handoverStatus.value,
+    if (handoverRecipientName != null)
+      'handover_recipient_name': handoverRecipientName,
+    if (handoverRecipientRole != null)
+      'handover_recipient_role': handoverRecipientRole,
+    if (handoverConfirmedAt != null)
+      'handover_confirmed_at': handoverConfirmedAt!.toIso8601String(),
+    'milestones': milestones.map((m) => m.toJson()).toList(),
+    if (waitingTimeRemainingSeconds != null)
+      'waiting_time_remaining_seconds': waitingTimeRemainingSeconds,
+    'payment_status': paymentStatus,
+    'payment_method': paymentMethod,
+    if (transactionId != null) 'transaction_id': transactionId,
+    if (paidAt != null) 'paid_at': paidAt!.toIso8601String(),
+    if (skipReason != null) 'skip_reason': skipReason,
+    if (cancelledAt != null) 'cancelled_at': cancelledAt!.toIso8601String(),
+  };
 
   @override
   List<Object?> get props => [
-        id,
-        tripReference,
-        status,
-        scheduledPickupAt,
-        assignedDriver,
-        handoverStatus,
-      ];
+    id,
+    tripReference,
+    status,
+    scheduledPickupAt,
+    assignedDriver,
+    handoverStatus,
+  ];
 }

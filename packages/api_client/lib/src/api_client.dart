@@ -12,9 +12,10 @@ class ApiClient {
     required AppConfig config,
     TokenProvider? tokenProvider,
     Dio? customDio,
-  })  : _config = config,
-        _tokenProvider = tokenProvider {
-    _dio = customDio ??
+  }) : _config = config,
+       _tokenProvider = tokenProvider {
+    _dio =
+        customDio ??
         Dio(
           BaseOptions(
             baseUrl: _config.apiBaseUrl,
@@ -39,8 +40,9 @@ class ApiClient {
               options.headers['Authorization'] = 'Bearer $token';
             }
           }
-          options.headers['X-Request-Id'] =
-              DateTime.now().microsecondsSinceEpoch.toString();
+          options.headers['X-Request-Id'] = DateTime.now()
+              .microsecondsSinceEpoch
+              .toString();
           handler.next(options);
         },
         onError: (DioException err, handler) {
@@ -76,8 +78,7 @@ class ApiClient {
         'dropoff': dropoff.toJson(),
         if (scheduledTime != null)
           'scheduled_time': scheduledTime.toIso8601String(),
-        if (packageCategory != null)
-          'package_category': packageCategory.code,
+        if (packageCategory != null) 'package_category': packageCategory.code,
       },
       parser: (data) => QuoteDto.fromJson(data as Map<String, dynamic>),
     );
@@ -98,7 +99,8 @@ class ApiClient {
     String? recipientPhone,
     String? idempotencyKey,
   }) async {
-    final key = idempotencyKey ??
+    final key =
+        idempotencyKey ??
         'idem_${DateTime.now().microsecondsSinceEpoch}_${quoteId.hashCode.abs()}';
 
     return _send<BookingDto>(
@@ -134,14 +136,12 @@ class ApiClient {
         'service_area_id': ?serviceAreaId,
       },
       parser: (data) {
-        final list = (data is Map<String, dynamic> && data.containsKey('data'))
-            ? data['data'] as List<dynamic>? ?? []
-            : data is List
-                ? data
-                : <dynamic>[];
-        return list
-            .map((e) => RideCategoryDto.fromJson(e as Map<String, dynamic>))
-            .toList();
+        if (data is List) {
+          return data
+              .map((e) => RideCategoryDto.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+        return <RideCategoryDto>[];
       },
     );
   }
@@ -170,8 +170,7 @@ class ApiClient {
     return _send<TripReceiptDto>(
       method: 'GET',
       path: '/bookings/$bookingId/receipt',
-      parser: (data) =>
-          TripReceiptDto.fromJson(data as Map<String, dynamic>),
+      parser: (data) => TripReceiptDto.fromJson(data as Map<String, dynamic>),
     );
   }
 
@@ -197,10 +196,7 @@ class ApiClient {
     return _send<ParcelCatalogueDto>(
       method: 'GET',
       path: '/delivery/catalogue',
-      queryParameters: {
-        'lat': ?latitude,
-        'lng': ?longitude,
-      },
+      queryParameters: {'lat': ?latitude, 'lng': ?longitude},
       parser: (data) =>
           ParcelCatalogueDto.fromJson(data as Map<String, dynamic>),
     );
@@ -247,8 +243,8 @@ class ApiClient {
     String? couponCode,
     String? idempotencyKey,
   }) async {
-    final key = idempotencyKey ??
-        'idem_del_${DateTime.now().microsecondsSinceEpoch}';
+    final key =
+        idempotencyKey ?? 'idem_del_${DateTime.now().microsecondsSinceEpoch}';
 
     return _send<ParcelDeliveryDto>(
       method: 'POST',
@@ -276,6 +272,141 @@ class ApiClient {
       path: '/deliveries/$id',
       parser: (data) =>
           ParcelDeliveryDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // MARKET ERRAND (v1.6 §1556-2034)
+  // ---------------------------------------------------------------------------
+
+  /// Fetches market errand catalogue: shops, categories, item units & rules.
+  Future<ApiResponse<ErrandCatalogueDto>> getErrandCatalogue() async {
+    return _send<ErrandCatalogueDto>(
+      method: 'GET',
+      path: '/errands/catalogue',
+      parser: (data) =>
+          ErrandCatalogueDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Fetches available shops and open markets.
+  Future<ApiResponse<List<ShopDto>>> getErrandShops({
+    String? search,
+    String? tab,
+    double? latitude,
+    double? longitude,
+  }) async {
+    return _send<List<ShopDto>>(
+      method: 'GET',
+      path: '/errands/shops',
+      queryParameters: {
+        'search': ?search,
+        'tab': ?tab,
+        'lat': ?latitude,
+        'lng': ?longitude,
+      },
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((s) => ShopDto.fromJson(s as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  /// Calculates authoritative errand quote.
+  Future<ApiResponse<ErrandQuoteDto>> requestErrandQuote(
+    Map<String, dynamic> payload,
+  ) async {
+    return _send<ErrandQuoteDto>(
+      method: 'POST',
+      path: '/errands/quotes',
+      data: payload,
+      parser: (data) =>
+          ErrandQuoteDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Creates a new errand booking.
+  Future<ApiResponse<ErrandDto>> createErrand(
+    Map<String, dynamic> errandPayload, {
+    String? idempotencyKey,
+  }) async {
+    final key = idempotencyKey ??
+        'idem_err_${DateTime.now().microsecondsSinceEpoch}';
+
+    return _send<ErrandDto>(
+      method: 'POST',
+      path: '/errands',
+      headers: {'Idempotency-Key': key},
+      data: errandPayload,
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Retrieves errand status and assigned rider.
+  Future<ApiResponse<ErrandDto>> getErrand(String id) async {
+    return _send<ErrandDto>(
+      method: 'GET',
+      path: '/errands/$id',
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Lists customer errands.
+  Future<ApiResponse<List<ErrandDto>>> listErrands({String? status}) async {
+    return _send<List<ErrandDto>>(
+      method: 'GET',
+      path: '/errands',
+      queryParameters: {'status': ?status},
+      parser: (data) {
+        final list = data as List<dynamic>? ?? [];
+        return list.map((e) => ErrandDto.fromJson(e as Map<String, dynamic>)).toList();
+      },
+    );
+  }
+
+  /// Accepts a quote for Flow C custom errand.
+  Future<ApiResponse<ErrandDto>> acceptErrandQuote(String id) async {
+    return _send<ErrandDto>(
+      method: 'POST',
+      path: '/errands/$id/quote/accept',
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Declines a quote for Flow C custom errand.
+  Future<ApiResponse<ErrandDto>> declineErrandQuote(String id) async {
+    return _send<ErrandDto>(
+      method: 'POST',
+      path: '/errands/$id/quote/decline',
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Progresses errand lifecycle status for testing/simulation.
+  Future<ApiResponse<ErrandDto>> advanceErrandStatus(String id) async {
+    return _send<ErrandDto>(
+      method: 'POST',
+      path: '/errands/$id/advance-status',
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Cancels an active errand.
+  Future<ApiResponse<ErrandDto>> cancelErrand(String id) async {
+    return _send<ErrandDto>(
+      method: 'POST',
+      path: '/errands/$id/cancel',
+      parser: (data) => ErrandDto.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Submits rating for completed errand.
+  Future<ApiResponse<bool>> rateErrand(String id, double rating) async {
+    return _send<bool>(
+      method: 'POST',
+      path: '/errands/$id/rating',
+      data: {'rating': rating},
+      parser: (data) => true,
     );
   }
 
@@ -330,11 +461,7 @@ class ApiClient {
     return _send<List<BookingDto>>(
       method: 'GET',
       path: '/bookings',
-      queryParameters: {
-        'status': ?status,
-        'limit': limit,
-        'offset': offset,
-      },
+      queryParameters: {'status': ?status, 'limit': limit, 'offset': offset},
       parser: (data) {
         final list = data as List<dynamic>? ?? [];
         return list
@@ -364,11 +491,7 @@ class ApiClient {
     return _send<ProfileDto>(
       method: 'PATCH',
       path: '/users/profile',
-      data: {
-        'full_name': ?fullName,
-        'email': ?email,
-        'avatar_url': ?avatarUrl,
-      },
+      data: {'full_name': ?fullName, 'email': ?email, 'avatar_url': ?avatarUrl},
       parser: (data) => ProfileDto.fromJson(data as Map<String, dynamic>),
     );
   }
@@ -396,7 +519,9 @@ class ApiClient {
       parser: (data) {
         final list = data as List<dynamic>? ?? [];
         return list
-            .map((e) => WalletTransactionDto.fromJson(e as Map<String, dynamic>))
+            .map(
+              (e) => WalletTransactionDto.fromJson(e as Map<String, dynamic>),
+            )
             .toList();
       },
     );
@@ -425,7 +550,9 @@ class ApiClient {
     );
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> verifyPayment(String reference) async {
+  Future<ApiResponse<Map<String, dynamic>>> verifyPayment(
+    String reference,
+  ) async {
     return _send<Map<String, dynamic>>(
       method: 'GET',
       path: '/payments/verify/$reference',
@@ -466,6 +593,7 @@ class ApiClient {
   }
 
   // ---------------------------------------------------------------------------
+  // SCHEDULED PLANS (Commuter & School-Run)
   // SCHEDULED PLANS & COMMUTE (v1.5 Section 21)
   // ---------------------------------------------------------------------------
 
@@ -501,7 +629,9 @@ class ApiClient {
       },
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledQuoteDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledQuoteDto');
@@ -533,7 +663,9 @@ class ApiClient {
       },
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -542,7 +674,9 @@ class ApiClient {
   }
 
   /// Fetches customer's scheduled plans.
-  Future<ApiResponse<List<ScheduledPlanDto>>> listScheduledPlans({String? status}) async {
+  Future<ApiResponse<List<ScheduledPlanDto>>> listScheduledPlans({
+    String? status,
+  }) async {
     return _send<List<ScheduledPlanDto>>(
       method: 'GET',
       path: '/scheduled-plans',
@@ -552,7 +686,9 @@ class ApiClient {
             ? data['data'] as List<dynamic>? ?? []
             : data as List<dynamic>? ?? [];
         return list
-            .map((item) => ScheduledPlanDto.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) => ScheduledPlanDto.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       },
     );
@@ -565,7 +701,9 @@ class ApiClient {
       path: '/scheduled-plans/$planId',
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -574,13 +712,17 @@ class ApiClient {
   }
 
   /// Operations approves a pending plan, activating 48h payment window.
-  Future<ApiResponse<ScheduledPlanDto>> approveScheduledPlan(String planId) async {
+  Future<ApiResponse<ScheduledPlanDto>> approveScheduledPlan(
+    String planId,
+  ) async {
     return _send<ScheduledPlanDto>(
       method: 'POST',
       path: '/scheduled-plans/$planId/approve',
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -599,7 +741,9 @@ class ApiClient {
       data: {'payment_method': paymentMethod},
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -618,7 +762,9 @@ class ApiClient {
       data: {'effective_date': effectiveDate.toIso8601String()},
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -627,13 +773,17 @@ class ApiClient {
   }
 
   /// Resumes a paused plan.
-  Future<ApiResponse<ScheduledPlanDto>> resumeScheduledPlan(String planId) async {
+  Future<ApiResponse<ScheduledPlanDto>> resumeScheduledPlan(
+    String planId,
+  ) async {
     return _send<ScheduledPlanDto>(
       method: 'POST',
       path: '/scheduled-plans/$planId/resume',
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -652,7 +802,9 @@ class ApiClient {
       data: {'reason': ?reason},
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          final payload = data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          final payload = data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
           return ScheduledPlanDto.fromJson(payload);
         }
         throw const FormatException('Expected Map for ScheduledPlanDto');
@@ -661,7 +813,9 @@ class ApiClient {
   }
 
   /// Lists upcoming scheduled trips, optionally filtered by planId.
-  Future<ApiResponse<List<ScheduledTripDto>>> listScheduledTrips({String? planId}) async {
+  Future<ApiResponse<List<ScheduledTripDto>>> listScheduledTrips({
+    String? planId,
+  }) async {
     return _send<List<ScheduledTripDto>>(
       method: 'GET',
       path: '/scheduled-trips',
@@ -671,7 +825,9 @@ class ApiClient {
             ? data['data'] as List<dynamic>? ?? []
             : data as List<dynamic>? ?? [];
         return list
-            .map((item) => ScheduledTripDto.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) => ScheduledTripDto.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       },
     );
@@ -688,7 +844,9 @@ class ApiClient {
       data: tripTime != null ? {'trip_time': tripTime.toIso8601String()} : null,
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
         }
         return {'status': 'skipped'};
       },
@@ -712,7 +870,9 @@ class ApiClient {
       },
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
         }
         return {'verified': true};
       },
@@ -728,13 +888,12 @@ class ApiClient {
     return _send<Map<String, dynamic>>(
       method: 'POST',
       path: '/scheduled-trips/$tripId/report-issue',
-      data: {
-        'issue_type': issueType,
-        'notes': ?notes,
-      },
+      data: {'issue_type': issueType, 'notes': ?notes},
       parser: (data) {
         if (data is Map<String, dynamic>) {
-          return data.containsKey('data') ? data['data'] as Map<String, dynamic> : data;
+          return data.containsKey('data')
+              ? data['data'] as Map<String, dynamic>
+              : data;
         }
         return {'status': 'recorded'};
       },
@@ -787,7 +946,6 @@ class ApiClient {
     );
   }
 
-
   // ---------------------------------------------------------------------------
   // INTERNAL REQUEST DISPATCHER
   // ---------------------------------------------------------------------------
@@ -838,10 +996,7 @@ class ApiClient {
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.connectionError) {
-      return ApiResponse<T>.failure(
-        ApiError.network(),
-        statusCode: 0,
-      );
+      return ApiResponse<T>.failure(ApiError.network(), statusCode: 0);
     }
 
     if (response != null && response.data is Map<String, dynamic>) {

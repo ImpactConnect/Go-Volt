@@ -30,7 +30,8 @@ class _PausePlanScreenState extends ConsumerState<PausePlanScreen> {
     final cardBg = isDark ? const Color(0xFF1C2420) : const Color(0xFFF6F8F7);
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final plan = state.selectedPlan ??
+    final plan =
+        state.selectedPlan ??
         (state.plans.isNotEmpty ? state.plans.first : null);
 
     final dateStr =
@@ -126,7 +127,9 @@ class _PausePlanScreenState extends ConsumerState<PausePlanScreen> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GVSpacing.md, vertical: 14),
+                    horizontal: GVSpacing.md,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(GVBorderRadius.md),
@@ -134,8 +137,11 @@ class _PausePlanScreenState extends ConsumerState<PausePlanScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 20, color: GVColors.primary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 20,
+                        color: GVColors.primary,
+                      ),
                       const SizedBox(width: GVSpacing.md),
                       Text(
                         dateStr,

@@ -436,7 +436,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final formattedPhone = SupabaseAuthService.formatPhoneNumber(phoneNumber);
-      final effectiveName = fullName ?? this.state.profile?.fullName ?? 'Customer';
+      final effectiveName =
+          fullName ?? this.state.profile?.fullName ?? 'Customer';
 
       if (_authService.isInitialized) {
         await _authService.updateUserMetadata(

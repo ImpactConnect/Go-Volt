@@ -67,6 +67,8 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
     final accountNumber = dedicated?.accountNumber ?? '9928103948';
     final formattedAccount = dedicated?.formattedAccountNumber ?? '9928 1039 48';
     final beneficiaryName = dedicated?.accountName ?? 'Go-Volts / ${profile?.fullName ?? "Customer"}';
+    bool isCheckingTransfer = false;
+    String? transferPendingMessage;
 
     showModalBottomSheet<void>(
       context: context,
@@ -75,134 +77,192 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(GVSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.account_balance,
-                          color: GVColors.brandGreen, size: 22),
-                      const SizedBox(width: GVSpacing.xs),
-                      Expanded(
-                        child: Text(
-                          'Bank Transfer Top-Up',
-                          style: GVTypography.h3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: GVSpacing.xs),
-            Text(
-              'Transfer exactly ₦${amount.toStringAsFixed(2)} to your dedicated virtual NUBAN account. Funds will be credited automatically.',
-              style: GVTypography.caption.copyWith(color: GVColors.textSecondary),
-            ),
-            const SizedBox(height: GVSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(GVSpacing.md),
-              decoration: BoxDecoration(
-                color: GVColors.softBackground,
-                borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                border: Border.all(color: GVColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: const EdgeInsets.all(GVSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Bank Name', style: GVTypography.caption),
-                      Text('Providus Bank',
-                          style: GVTypography.bodyMedium
-                              .copyWith(fontWeight: FontWeight.bold)),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.account_balance,
+                            color: GVColors.brandGreen, size: 22),
+                        const SizedBox(width: GVSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Bank Transfer Top-Up',
+                            style: GVTypography.h3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Divider(height: GVSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: GVSpacing.xs),
+              Text(
+                'Transfer exactly ₦${amount.toStringAsFixed(2)} to your dedicated virtual NUBAN account. Funds will be credited automatically upon settlement.',
+                style: GVTypography.caption.copyWith(color: GVColors.textSecondary),
+              ),
+              const SizedBox(height: GVSpacing.md),
+              if (transferPendingMessage != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: GVSpacing.md),
+                  padding: const EdgeInsets.all(GVSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F4FD),
+                    borderRadius: BorderRadius.circular(GVBorderRadius.sm),
+                    border: Border.all(color: const Color(0xFFBEE5EB)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Account Number', style: GVTypography.caption),
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      const Icon(Icons.hourglass_top_rounded, color: Color(0xFF0C5460), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Flexible(
-                              child: Text(
-                                formattedAccount,
-                                style: GVTypography.h3
-                                    .copyWith(color: GVColors.deepGreen),
-                                overflow: TextOverflow.ellipsis,
+                            const Text(
+                              'Transfer Pending Settlement',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0C5460),
+                                fontSize: 13,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () {
-                                Clipboard.setData(ClipboardData(text: accountNumber));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Account number copied!')),
-                                );
-                              },
-                              child: const Icon(Icons.copy,
-                                  size: 18, color: GVColors.brandGreen),
+                            const SizedBox(height: 2),
+                            Text(
+                              transferPendingMessage!,
+                              style: const TextStyle(
+                                color: Color(0xFF0C5460),
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const Divider(height: GVSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Beneficiary Name', style: GVTypography.caption),
-                      Flexible(
-                        child: Text(
-                          beneficiaryName,
-                          style: GVTypography.bodyMedium
-                              .copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
+                ),
+              Container(
+                padding: const EdgeInsets.all(GVSpacing.md),
+                decoration: BoxDecoration(
+                  color: GVColors.softBackground,
+                  borderRadius: BorderRadius.circular(GVBorderRadius.md),
+                  border: Border.all(color: GVColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Bank Name', style: GVTypography.caption),
+                        Text('Providus Bank',
+                            style: GVTypography.bodyMedium
+                                .copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(height: GVSpacing.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Account Number', style: GVTypography.caption),
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  formattedAccount,
+                                  style: GVTypography.h3
+                                      .copyWith(color: GVColors.deepGreen),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: accountNumber));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Account number copied!')),
+                                  );
+                                },
+                                child: const Icon(Icons.copy,
+                                    size: 18, color: GVColors.brandGreen),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const Divider(height: GVSpacing.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Beneficiary Name', style: GVTypography.caption),
+                        Flexible(
+                          child: Text(
+                            beneficiaryName,
+                            style: GVTypography.bodyMedium
+                                .copyWith(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: GVSpacing.lg),
-            GVPrimaryButton(
-              label: 'I Have Completed the Transfer',
-              onPressed: () async {
-                Navigator.pop(ctx);
-                final refCode =
-                    'NIBSS-TRF-${DateTime.now().millisecondsSinceEpoch}';
-                final ok = await ref
-                    .read(walletNotifierProvider.notifier)
-                    .completeTopUp(refCode, amount, userId: profile?.id);
+              const SizedBox(height: GVSpacing.lg),
+              GVPrimaryButton(
+                label: isCheckingTransfer
+                    ? 'Checking Bank Settlement...'
+                    : (transferPendingMessage != null ? 'Check Transfer Again' : 'I Have Completed the Transfer'),
+                onPressed: isCheckingTransfer
+                    ? null
+                    : () async {
+                        setSheetState(() => isCheckingTransfer = true);
+                        final result = await ref
+                            .read(walletNotifierProvider.notifier)
+                            .checkBankTransfer(
+                              userId: profile?.id,
+                              accountNumber: accountNumber,
+                            );
 
-                if (ok && mounted) {
-                  setState(() {
-                    _isSuccess = true;
-                    _creditedAmount = amount;
-                  });
-                }
-              },
-            ),
-          ],
+                        final isVerified = result['data']?['verified'] == true;
+                        if (isVerified && ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (isVerified && mounted) {
+                          setState(() {
+                            _isSuccess = true;
+                            _creditedAmount =
+                                (result['data']?['amount_credited'] as num?)?.toDouble() ?? amount;
+                          });
+                        } else if (mounted) {
+                          setSheetState(() {
+                            isCheckingTransfer = false;
+                            transferPendingMessage = result['data']?['message'] as String? ??
+                                'No transfer detected from NIBSS yet. Inter-bank settlements typically take 1 to 3 minutes. Your wallet will be credited automatically once settled.';
+                          });
+                        }
+                      },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -211,6 +271,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
   void _showPaystackCheckoutModal(double amount, String authUrl) {
     final refCode = authUrl.contains('/') ? authUrl.split('/').last : 'PSTK-TOP-${DateTime.now().millisecondsSinceEpoch}';
     bool isVerifying = false;
+    String? verificationError;
 
     showModalBottomSheet<void>(
       context: context,
@@ -259,7 +320,48 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                 'Cards, USSD, and Bank Transfers are securely processed through Paystack with 256-bit encryption.',
                 style: GVTypography.caption.copyWith(color: GVColors.textSecondary),
               ),
-              const SizedBox(height: GVSpacing.lg),
+              const SizedBox(height: GVSpacing.md),
+
+              if (verificationError != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: GVSpacing.md),
+                  padding: const EdgeInsets.all(GVSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    borderRadius: BorderRadius.circular(GVBorderRadius.sm),
+                    border: Border.all(color: const Color(0xFFFFEEBA)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Color(0xFF856404), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Payment Not Confirmed Yet',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF856404),
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              verificationError!,
+                              style: const TextStyle(
+                                color: Color(0xFF856404),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Pay with Paystack (Official URL Launch)
               GVPrimaryButton(
@@ -285,19 +387,28 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                 onPressed: isVerifying
                     ? null
                     : () async {
-                        setModalState(() => isVerifying = true);
+                        setModalState(() {
+                          isVerifying = true;
+                          verificationError = null;
+                        });
                         final profile = ref.read(authNotifierProvider).profile;
                         final ok = await ref
                             .read(walletNotifierProvider.notifier)
                             .completeTopUp(refCode, amount, userId: profile?.id);
 
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
                         if (ok && mounted) {
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
                           setState(() {
                             _isSuccess = true;
                             _creditedAmount = amount;
+                          });
+                        } else if (mounted) {
+                          setModalState(() {
+                            isVerifying = false;
+                            verificationError = ref.read(walletNotifierProvider).error ??
+                                'Payment has not been confirmed by Paystack. Please ensure you complete payment in the checkout window before verifying.';
                           });
                         }
                       },
@@ -308,7 +419,7 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: GVColors.brandGreen),
                       )
                     : Text(
-                        'I Have Completed Payment',
+                        verificationError != null ? 'Check Payment Again' : 'I Have Completed Payment',
                         style: GVTypography.bodyMedium.copyWith(
                           color: GVColors.deepGreen,
                           fontWeight: FontWeight.bold,

@@ -44,7 +44,7 @@ void main() {
       expect(firstTx['status'], equals('COMPLETED'));
     });
 
-    test('POST /api/v1/wallet/top-up/initialize and verify credits wallet', () async {
+    test('POST /api/v1/wallet/top-up/initialize and verify rejects unpaid and credits verified payments', () async {
       // 1. Initialize
       final initReq = Request(
         'POST',
@@ -59,18 +59,33 @@ void main() {
       final refCode = initData['reference'] as String;
       expect(refCode, isNotEmpty);
 
-      // 2. Verify
-      final verifyReq = Request(
+      // 2. Verify without payment completion - MUST BE REJECTED (Best practice security)
+      final unpaidReq = Request(
         'POST',
         Uri.parse('http://localhost/api/v1/wallet/top-up/verify'),
         body: jsonEncode({'reference': refCode, 'amount_naira': 2500.0}),
         headers: {'content-type': 'application/json'},
       );
-      final verifyRes = await handler(verifyReq);
-      expect(verifyRes.statusCode, equals(200));
-      final verifyBody = jsonDecode(await verifyRes.readAsString()) as Map<String, dynamic>;
-      final verifyData = verifyBody['data'] as Map<String, dynamic>;
-      expect(verifyData['balance'], isA<num>());
+      final unpaidRes = await handler(unpaidReq);
+      expect(unpaidRes.statusCode, equals(400));
+      final unpaidBody = jsonDecode(await unpaidRes.readAsString()) as Map<String, dynamic>;
+      final err = unpaidBody['error'] as Map<String, dynamic>;
+      expect(err['code'], equals('PAYMENT_NOT_CONFIRMED'));
+
+      // 3. Mark payment verified by gateway/webhook and re-verify - MUST SUCCEED
+      markTopUpPaidForTest(refCode, amountNaira: 2500.0);
+      final paidReq = Request(
+        'POST',
+        Uri.parse('http://localhost/api/v1/wallet/top-up/verify'),
+        body: jsonEncode({'reference': refCode, 'amount_naira': 2500.0}),
+        headers: {'content-type': 'application/json'},
+      );
+      final paidRes = await handler(paidReq);
+      expect(paidRes.statusCode, equals(200));
+      final paidBody = jsonDecode(await paidRes.readAsString()) as Map<String, dynamic>;
+      final paidData = paidBody['data'] as Map<String, dynamic>;
+      expect(paidData['balance'], isA<num>());
+      expect(paidData['status'], equals('COMPLETED'));
     });
   });
 

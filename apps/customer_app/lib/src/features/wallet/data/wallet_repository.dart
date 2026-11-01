@@ -343,7 +343,8 @@ class WalletRepository {
     }
   }
 
-  /// Verifies top-up after Paystack redirect / webhook.
+  /// Authoritatively verifies top-up with backend and Paystack gateway.
+  /// Throws an exception if payment was not confirmed by Paystack or the bank.
   Future<WalletDto> verifyTopUp(String reference, double amountNaira, {String? userId}) async {
     try {
       final res = await _apiClient.dio.post(
@@ -355,17 +356,78 @@ class WalletRepository {
         },
       );
       final data = res.data as Map<String, dynamic>;
-      return WalletDto.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (_) {
-      // Return updated wallet
-      final base = useSeedData ? 14500.0 : 0.0;
-      return WalletDto(
-        userId: userId ?? 'usr-customer-01',
-        balance: base + amountNaira,
-        lockedBalance: 0.0,
-        currency: 'NGN',
-        updatedAt: DateTime.now(),
+      final payload = data['data'] as Map<String, dynamic>? ?? {};
+      final isVerified = data['meta']?['verified'] == true || payload['status'] == 'COMPLETED';
+
+      if (!isVerified) {
+        final errorMsg = data['error']?['message'] ?? 'Payment has not been confirmed by Paystack or your bank.';
+        throw Exception(errorMsg);
+      }
+
+      return WalletDto.fromJson(payload);
+    } catch (e) {
+      if (useSeedData) {
+        // Offline test fixture harness support
+        return WalletDto(
+          userId: userId ?? 'usr-customer-01',
+          balance: 14500.0 + amountNaira,
+          lockedBalance: 0.0,
+          currency: 'NGN',
+          updatedAt: DateTime.now(),
+        );
+      }
+      // Extract backend error message if available
+      try {
+        final dynamic err = e;
+        final response = err.response;
+        if (response?.data is Map<String, dynamic>) {
+          final errMap = response.data['error'];
+          if (errMap is Map && errMap['message'] != null) {
+            throw Exception(errMap['message'].toString());
+          }
+        }
+      } catch (inner) {
+        if (inner is Exception && inner != e) rethrow;
+      }
+      rethrow;
+    }
+  }
+
+  /// Checks if a NIBSS bank transfer has been received and confirmed for user's dedicated virtual account.
+  Future<Map<String, dynamic>> checkBankTransfer({
+    String? userId,
+    String? accountNumber,
+  }) async {
+    try {
+      final res = await _apiClient.dio.get(
+        '/api/v1/wallet/top-up/check-transfer',
+        queryParameters: {
+          'user_id': ?userId,
+          'account_number': ?accountNumber,
+        },
       );
+      final data = res.data as Map<String, dynamic>;
+      return data;
+    } catch (_) {
+      if (useSeedData) {
+        return {
+          'data': {
+            'verified': true,
+            'status': 'COMPLETED',
+            'amount_credited': 2000.0,
+            'balance': 16500.0,
+          },
+          'meta': {'status': 'success', 'verified': true},
+        };
+      }
+      return {
+        'data': {
+          'verified': false,
+          'status': 'PENDING_SETTLEMENT',
+          'message': 'No transfer detected from NIBSS yet. Inter-bank settlements typically take 1 to 3 minutes.',
+        },
+        'meta': {'status': 'pending', 'verified': false},
+      };
     }
   }
 

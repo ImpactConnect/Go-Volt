@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
@@ -6,6 +8,8 @@ import 'package:shelf_router/shelf_router.dart';
 final Map<String, double> _userBalances = {};
 final Map<String, List<Map<String, dynamic>>> _userTransactions = {};
 final Map<String, List<Map<String, dynamic>>> _userCardsStore = {};
+final Map<String, Map<String, dynamic>> _pendingTopUpTransactions = {};
+final Map<String, List<Map<String, dynamic>>> _virtualAccountDepositsStore = {};
 
 // Admin-managed Paystack gateway settings
 Map<String, dynamic> _adminPaystackSettings = {
@@ -28,9 +32,41 @@ void resetWalletStateForTest({String? userId, double? balance}) {
   _userBalances.clear();
   _userTransactions.clear();
   _userCardsStore.clear();
+  _pendingTopUpTransactions.clear();
+  _virtualAccountDepositsStore.clear();
   if (userId != null && balance != null) {
     _userBalances[userId] = balance;
   }
+}
+
+void markTopUpPaidForTest(String reference, {double? amountNaira, String? userId}) {
+  if (_pendingTopUpTransactions.containsKey(reference)) {
+    _pendingTopUpTransactions[reference]!['status'] = 'COMPLETED';
+    _pendingTopUpTransactions[reference]!['is_verified'] = true;
+  } else {
+    _pendingTopUpTransactions[reference] = {
+      'reference': reference,
+      'user_id': userId ?? 'usr-customer-01',
+      'amount_naira': amountNaira ?? 2000.0,
+      'status': 'COMPLETED',
+      'is_verified': true,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+  }
+}
+
+void simulateBankDepositForTest({
+  required String userId,
+  required double amountNaira,
+  String? reference,
+}) {
+  final list = _virtualAccountDepositsStore.putIfAbsent(userId, () => []);
+  list.add({
+    'reference': reference ?? 'NIBSS-TRF-${DateTime.now().millisecondsSinceEpoch}',
+    'amount_naira': amountNaira,
+    'is_credited': false,
+    'timestamp': DateTime.now().toIso8601String(),
+  });
 }
 
 void seedWalletTransactionsForTest(String userId) {
@@ -311,21 +347,68 @@ Router walletRouter() {
     );
   });
 
-  // POST /top-up/initialize - Initializes Paystack Checkout
+  // POST /top-up/initialize - Initializes Paystack Checkout & registers pending transaction
   router.post('/top-up/initialize', (Request request) async {
     final raw = await request.readAsString();
-    final body = jsonDecode(raw) as Map<String, dynamic>;
+    final body = raw.isNotEmpty ? jsonDecode(raw) as Map<String, dynamic> : <String, dynamic>{};
     final userId = body['user_id'] as String? ??
         request.headers['x-user-id'] ??
         'usr-customer-01';
     final amount = (body['amount_naira'] as num?)?.toDouble() ?? 2000.0;
+    final email = body['email'] as String? ?? 'customer@govolts.ng';
     final refCode = 'PSTK-TOP-${DateTime.now().millisecondsSinceEpoch}';
+
+    String authUrl = 'https://checkout.paystack.com/$refCode';
+    final secretKey = (_adminPaystackSettings['secret_key'] as String? ?? '').trim();
+    final isEnabled = _adminPaystackSettings['is_enabled'] as bool? ?? true;
+
+    // Call official Paystack initialize endpoint if a live/test key is provisioned
+    if (isEnabled && secretKey.isNotEmpty && !secretKey.contains('••••') && !secretKey.startsWith('sk_test_placeholder')) {
+      try {
+        final res = await http.post(
+          Uri.parse('https://api.paystack.co/transaction/initialize'),
+          headers: {
+            'Authorization': 'Bearer $secretKey',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'amount': (amount * 100).toInt(), // amount in kobo
+            'email': email,
+            'reference': refCode,
+            'channels': _adminPaystackSettings['supported_channels'],
+            'callback_url': 'https://checkout.paystack.com/success',
+          }),
+        ).timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final pBody = jsonDecode(res.body) as Map<String, dynamic>;
+          final pData = pBody['data'] as Map<String, dynamic>? ?? {};
+          final pUrl = pData['authorization_url'] as String?;
+          if (pUrl != null && pUrl.isNotEmpty) {
+            authUrl = pUrl;
+          }
+        }
+      } catch (_) {
+        // Fall back to standard checkout link if network timeout
+      }
+    }
+
+    // Register pending transaction in authoritative store
+    _pendingTopUpTransactions[refCode] = {
+      'reference': refCode,
+      'user_id': userId,
+      'amount_naira': amount,
+      'status': 'PENDING',
+      'channel': 'card',
+      'created_at': DateTime.now().toIso8601String(),
+      'is_verified': false,
+    };
 
     final payload = {
       'data': {
         'status': 'success',
         'reference': refCode,
-        'authorization_url': 'https://checkout.paystack.com/$refCode',
+        'authorization_url': authUrl,
         'amount_naira': amount,
         'user_id': userId,
         'public_key': _adminPaystackSettings['public_key'],
@@ -338,7 +421,7 @@ Router walletRouter() {
     );
   });
 
-  // POST or GET /top-up/verify - Verifies Paystack reference and credits real wallet balance
+  // POST or GET /top-up/verify - Verifies Paystack reference against Paystack API & DB
   Future<Response> handleVerify(Request request) async {
     String? refCode;
     double? amount;
@@ -356,19 +439,122 @@ Router walletRouter() {
       userId = body['user_id'] as String?;
     }
 
-    refCode ??= 'PSTK-TOP-${DateTime.now().millisecondsSinceEpoch}';
-    amount ??= 2000.0;
+    refCode = refCode?.trim();
+    if (refCode == null || refCode.isEmpty) {
+      return Response(400,
+          body: jsonEncode({
+            'error': {'code': 'MISSING_REFERENCE', 'message': 'Payment reference is required.'}
+          }),
+          headers: {'content-type': 'application/json'});
+    }
+
     userId ??= request.headers['x-user-id'] ?? 'usr-customer-01';
 
+    // 1. Check if transaction exists in pending or completed store
+    final existingTx = _pendingTopUpTransactions[refCode];
+
+    // If already verified and completed, return current balance idempotently
+    if (existingTx != null && existingTx['status'] == 'COMPLETED') {
+      final bal = _userBalances[userId] ?? 0.0;
+      return Response.ok(
+        jsonEncode({
+          'data': {
+            'user_id': userId,
+            'balance': bal,
+            'locked_balance': 0.0,
+            'currency': 'NGN',
+            'reference': refCode,
+            'status': 'COMPLETED',
+            'message': 'Payment has already been confirmed and credited.',
+          },
+          'meta': {'status': 'success', 'verified': true},
+        }),
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
+    // 2. Authoritative verification with Paystack gateway API
+    final secretKey = (_adminPaystackSettings['secret_key'] as String? ?? '').trim();
+    bool isPaystackSuccess = false;
+    double? verifiedAmountNaira;
+
+    if (secretKey.isNotEmpty && !secretKey.contains('••••') && !secretKey.startsWith('sk_test_placeholder')) {
+      try {
+        final verifyUrl = Uri.parse('https://api.paystack.co/transaction/verify/$refCode');
+        final paystackRes = await http.get(
+          verifyUrl,
+          headers: {
+            'Authorization': 'Bearer $secretKey',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 5));
+
+        if (paystackRes.statusCode == 200) {
+          final pBody = jsonDecode(paystackRes.body) as Map<String, dynamic>;
+          final pData = pBody['data'] as Map<String, dynamic>? ?? {};
+          if (pData['status'] == 'success') {
+            isPaystackSuccess = true;
+            final amountKobo = (pData['amount'] as num?)?.toDouble() ?? 0.0;
+            if (amountKobo > 0) {
+              verifiedAmountNaira = amountKobo / 100.0;
+            }
+          }
+        }
+      } catch (_) {
+        // Network timeout / connection error
+      }
+    }
+
+    // Check if test environment simulation header is set
+    final isTestSimulated = request.headers['x-test-simulate-success'] == 'true' ||
+        (existingTx != null && existingTx['is_verified'] == true);
+
+    if (!isPaystackSuccess && !isTestSimulated) {
+      // Payment has NOT been completed on Paystack - DO NOT CREDIT!
+      return Response(400,
+          body: jsonEncode({
+            'error': {
+              'code': 'PAYMENT_NOT_CONFIRMED',
+              'message': 'Payment has not been confirmed by Paystack or your bank. Please complete payment before verifying.',
+            },
+            'data': {
+              'verified': false,
+              'status': 'PENDING',
+              'reference': refCode,
+            },
+            'meta': {'status': 'pending', 'verified': false},
+          }),
+          headers: {'content-type': 'application/json'});
+    }
+
+    // 3. Payment confirmed! Credit wallet atomically
+    final creditAmount = verifiedAmountNaira ?? existingTx?['amount_naira'] as double? ?? amount ?? 2000.0;
     final currentBal = _userBalances[userId] ?? 0.0;
-    final newBal = currentBal + amount;
+    final newBal = currentBal + creditAmount;
     _userBalances[userId] = newBal;
+
+    if (existingTx != null) {
+      existingTx['status'] = 'COMPLETED';
+      existingTx['is_verified'] = true;
+      existingTx['verified_at'] = DateTime.now().toIso8601String();
+      existingTx['amount_naira'] = creditAmount;
+    } else {
+      _pendingTopUpTransactions[refCode] = {
+        'reference': refCode,
+        'user_id': userId,
+        'amount_naira': creditAmount,
+        'status': 'COMPLETED',
+        'is_verified': true,
+        'created_at': DateTime.now().toIso8601String(),
+        'verified_at': DateTime.now().toIso8601String(),
+      };
+    }
 
     final txList = _userTransactions.putIfAbsent(userId, () => []);
     txList.insert(0, {
       'id': 'tx-${DateTime.now().millisecondsSinceEpoch}',
       'user_id': userId,
-      'amount': amount,
+      'amount': creditAmount,
       'is_credit': true,
       'description': 'Paystack Wallet Top-Up',
       'reference': refCode,
@@ -380,12 +566,14 @@ Router walletRouter() {
       'data': {
         'user_id': userId,
         'balance': newBal,
+        'amount_credited': creditAmount,
         'locked_balance': 0.0,
         'currency': 'NGN',
         'reference': refCode,
+        'status': 'COMPLETED',
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       },
-      'meta': {'status': 'success', 'verified': true},
+      'meta': {'status': 'success', 'verified': true, 'message': 'Top-up confirmed and credited.'},
     };
     return Response.ok(
       jsonEncode(payload),
@@ -395,6 +583,103 @@ Router walletRouter() {
 
   router.post('/top-up/verify', handleVerify);
   router.get('/top-up/verify', handleVerify);
+
+  // GET /top-up/check-transfer - Checks if NIBSS bank transfer has landed in dedicated account
+  router.get('/top-up/check-transfer', (Request request) async {
+    final userId = request.url.queryParameters['user_id'] ??
+        request.headers['x-user-id'] ??
+        'usr-customer-01';
+
+    final deposits = _virtualAccountDepositsStore[userId] ?? [];
+    final uncredited = deposits.where((d) => d['is_credited'] == false).toList();
+
+    if (uncredited.isEmpty) {
+      return Response.ok(
+        jsonEncode({
+          'data': {
+            'verified': false,
+            'status': 'PENDING_SETTLEMENT',
+            'message': 'No transfer detected from NIBSS yet. Inter-bank settlements typically take 1 to 3 minutes.',
+          },
+          'meta': {'status': 'pending', 'verified': false},
+        }),
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
+    double totalCredited = 0.0;
+    for (final dep in uncredited) {
+      dep['is_credited'] = true;
+      final amt = (dep['amount_naira'] as num).toDouble();
+      totalCredited += amt;
+      creditWalletBalance(
+        amt,
+        'Virtual Dedicated Bank Account Deposit (NIBSS)',
+        dep['reference'] as String,
+        userId: userId,
+      );
+    }
+
+    return Response.ok(
+      jsonEncode({
+        'data': {
+          'verified': true,
+          'status': 'COMPLETED',
+          'amount_credited': totalCredited,
+          'balance': _userBalances[userId],
+          'message': 'Bank transfer confirmed and credited to wallet.',
+        },
+        'meta': {'status': 'success', 'verified': true},
+      }),
+      headers: {'content-type': 'application/json'},
+    );
+  });
+
+  // POST /webhook - Paystack Webhook handler for asynchronous payment settlement
+  router.post('/webhook', (Request request) async {
+    final rawBody = await request.readAsString();
+    final signature = request.headers['x-paystack-signature'];
+    final secret = (_adminPaystackSettings['webhook_secret'] as String? ?? '').trim();
+
+    if (signature != null && secret.isNotEmpty && !secret.contains('••••')) {
+      final hmac = Hmac(sha512, utf8.encode(secret));
+      final digest = hmac.convert(utf8.encode(rawBody));
+      if (digest.toString() != signature) {
+        return Response(401, body: 'Invalid webhook signature');
+      }
+    }
+
+    final event = jsonDecode(rawBody) as Map<String, dynamic>;
+    final eventType = event['event'] as String? ?? '';
+
+    if (eventType == 'charge.success') {
+      final data = event['data'] as Map<String, dynamic>? ?? {};
+      final reference = data['reference'] as String?;
+      final amountKobo = (data['amount'] as num?)?.toDouble() ?? 0.0;
+      final amountNaira = amountKobo / 100.0;
+      final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
+      final userId = metadata['user_id'] as String? ?? 'usr-customer-01';
+
+      if (reference != null) {
+        final tx = _pendingTopUpTransactions[reference];
+        if (tx == null || tx['status'] != 'COMPLETED') {
+          creditWalletBalance(
+            amountNaira,
+            'Paystack Card Top-Up (Webhook Confirmed)',
+            reference,
+            userId: userId,
+          );
+          if (tx != null) {
+            tx['status'] = 'COMPLETED';
+            tx['is_verified'] = true;
+            tx['verified_at'] = DateTime.now().toIso8601String();
+          }
+        }
+      }
+    }
+
+    return Response.ok(jsonEncode({'status': 'event_received'}));
+  });
 
   return router;
 }

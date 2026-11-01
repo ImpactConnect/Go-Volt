@@ -177,9 +177,9 @@ class WalletNotifier extends StateNotifier<WalletState> {
     }
   }
 
-  /// Completes Paystack top-up post verification and updates balance atomically.
+  /// Completes Paystack top-up post authoritative verification and updates balance atomically.
   Future<bool> completeTopUp(String reference, double amountNaira, {String? userId}) async {
-    state = state.copyWith(isProcessingTopUp: true);
+    state = state.copyWith(isProcessingTopUp: true, error: null);
     try {
       final updatedWallet = await _repository.verifyTopUp(reference, amountNaira, userId: userId);
       final newTx = WalletTransactionDto(
@@ -201,11 +201,39 @@ class WalletNotifier extends StateNotifier<WalletState> {
       );
       return true;
     } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '').trim();
+      final displayError = cleanMsg.isNotEmpty && !cleanMsg.startsWith('DioException')
+          ? cleanMsg
+          : 'Payment has not been confirmed by Paystack or your bank yet. Please complete payment before verifying.';
+
       state = state.copyWith(
         isProcessingTopUp: false,
-        error: 'Verification pending: Please check your bank debit notification.',
+        error: displayError,
       );
       return false;
+    }
+  }
+
+  /// Verifies if dedicated virtual account bank transfer has settled in database.
+  Future<Map<String, dynamic>> checkBankTransfer({String? userId, String? accountNumber}) async {
+    state = state.copyWith(isProcessingTopUp: true, error: null);
+    try {
+      final res = await _repository.checkBankTransfer(userId: userId, accountNumber: accountNumber);
+      final isVerified = res['data']?['verified'] == true;
+      if (isVerified) {
+        await loadWallet(userId: userId);
+      }
+      state = state.copyWith(isProcessingTopUp: false);
+      return res;
+    } catch (e) {
+      state = state.copyWith(isProcessingTopUp: false);
+      return {
+        'data': {
+          'verified': false,
+          'status': 'PENDING_SETTLEMENT',
+          'message': 'No transfer detected from NIBSS yet. Inter-bank settlements typically take 1 to 3 minutes.',
+        }
+      };
     }
   }
 

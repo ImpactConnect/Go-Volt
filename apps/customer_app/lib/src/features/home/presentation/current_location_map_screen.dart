@@ -13,10 +13,7 @@ import '../application/home_notifier.dart';
 /// Screen displaying an embedded live Google Map for viewing, zooming,
 /// and confirming the customer's exact current GPS coordinates.
 class CurrentLocationMapScreen extends ConsumerStatefulWidget {
-  const CurrentLocationMapScreen({
-    super.key,
-    this.initialLocation,
-  });
+  const CurrentLocationMapScreen({super.key, this.initialLocation});
 
   final LocationDto? initialLocation;
 
@@ -26,9 +23,8 @@ class CurrentLocationMapScreen extends ConsumerStatefulWidget {
   }) {
     return Navigator.of(context).push<LocationDto>(
       MaterialPageRoute(
-        builder: (_) => CurrentLocationMapScreen(
-          initialLocation: initialLocation,
-        ),
+        builder: (_) =>
+            CurrentLocationMapScreen(initialLocation: initialLocation),
       ),
     );
   }
@@ -54,7 +50,8 @@ class _CurrentLocationMapScreenState
     _operatingLandmarks = GpsLocationService.getOperatingLandmarks();
 
     final homeState = ref.read(homeNotifierProvider);
-    final initLoc = widget.initialLocation ??
+    final initLoc =
+        widget.initialLocation ??
         homeState.currentCoordinates ??
         const LocationDto(
           latitude: GpsLocationService.defaultLat,
@@ -109,7 +106,10 @@ class _CurrentLocationMapScreenState
       _currentLat = newCoord.latitude;
       _currentLng = newCoord.longitude;
       // Reverse-geocode to closest known landmark or coordinate string
-      final closest = _findClosestLandmark(newCoord.latitude, newCoord.longitude);
+      final closest = _findClosestLandmark(
+        newCoord.latitude,
+        newCoord.longitude,
+      );
       if (closest != null) {
         _address = closest.address;
         _label = closest.label ?? 'Selected Location';
@@ -206,7 +206,10 @@ class _CurrentLocationMapScreenState
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     // Back / Close Button
@@ -241,7 +244,9 @@ class _CurrentLocationMapScreenState
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E2822) : Colors.white,
+                          color: isDark
+                              ? const Color(0xFF1E2822)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
@@ -332,7 +337,9 @@ class _CurrentLocationMapScreenState
                     side: BorderSide(
                       color: isSelected
                           ? GVColors.brandGreen
-                          : (isDark ? const Color(0xFF2E3D35) : GVColors.border),
+                          : (isDark
+                                ? const Color(0xFF2E3D35)
+                                : GVColors.border),
                     ),
                     onPressed: () => _selectLandmark(lm),
                   );
@@ -350,7 +357,9 @@ class _CurrentLocationMapScreenState
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               decoration: BoxDecoration(
                 color: cardBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border(top: BorderSide(color: borderColor)),
                 boxShadow: [
                   BoxShadow(
@@ -406,8 +415,9 @@ class _CurrentLocationMapScreenState
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: GVColors.brandGreen
-                                          .withValues(alpha: 0.12),
+                                      color: GVColors.brandGreen.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(

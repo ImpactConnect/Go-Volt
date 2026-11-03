@@ -14,11 +14,26 @@ List<Map<String, dynamic>> _calendarExceptions = [];
 List<Map<String, dynamic>> _kycSubmissions = [];
 List<Map<String, dynamic>> _adminFaqs = [];
 
-void resetAdminStoreForTest() {
-  _initStores();
+void resetAdminStoreForTest({bool seed = true}) {
+  if (seed) {
+    _seedStores();
+  } else {
+    _initEmptyStores();
+  }
+  _hasInitialized = true;
 }
 
-void _initStores() {
+void _initEmptyStores() {
+  _sosAlerts = [];
+  _batteryStations = [];
+  _adminErrands = [];
+  _scheduledManifest = [];
+  _calendarExceptions = [];
+  _kycSubmissions = [];
+  _adminFaqs = [];
+}
+
+void _seedStores() {
   final now = DateTime.now();
 
   // 1. SOS Distress Alerts
@@ -365,10 +380,13 @@ void _initStores() {
   ];
 }
 
-// Automatically seed on module load
+bool _hasInitialized = false;
+
+// Initialize clean empty stores on module load (no mock seed data in production)
 void _ensureInitialized() {
-  if (_sosAlerts.isEmpty && _batteryStations.isEmpty) {
-    _initStores();
+  if (!_hasInitialized) {
+    _initEmptyStores();
+    _hasInitialized = true;
   }
 }
 

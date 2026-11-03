@@ -416,7 +416,7 @@ class BatterySwapScreen extends ConsumerWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          'CABINET (24 BAYS)',
+                          'CABINET (${station.totalCabinetBays} BAYS)',
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.6),

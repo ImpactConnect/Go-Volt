@@ -1,5 +1,7 @@
 import 'package:app_models/app_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/battery_swap_models.dart';
 
 class BatterySwapState {
@@ -80,169 +82,53 @@ class BatterySwapState {
 
 class BatterySwapNotifier extends StateNotifier<BatterySwapState> {
   BatterySwapNotifier() : super(const BatterySwapState()) {
-    _loadSeedData();
+    fetchRealStations();
   }
 
-  void _loadSeedData() {
-    List<BatteryBayModel> generateBays({
-      required int chargedCount,
-      required int chargingCount,
-      int quarantinedCount = 0,
-      String? quarantineReason,
-    }) {
-      final bays = <BatteryBayModel>[];
-      var currentBay = 1;
+  Future<void> fetchRealStations() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
 
-      // Charged bays
-      for (int i = 0; i < chargedCount; i++) {
-        bays.add(BatteryBayModel(
-          bayNumber: currentBay,
-          batterySerial: 'BAT-EV-${currentBay.toString().padLeft(4, '0')}',
-          socPercent: 92 + (i % 8),
-          sohHealthPercent: 96,
-          temperatureCelsius: 27.5,
-          isCharging: false,
-          isQuarantined: false,
-          isLocked: true,
-        ));
-        currentBay++;
-      }
+    try {
+      state = state.copyWith(isLoading: true);
+      final res = await client.from('battery_swap_stations').select();
+      final list = res as List<dynamic>;
 
-      // Charging bays
-      for (int i = 0; i < chargingCount; i++) {
-        bays.add(BatteryBayModel(
-          bayNumber: currentBay,
-          batterySerial: 'BAT-EV-${currentBay.toString().padLeft(4, '0')}',
-          socPercent: 35 + (i * 4),
-          sohHealthPercent: 94,
-          temperatureCelsius: 32.0,
-          isCharging: true,
-          isQuarantined: false,
-          isLocked: true,
-        ));
-        currentBay++;
-      }
+      final mapped = list.map((s) {
+        final lat = (s['latitude'] as num?)?.toDouble() ?? 6.4281;
+        final lng = (s['longitude'] as num?)?.toDouble() ?? 3.4219;
+        final addr = s['address']?.toString() ?? 'Lagos';
+        return BatterySwapStationModel(
+          id: s['id']?.toString() ?? '',
+          name: s['name']?.toString() ?? 'EV Swap Station',
+          address: addr,
+          location: LocationDto(latitude: lat, longitude: lng, address: addr),
+          totalCabinetBays: (s['total_cabinet_bays'] as num?)?.toInt() ?? 24,
+          powerSource:
+              s['power_source']?.toString() ?? 'Solar PV + Grid Active',
+          temperatureCelsius:
+              (s['temperature_celsius'] as num?)?.toDouble() ?? 28.5,
+          dailySwapCount: (s['daily_swap_count'] as num?)?.toInt() ?? 0,
+          status: s['status']?.toString() ?? 'OPERATIONAL',
+          bays: const [],
+        );
+      }).toList();
 
-      // Quarantined bays
-      for (int i = 0; i < quarantinedCount; i++) {
-        bays.add(BatteryBayModel(
-          bayNumber: currentBay,
-          batterySerial: 'BAT-EV-${currentBay.toString().padLeft(4, '0')}',
-          socPercent: 48,
-          sohHealthPercent: 68,
-          temperatureCelsius: 44.5,
-          isCharging: false,
-          isQuarantined: true,
-          quarantineReason: quarantineReason ?? 'Thermal Runaway Warning (>44°C cell temperature)',
-          isLocked: true,
-        ));
-        currentBay++;
-      }
-
-      // Remaining empty or standby bays up to 24
-      while (currentBay <= 24) {
-        bays.add(BatteryBayModel(
-          bayNumber: currentBay,
-          batterySerial: 'BAT-EV-${currentBay.toString().padLeft(4, '0')}',
-          socPercent: 90,
-          sohHealthPercent: 95,
-          temperatureCelsius: 28.0,
-          isCharging: false,
-          isQuarantined: false,
-          isLocked: true,
-        ));
-        currentBay++;
-      }
-
-      return bays;
+      state = state.copyWith(
+        isLoading: false,
+        stations: mapped,
+      );
+    } catch (e) {
+      debugPrint('[BatterySwapNotifier] Error fetching swap stations: $e');
+      state = state.copyWith(isLoading: false);
     }
-
-    // Station 1: Victoria Island Central
-    final stn1 = BatterySwapStationModel(
-      id: 'STN-01',
-      name: 'Victoria Island Central Swap Hub',
-      address: 'Ahmadu Bello Way / Adeola Odeku, VI, Lagos',
-      location: const LocationDto(
-        latitude: 6.4281,
-        longitude: 3.4219,
-        address: 'Ahmadu Bello Way / Adeola Odeku, VI, Lagos',
-      ),
-      totalCabinetBays: 24,
-      powerSource: 'Solar PV + Grid Active',
-      temperatureCelsius: 28.2,
-      dailySwapCount: 184,
-      status: 'OPERATIONAL',
-      bays: generateBays(
-        chargedCount: 16,
-        chargingCount: 7,
-        quarantinedCount: 1,
-        quarantineReason: 'Cell impedance mismatch flagged by BMS',
-      ),
-    );
-
-    // Station 2: Lekki Phase 1
-    final stn2 = BatterySwapStationModel(
-      id: 'STN-02',
-      name: 'Lekki Phase 1 Solar Swap Station',
-      address: 'Admiralty Way, Lekki Phase 1, Lagos',
-      location: const LocationDto(
-        latitude: 6.4474,
-        longitude: 3.4723,
-        address: 'Admiralty Way, Lekki Phase 1, Lagos',
-      ),
-      totalCabinetBays: 24,
-      powerSource: '100% Rooftop Solar + BESS',
-      temperatureCelsius: 27.8,
-      dailySwapCount: 122,
-      status: 'OPERATIONAL',
-      bays: generateBays(chargedCount: 18, chargingCount: 6),
-    );
-
-    // Station 3: Ikeja Commercial Hub
-    final stn3 = BatterySwapStationModel(
-      id: 'STN-03',
-      name: 'Ikeja Commercial Fulfilment Hub',
-      address: 'Allen Avenue, Ikeja, Lagos',
-      location: const LocationDto(
-        latitude: 6.6018,
-        longitude: 3.3515,
-        address: 'Allen Avenue, Ikeja, Lagos',
-      ),
-      totalCabinetBays: 24,
-      powerSource: 'Grid Active + Diesel Standby',
-      temperatureCelsius: 31.0,
-      dailySwapCount: 210,
-      status: 'OPERATIONAL',
-      bays: generateBays(
-        chargedCount: 14,
-        chargingCount: 9,
-        quarantinedCount: 1,
-        quarantineReason: 'Thermal runaway threshold warning (>44°C cell temperature)',
-      ),
-    );
-
-    // Station 4: Yaba Tech Corridor Hub
-    final stn4 = BatterySwapStationModel(
-      id: 'STN-04',
-      name: 'Yaba Tech Corridor Hub',
-      address: 'Herbert Macaulay Way, Yaba, Lagos',
-      location: const LocationDto(
-        latitude: 6.5095,
-        longitude: 3.3711,
-        address: 'Herbert Macaulay Way, Yaba, Lagos',
-      ),
-      totalCabinetBays: 24,
-      powerSource: 'Solar PV + Grid Active',
-      temperatureCelsius: 33.5,
-      dailySwapCount: 95,
-      status: 'HIGH_DEMAND',
-      bays: generateBays(chargedCount: 6, chargingCount: 18),
-    );
-
-    state = state.copyWith(
-      stations: [stn1, stn2, stn3, stn4],
-    );
   }
+
+  @visibleForTesting
+  void updateStateForTesting(BatterySwapState newState) {
+    state = newState;
+  }
+
 
   void search(String query) {
     state = state.copyWith(searchQuery: query.trim());

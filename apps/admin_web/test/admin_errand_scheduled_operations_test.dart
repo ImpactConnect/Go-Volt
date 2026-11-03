@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/core/auth/admin_auth_notifier.dart';
 import 'package:admin_web/src/core/auth/admin_role.dart';
 import 'package:admin_web/src/features/errands/application/errand_operations_notifier.dart';
@@ -23,6 +24,16 @@ Widget createTestApp(Widget home, {StaffRole role = StaffRole.admin}) {
         notifier.setRole(role);
         return notifier;
       }),
+      errandOperationsNotifierProvider.overrideWith((ref) {
+        final notifier = ErrandOperationsNotifier();
+        notifier.seedForTest();
+        return notifier;
+      }),
+      scheduledOperationsNotifierProvider.overrideWith((ref) {
+        final notifier = ScheduledOperationsNotifier();
+        notifier.seedForTest();
+        return notifier;
+      }),
     ],
     child: MaterialApp(
       home: home,
@@ -37,6 +48,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(errandOperationsNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(errandOperationsNotifierProvider);
 
       expect(state.totalErrands, equals(5));
@@ -224,6 +236,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(scheduledOperationsNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(scheduledOperationsNotifierProvider);
 
       expect(state.todayManifestCount, equals(4));

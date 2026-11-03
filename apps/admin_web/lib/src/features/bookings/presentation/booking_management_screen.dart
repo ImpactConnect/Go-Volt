@@ -188,8 +188,18 @@ class BookingManagementScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(GVBorderRadius.md),
                 border: Border.all(color: const Color(0xFF223028)),
               ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              child: filtered.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(48),
+                      child: Center(
+                        child: Text(
+                          'No bookings recorded in this filter or time range.',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                 child: DataTable(
                   columns: const [
                     DataColumn(label: Text('Booking Ref')),

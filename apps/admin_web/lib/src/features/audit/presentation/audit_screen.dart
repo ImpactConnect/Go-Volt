@@ -190,7 +190,18 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
                   ],
                 ),
                 const SizedBox(height: GVSpacing.md),
-                Table(
+                if (logs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'No audit trail entries found matching current filter or search criteria.',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                  )
+                else
+                  Table(
                   columnWidths: const {
                     0: FlexColumnWidth(1.4),
                     1: FlexColumnWidth(1.8),

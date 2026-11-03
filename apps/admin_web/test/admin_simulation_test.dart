@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/core/auth/admin_auth_notifier.dart';
 import 'package:admin_web/src/core/auth/admin_role.dart';
 import 'package:admin_web/src/features/audit/application/audit_notifier.dart';
@@ -35,6 +36,15 @@ void main() {
       final pricingNotifier = container.read(pricingNotifierProvider.notifier);
       final auditNotifier = container.read(auditNotifierProvider.notifier);
       final intNotifier = container.read(integrationsNotifierProvider.notifier);
+
+      opsNotifier.seedForTest();
+      bookingNotifier.seedForTest();
+      riderNotifier.seedForTest();
+      safetyNotifier.seedForTest();
+      financeNotifier.seedForTest();
+      pricingNotifier.seedForTest();
+      auditNotifier.seedForTest();
+      intNotifier.seedForTest();
 
       // =======================================================================
       // STEP 1: Morning Operations Agent Shift (Live Dispatch & Bookings)

@@ -161,13 +161,13 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                 ),
               ),
               const SizedBox(width: GVSpacing.md),
-              const Expanded(
+              Expanded(
                 child: AdminKpiCard(
-                  title: 'Active Safety Personnel',
-                  value: '4 Officers On-Duty',
-                  subtitle: 'Monitoring geofences 24/7',
+                  title: 'Desk Status',
+                  value: supportState.activeIncidentsCount > 0 ? 'Active Escalation' : 'Nominal',
+                  subtitle: 'Monitoring telematics 24/7',
                   icon: Icons.security_outlined,
-                  accentColor: Colors.purpleAccent,
+                  accentColor: supportState.activeIncidentsCount > 0 ? Colors.redAccent : Colors.purpleAccent,
                 ),
               ),
             ],
@@ -303,8 +303,18 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                     ),
                   ),
                   const SizedBox(height: GVSpacing.md),
-
-                  Table(
+                  if (supportState.filteredTickets.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'No customer or rider inquiries currently open.',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                    )
+                  else
+                    Table(
                     columnWidths: const {
                       0: FlexColumnWidth(1.2),
                       1: FlexColumnWidth(1.6),

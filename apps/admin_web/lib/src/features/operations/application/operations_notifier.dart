@@ -1,5 +1,7 @@
 import 'package:app_models/app_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/operations_state.dart';
 
 final operationsNotifierProvider =
@@ -9,94 +11,94 @@ final operationsNotifierProvider =
 
 class OperationsNotifier extends StateNotifier<OperationsDashboardState> {
   OperationsNotifier() : super(const OperationsDashboardState()) {
-    _loadInitialTelemetry();
+    fetchRealOperations();
   }
 
-  void _loadInitialTelemetry() {
-    state = state.copyWith(
-      onlineRiders: const [
-        OnlineRiderTelemetry(
-          id: 'RDR-001',
-          fullName: 'Babajide Ogundipe',
-          vehiclePlate: 'LAG-428-EV',
-          vehicleModel: 'Roam Air EV Bike',
-          batteryPercent: 92,
-          currentZone: 'Lekki Phase 1',
-          lastHeartbeatSecondsAgo: 3,
-          status: 'idle',
-          rating: 4.96,
-        ),
-        OnlineRiderTelemetry(
-          id: 'RDR-002',
-          fullName: 'Emeka Nwosu',
-          vehiclePlate: 'LAG-889-ET',
-          vehicleModel: 'Spiro EV Trike',
-          batteryPercent: 78,
-          currentZone: 'Victoria Island',
-          lastHeartbeatSecondsAgo: 5,
-          status: 'in_transit',
-          rating: 4.88,
-        ),
-        OnlineRiderTelemetry(
-          id: 'RDR-003',
-          fullName: 'Aminu Dantata',
-          vehiclePlate: 'LAG-310-EV',
-          vehicleModel: 'Roam Air EV Bike',
-          batteryPercent: 14,
-          currentZone: 'Oniru / Lekki Toll',
-          lastHeartbeatSecondsAgo: 2,
-          status: 'low_battery',
-          rating: 4.91,
-        ),
-        OnlineRiderTelemetry(
-          id: 'RDR-004',
-          fullName: 'Tunde Adeleke',
-          vehiclePlate: 'LAG-992-ET',
-          vehicleModel: 'Spiro EV Trike (School Chaperone)',
-          batteryPercent: 86,
-          currentZone: 'Ikoyi / Parkview',
-          lastHeartbeatSecondsAgo: 8,
-          status: 'idle',
-          rating: 5.0,
-        ),
-      ],
-      urgentJobs: const [
-        UnassignedJobAlert(
-          bookingId: 'BK-GV-9021',
-          reference: 'GV-BK-89021',
-          serviceType: ServiceTierEligibility.schoolRunCommute,
-          customerName: 'Dr. Aisha Adeleke',
-          pickupAddress: 'Block 4 Admiralty Way, Lekki',
-          dropoffAddress: 'Corona School, Victoria Island',
-          fareKobo: 400000,
-          minutesWaiting: 8,
-          isOverdue: true,
-        ),
-        UnassignedJobAlert(
-          bookingId: 'BK-GV-9022',
-          reference: 'GV-BK-89022',
-          serviceType: ServiceTierEligibility.parcelDelivery,
-          customerName: 'Chidinma Okafor',
-          pickupAddress: 'Plot 14 Admiralty Way, Lekki',
-          dropoffAddress: 'Ahmadu Bello Way, VI',
-          fareKobo: 300000,
-          minutesWaiting: 12,
-          isOverdue: true,
-        ),
-        UnassignedJobAlert(
-          bookingId: 'BK-GV-9023',
-          reference: 'GV-BK-89023',
-          serviceType: ServiceTierEligibility.passengerRide,
-          customerName: 'Kehinde Balogun',
-          pickupAddress: 'Ozumba Mbadiwe Ave, VI',
-          dropoffAddress: 'Marina Bus Stop, Lagos Island',
-          fareKobo: 250000,
-          minutesWaiting: 4,
-          isOverdue: false,
-        ),
-      ],
-    );
+  Future<void> fetchRealOperations() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
+
+    try {
+      state = state.copyWith(isLoading: true);
+      final bookingsRes = await client.from('bookings').select();
+      final bookings = bookingsRes as List<dynamic>;
+
+      final activeTrips = bookings.where((b) {
+        final st = b['status']?.toString().toLowerCase();
+        return st == 'in_transit' || st == 'in_progress' || st == 'active';
+      }).length;
+
+      final unassigned = bookings.where((b) {
+        final st = b['status']?.toString().toLowerCase();
+        return st == 'searching' || st == 'unassigned' || st == 'pending';
+      }).toList();
+
+      final ridersRes = await client.from('rider_profiles').select();
+      final riders = ridersRes as List<dynamic>;
+
+      final onlineRiders = riders.where((r) {
+        return r['is_online'] == true ||
+            r['status'] == 'online' ||
+            r['status'] == 'idle' ||
+            r['status'] == 'in_transit';
+      }).map((r) {
+        return OnlineRiderTelemetry(
+          id: r['id']?.toString() ?? '',
+          fullName: r['full_name']?.toString() ?? 'Rider',
+          vehiclePlate: r['vehicle_plate']?.toString() ?? 'N/A',
+          vehicleModel: r['vehicle_model']?.toString() ?? 'EV Bike',
+          batteryPercent: (r['battery_percent'] as num?)?.toInt() ?? 100,
+          currentZone: r['current_zone']?.toString() ?? 'Lagos Central',
+          lastHeartbeatSecondsAgo:
+              (r['last_heartbeat_seconds_ago'] as num?)?.toInt() ?? 0,
+          status: r['status']?.toString() ?? 'idle',
+          rating: (r['rating'] as num?)?.toDouble() ?? 5.0,
+        );
+      }).toList();
+
+      int revenueKobo = 0;
+      for (final b in bookings) {
+        final fare = (b['total_fare_kobo'] as num?)?.toInt() ??
+            (b['fare_kobo'] as num?)?.toInt() ??
+            0;
+        revenueKobo += fare;
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        activeTripsCount: activeTrips,
+        onlineRidersCount: onlineRiders.length,
+        unassignedJobsCount: unassigned.length,
+        overduePickupsCount: 0,
+        grossRevenueTodayKobo: revenueKobo,
+        onlineRiders: onlineRiders,
+        urgentJobs: unassigned
+            .map((b) => UnassignedJobAlert(
+                  bookingId: b['id']?.toString() ?? '',
+                  reference: b['reference']?.toString() ??
+                      b['id']?.toString() ??
+                      '',
+                  serviceType: ServiceTierEligibility.passengerRide,
+                  customerName: b['customer_name']?.toString() ?? 'Customer',
+                  pickupAddress: b['pickup_address']?.toString() ?? '',
+                  dropoffAddress: b['dropoff_address']?.toString() ?? '',
+                  fareKobo: (b['fare_kobo'] as num?)?.toInt() ?? 0,
+                  minutesWaiting: 0,
+                  isOverdue: false,
+                ))
+            .toList(),
+      );
+    } catch (e) {
+      debugPrint('[OperationsNotifier] Error fetching real operations: $e');
+      state = state.copyWith(isLoading: false);
+    }
   }
+
+  @visibleForTesting
+  void updateStateForTesting(OperationsDashboardState newState) {
+    state = newState;
+  }
+
 
   /// Manually assign an unassigned job to a selected available rider.
   Future<bool> assignRiderToJob({

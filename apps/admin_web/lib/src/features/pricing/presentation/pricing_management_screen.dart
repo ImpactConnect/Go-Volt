@@ -650,7 +650,7 @@ class _PricingManagementScreenState
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Dynamic vehicle options fetched and displayed in customer app (§5.4 & §6.8.1). Seeded with 2 bikes and 3 cars.',
+                            'Dynamic vehicle options fetched and displayed in customer app (§5.4 & §6.8.1).',
                             style: TextStyle(color: Colors.white60, fontSize: 12),
                           ),
                         ],

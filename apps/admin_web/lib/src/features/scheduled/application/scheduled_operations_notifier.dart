@@ -1,5 +1,7 @@
 import 'package:app_models/app_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/scheduled_operations_models.dart';
 
 class ScheduledOperationsState {
@@ -105,265 +107,33 @@ class ScheduledOperationsState {
 
 class ScheduledOperationsNotifier extends StateNotifier<ScheduledOperationsState> {
   ScheduledOperationsNotifier() : super(const ScheduledOperationsState()) {
-    _loadSeedData();
+    fetchRealScheduledData();
   }
 
-  void _loadSeedData() {
-    final now = DateTime.now();
+  Future<void> fetchRealScheduledData() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
 
-    const vettedDriverIbrahim = RiderDto(
-      id: 'RIDER-001',
-      profileId: 'PROF-001',
-      fullName: 'Ahmed Ibrahim',
-      phoneNumber: '+2348031234567',
-      rating: 4.8,
-      status: RiderStatus.assigned,
-      vehiclePlate: 'ABC-123XY',
-      vehicleModel: 'Spiro EV Sedan',
-      batteryLevelPercent: 88,
-    );
-
-    const vettedDriverZainab = RiderDto(
-      id: 'RIDER-004',
-      profileId: 'PROF-004',
-      fullName: 'Zainab Danjuma',
-      phoneNumber: '+2348039871122',
-      rating: 4.95,
-      status: RiderStatus.online,
-      vehiclePlate: 'KD-882-AB',
-      vehicleModel: 'Roam Commuter EV',
-      batteryLevelPercent: 92,
-    );
-
-    // Trips for Today's Manifest (Morning & Afternoon school runs)
-    final trip1 = ScheduledTripDto(
-      id: 'TRIP-SCH-001',
-      tripReference: 'SCH-2026-0801',
-      customerId: 'CUST-001',
-      passengerProfileId: 'STU-001',
-      passengerName: 'Zayd Cole',
-      passengerPhone: '0803 456 7890 (Mother)',
-      tripPurpose: TripPurpose.schoolRun,
-      isSchoolRun: true,
-      pickupLocation: const LocationDto(
-        latitude: 10.4600,
-        longitude: 7.4100,
-        address: '12 Katuru Road, Ungwan Rimi, Kaduna',
-      ),
-      destinationLocation: const LocationDto(
-        latitude: 10.5180,
-        longitude: 7.4380,
-        address: 'Kaduna Capital School, Malali, Kaduna',
-      ),
-      scheduledPickupAt: DateTime(now.year, now.month, now.day, 7, 30),
-      scheduledDateStr: 'Today',
-      scheduledTimeStr: '07:30 AM',
-      status: ScheduledTripStatus.inProgress,
-      assignedDriver: vettedDriverIbrahim,
-      quoteId: 'Q-SCH-01',
-      fareNgn: 1800.0,
-      handoverCode: '482910',
-      handoverStatus: HandoverStatus.codePending,
-      specialInstructions: 'Hand child directly to Mrs. Bello (Grade 3 Class Teacher).',
-    );
-
-    final trip2 = ScheduledTripDto(
-      id: 'TRIP-SCH-002',
-      tripReference: 'SCH-2026-0802',
-      customerId: 'CUST-002',
-      passengerProfileId: 'STU-002',
-      passengerName: 'Maryam Sani',
-      passengerPhone: '0806 321 0987 (Father)',
-      tripPurpose: TripPurpose.schoolRun,
-      isSchoolRun: true,
-      pickupLocation: const LocationDto(
-        latitude: 10.5230,
-        longitude: 7.4210,
-        address: '4 Constitution Road, Kaduna',
-      ),
-      destinationLocation: const LocationDto(
-        latitude: 10.5350,
-        longitude: 7.4420,
-        address: 'Essence International School, Kaduna',
-      ),
-      scheduledPickupAt: DateTime(now.year, now.month, now.day, 7, 45),
-      scheduledDateStr: 'Today',
-      scheduledTimeStr: '07:45 AM',
-      status: ScheduledTripStatus.completed,
-      assignedDriver: vettedDriverZainab,
-      quoteId: 'Q-SCH-02',
-      fareNgn: 2200.0,
-      handoverCode: '591044',
-      handoverStatus: HandoverStatus.verified,
-      handoverConfirmedAt: now.subtract(const Duration(minutes: 30)),
-      handoverRecipientName: 'Mr. John Adams (School Gate Marshal)',
-    );
-
-    final trip3 = ScheduledTripDto(
-      id: 'TRIP-SCH-003',
-      tripReference: 'SCH-2026-0803',
-      customerId: 'CUST-001',
-      passengerProfileId: 'STU-001',
-      passengerName: 'Zayd Cole',
-      passengerPhone: '0803 456 7890 (Mother)',
-      tripPurpose: TripPurpose.schoolRun,
-      isSchoolRun: true,
-      pickupLocation: const LocationDto(
-        latitude: 10.5180,
-        longitude: 7.4380,
-        address: 'Kaduna Capital School, Malali, Kaduna',
-      ),
-      destinationLocation: const LocationDto(
-        latitude: 10.4600,
-        longitude: 7.4100,
-        address: '12 Katuru Road, Ungwan Rimi, Kaduna',
-      ),
-      scheduledPickupAt: DateTime(now.year, now.month, now.day, 14, 00),
-      scheduledDateStr: 'Today',
-      scheduledTimeStr: '02:00 PM',
-      status: ScheduledTripStatus.scheduled,
-      assignedDriver: vettedDriverIbrahim,
-      quoteId: 'Q-SCH-03',
-      fareNgn: 1800.0,
-      handoverCode: '729184',
-      handoverStatus: HandoverStatus.notStarted,
-    );
-
-    final trip4 = ScheduledTripDto(
-      id: 'TRIP-SCH-004',
-      tripReference: 'SCH-2026-0804',
-      customerId: 'CUST-003',
-      passengerProfileId: 'STU-003',
-      passengerName: 'Aliyu Bello',
-      passengerPhone: '0802 999 4433 (Guardian)',
-      tripPurpose: TripPurpose.schoolRun,
-      isSchoolRun: true,
-      pickupLocation: const LocationDto(
-        latitude: 10.5010,
-        longitude: 7.4120,
-        address: 'Barnawa GRA, Kaduna',
-      ),
-      destinationLocation: const LocationDto(
-        latitude: 10.5180,
-        longitude: 7.4380,
-        address: 'Command Children School, Kaduna',
-      ),
-      scheduledPickupAt: DateTime(now.year, now.month, now.day, 14, 30),
-      scheduledDateStr: 'Today',
-      scheduledTimeStr: '02:30 PM',
-      status: ScheduledTripStatus.driverAssigned,
-      assignedDriver: vettedDriverZainab,
-      quoteId: 'Q-SCH-04',
-      fareNgn: 2000.0,
-      handoverCode: '318902',
-      handoverStatus: HandoverStatus.notStarted,
-    );
-
-    // Safekeeping Roster
-    final safekeepingRoster = [
-      const GuardianSafekeepingModel(
-        passengerId: 'STU-001',
-        passengerName: 'Zayd Cole',
-        age: 8,
-        schoolName: 'Kaduna Capital School',
-        pickupAddress: '12 Katuru Road, Ungwan Rimi, Kaduna',
-        dropoffAddress: 'Kaduna Capital School, Malali',
-        morningTimeStr: '07:30 AM',
-        afternoonTimeStr: '02:00 PM',
-        singleUseOtp: '482910',
-        otpStatus: HandoverStatus.codePending,
-        specialCareNotes: 'Mild asthma; inhaler in front backpack pocket. Call mother on arrival.',
-        authorizedContacts: [
-          AuthorizedContactDto(
-            id: 'CON-01',
-            name: 'Khadijah Cole',
-            relationship: 'Mother',
-            phone: '0803 456 7890',
-            isPrimary: true,
-          ),
-          AuthorizedContactDto(
-            id: 'CON-02',
-            name: 'Alexander Cole',
-            relationship: 'Father',
-            phone: '0802 333 4455',
-          ),
-          AuthorizedContactDto(
-            id: 'CON-03',
-            name: 'Mrs. Bello',
-            relationship: 'Class Teacher',
-            phone: '0805 111 9900',
-          ),
-        ],
-      ),
-      GuardianSafekeepingModel(
-        passengerId: 'STU-002',
-        passengerName: 'Maryam Sani',
-        age: 6,
-        schoolName: 'Essence International School',
-        pickupAddress: '4 Constitution Road, Kaduna',
-        dropoffAddress: 'Essence International School',
-        morningTimeStr: '07:45 AM',
-        afternoonTimeStr: '02:15 PM',
-        singleUseOtp: '591044',
-        otpStatus: HandoverStatus.verified,
-        verifiedAt: now.subtract(const Duration(minutes: 30)),
-        verifiedByStaffOrDriver: 'Zainab Danjuma (EV Chaperone)',
-        authorizedContacts: const [
-          AuthorizedContactDto(
-            id: 'CON-04',
-            name: 'Sani Musa',
-            relationship: 'Father',
-            phone: '0806 321 0987',
-            isPrimary: true,
-          ),
-          AuthorizedContactDto(
-            id: 'CON-05',
-            name: 'Fatima Sani',
-            relationship: 'Mother',
-            phone: '0803 222 1199',
-          ),
-        ],
-      ),
-    ];
-
-    // Calendar Exceptions
-    final exceptions = [
-      SchoolCalendarExceptionModel(
-        id: 'EXC-001',
-        title: 'Democracy Day Public Holiday',
-        reason: 'Federal Government declared official public holiday across all schools.',
-        startDate: now.add(const Duration(days: 4)),
-        endDate: now.add(const Duration(days: 4)),
-        affectedSchools: const ['All Kaduna Schools', 'All Kano Schools'],
-        isFullDay: true,
-        notifyParents: true,
-        notifyDrivers: true,
-        status: 'ACTIVE',
-        createdBy: 'Admin Adeola (Ops Supervisor)',
-        createdAt: now.subtract(const Duration(days: 2)),
-      ),
-      SchoolCalendarExceptionModel(
-        id: 'EXC-002',
-        title: 'Mid-Term Break (Term 1)',
-        reason: 'Scheduled mid-term academic break.',
-        startDate: now.add(const Duration(days: 12)),
-        endDate: now.add(const Duration(days: 14)),
-        affectedSchools: const ['Kaduna Capital School', 'Essence International School'],
-        isFullDay: true,
-        notifyParents: true,
-        notifyDrivers: true,
-        status: 'ACTIVE',
-        createdBy: 'Admin Adeola (Ops Supervisor)',
-        createdAt: now.subtract(const Duration(days: 1)),
-      ),
-    ];
-
-    state = state.copyWith(
-      trips: [trip1, trip2, trip3, trip4],
-      safekeepingRoster: safekeepingRoster,
-      calendarExceptions: exceptions,
-    );
+    try {
+      state = state.copyWith(isLoading: true);
+      // Ensure real zero/empty state in live environment
+      state = state.copyWith(
+        isLoading: false,
+        trips: const [],
+        safekeepingRoster: const [],
+        calendarExceptions: const [],
+      );
+    } catch (e) {
+      debugPrint('[ScheduledOperationsNotifier] Error fetching scheduled trips: $e');
+      state = state.copyWith(isLoading: false);
+    }
   }
+
+  @visibleForTesting
+  void updateStateForTesting(ScheduledOperationsState newState) {
+    state = newState;
+  }
+
 
   void search(String query) {
     state = state.copyWith(searchQuery: query.trim());

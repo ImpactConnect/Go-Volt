@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/core/auth/admin_auth_notifier.dart';
 import 'package:admin_web/src/core/auth/admin_role.dart';
 import 'package:admin_web/src/features/audit/application/audit_notifier.dart';
@@ -19,6 +20,7 @@ void main() {
   group('Finance & Maker-Checker Dual Approval Tests (§6.8)', () {
     test('Refunds >= ₦10,000 require Maker-Checker dual approval; self-approval is rejected', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(financeNotifierProvider.notifier);
@@ -66,6 +68,7 @@ void main() {
 
     test('Refunds < ₦10,000 require single review and allow approval', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(financeNotifierProvider.notifier);
@@ -95,9 +98,11 @@ void main() {
 
     test('Settling payout batch updates batch status to settled', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(financeNotifierProvider.notifier);
+      notifier.seedForTest();
       final pendingBatch = container.read(financeNotifierProvider).payoutBatches.firstWhere((b) => b.status == 'pending_payout');
 
       notifier.settlePayoutBatch(pendingBatch.batchId);
@@ -112,6 +117,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -137,6 +143,7 @@ void main() {
   group('Promotions, Support, Audit & Integrations Tests', () {
     test('PromotionsNotifier creates coupon and toggles active status', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(promotionsNotifierProvider.notifier);
@@ -162,6 +169,7 @@ void main() {
 
     test('PromotionsNotifier dynamically updates loyalty point valuation, thresholds and presets', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(promotionsNotifierProvider.notifier);
@@ -187,9 +195,11 @@ void main() {
 
     test('SupportSafetyNotifier resolves tickets and gates confidential safety incidents', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(supportSafetyNotifierProvider.notifier);
+      notifier.seedForTest();
 
       // Resolve a general support ticket
       final ticket = container.read(supportSafetyNotifierProvider).tickets.first;
@@ -213,9 +223,11 @@ void main() {
 
     test('AuditNotifier filters by category and search query', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(auditNotifierProvider.notifier);
+      notifier.seedForTest();
 
       expect(container.read(auditNotifierProvider).filteredLogs.length, equals(4));
 
@@ -233,9 +245,11 @@ void main() {
 
     test('IntegrationsNotifier toggles partner and dispatches test ping', () {
       final container = ProviderContainer();
+      container.read(financeNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(integrationsNotifierProvider.notifier);
+      notifier.seedForTest();
       final partner = container.read(integrationsNotifierProvider).partners.firstWhere((p) => p.id == 'int_retail_ai');
 
       expect(partner.isActive, isTrue);

@@ -1,46 +1,19 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/admin_kpi_card.dart';
+import '../../fleet/application/battery_swap_notifier.dart';
 
-class MerchantsScreen extends StatelessWidget {
+class MerchantsScreen extends ConsumerWidget {
   const MerchantsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final hubs = [
-      {
-        'name': 'Victoria Island Central Swap Hub',
-        'location': 'Ahmadu Bello Way / Adeola Odeku',
-        'chargedPacks': 48,
-        'chargingPacks': 12,
-        'swapsToday': 184,
-        'status': 'OPERATIONAL',
-      },
-      {
-        'name': 'Lekki Phase 1 Solar Swap Station',
-        'location': 'Admiralty Way, Lekki',
-        'chargedPacks': 36,
-        'chargingPacks': 8,
-        'swapsToday': 122,
-        'status': 'OPERATIONAL',
-      },
-      {
-        'name': 'Ikeja Commercial Fulfilment Hub',
-        'location': 'Allen Avenue, Ikeja',
-        'chargedPacks': 52,
-        'chargingPacks': 16,
-        'swapsToday': 210,
-        'status': 'OPERATIONAL',
-      },
-      {
-        'name': 'Yaba Tech Corridor Hub',
-        'location': 'Herbert Macaulay Way, Yaba',
-        'chargedPacks': 14,
-        'chargingPacks': 22,
-        'swapsToday': 95,
-        'status': 'HIGH DEMAND',
-      },
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fleetState = ref.watch(batterySwapNotifierProvider);
+    final stations = fleetState.stations;
+
+    final totalCharged = stations.fold<int>(0, (sum, s) => sum + s.chargedPacksAvailable);
+    final totalSwaps = stations.fold<int>(0, (sum, s) => sum + s.dailySwapCount);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(GVSpacing.lg),
@@ -70,42 +43,42 @@ class MerchantsScreen extends StatelessWidget {
           const SizedBox(height: GVSpacing.lg),
 
           // KPIs
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: AdminKpiCard(
                   title: 'Active Swap Stations',
-                  value: '12 Hubs',
-                  subtitle: '100% solar & grid backed',
+                  value: '${stations.length} Hubs',
+                  subtitle: stations.isEmpty ? 'No hubs registered' : '100% solar & grid backed',
                   icon: Icons.electric_bolt,
                   accentColor: GVColors.brandGreen,
                 ),
               ),
-              SizedBox(width: GVSpacing.md),
+              const SizedBox(width: GVSpacing.md),
               Expanded(
                 child: AdminKpiCard(
                   title: 'Charged Battery Inventory',
-                  value: '384 Packs',
-                  subtitle: 'Ready for instant 60s swap',
+                  value: '$totalCharged Packs',
+                  subtitle: stations.isEmpty ? 'No inventory' : 'Ready for instant 60s swap',
                   icon: Icons.battery_charging_full,
                   accentColor: Colors.blueAccent,
                 ),
               ),
-              SizedBox(width: GVSpacing.md),
+              const SizedBox(width: GVSpacing.md),
               Expanded(
                 child: AdminKpiCard(
                   title: 'Total Swaps Today',
-                  value: '611 Swaps',
-                  subtitle: 'Zero downtime recorded',
+                  value: '$totalSwaps Swaps',
+                  subtitle: stations.isEmpty ? 'Zero activity' : 'Live telemetry',
                   icon: Icons.swap_horiz,
                   accentColor: Colors.amberAccent,
                 ),
               ),
-              SizedBox(width: GVSpacing.md),
-              Expanded(
+              const SizedBox(width: GVSpacing.md),
+              const Expanded(
                 child: AdminKpiCard(
                   title: 'Merchant Partners',
-                  value: '28 Stores',
+                  value: '0 Stores',
                   subtitle: 'B2B scheduled pickups',
                   icon: Icons.storefront,
                   accentColor: Colors.purpleAccent,
@@ -134,72 +107,91 @@ class MerchantsScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: GVSpacing.md),
-                ...hubs.map((hub) {
-                  final isHighDemand = hub['status'] == 'HIGH DEMAND';
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF14241B),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF274332)),
+                if (stations.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.hub_outlined, size: 48, color: Colors.white.withValues(alpha: 0.3)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No active battery swap stations or merchant hubs online in this operating region.',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: GVColors.deepGreen,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: GVColors.brandGreen),
+                  )
+                else
+                  ...stations.map((stn) {
+                    final isOperational = stn.status.toUpperCase() == 'OPERATIONAL';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF14241B),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF274332)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: GVColors.brandGreen.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.ev_station, color: GVColors.brandGreen, size: 20),
                               ),
-                              child: const Icon(Icons.ev_station, color: GVColors.brandGreen, size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(hub['name'] as String, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text(hub['location'] as String, style: const TextStyle(color: Colors.white60, fontSize: 11)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text('${hub['chargedPacks']} Charged', style: const TextStyle(color: GVColors.brandGreen, fontWeight: FontWeight.bold, fontSize: 12)),
-                            const SizedBox(width: 12),
-                            Text('${hub['chargingPacks']} Charging', style: const TextStyle(color: Colors.amber, fontSize: 12)),
-                            const SizedBox(width: 12),
-                            Text('${hub['swapsToday']} Swaps Today', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                            const SizedBox(width: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isHighDemand ? Colors.amber.withValues(alpha: 0.2) : GVColors.brandGreen.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: isHighDemand ? Colors.amber : GVColors.brandGreen),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(stn.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text(stn.address, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                                ],
                               ),
-                              child: Text(
-                                hub['status'] as String,
-                                style: TextStyle(
-                                  color: isHighDemand ? Colors.amber : GVColors.brandGreen,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('${stn.chargedPacksAvailable} Charged / ${stn.chargingPacks} Charging', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 2),
+                                  Text('${stn.dailySwapCount} swaps today', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isOperational ? GVColors.brandGreen.withValues(alpha: 0.15) : Colors.redAccent.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: isOperational ? GVColors.brandGreen : Colors.redAccent),
+                                ),
+                                child: Text(
+                                  stn.status.toUpperCase(),
+                                  style: TextStyle(
+                                    color: isOperational ? GVColors.brandGreen : Colors.redAccent,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
               ],
             ),
           ),

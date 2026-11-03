@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/supabase_admin_client.dart';
 import 'admin_role.dart';
 
 class AdminUserState {
   const AdminUserState({
-    this.userId = 'adm_usr_001',
-    this.fullName = 'Babatunde Balogun',
-    this.email = 'babatunde.balogun@govolts.ng',
+    this.userId = '',
+    this.fullName = 'Operations Admin',
+    this.email = 'admin@govolts.ng',
     this.role = StaffRole.superAdmin,
     this.selectedServiceArea = 'Lekki / Victoria Island',
     this.isAuthenticated = true,
@@ -45,7 +46,25 @@ final adminAuthNotifierProvider =
 });
 
 class AdminAuthNotifier extends StateNotifier<AdminUserState> {
-  AdminAuthNotifier() : super(const AdminUserState());
+  AdminAuthNotifier() : super(const AdminUserState()) {
+    _syncLiveUser();
+  }
+
+  void _syncLiveUser() {
+    final client = tryGetSupabaseClient();
+    final user = client?.auth.currentUser;
+    if (user != null) {
+      final meta = user.userMetadata;
+      state = state.copyWith(
+        userId: user.id,
+        email: user.email ?? '',
+        fullName: meta?['full_name']?.toString() ??
+            meta?['name']?.toString() ??
+            user.email?.split('@').first ??
+            'Operations Admin',
+      );
+    }
+  }
 
   void setRole(StaffRole newRole) {
     state = state.copyWith(role: newRole);

@@ -1,5 +1,6 @@
 import 'package:app_models/app_models.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/pricing_models.dart';
 
@@ -18,10 +19,14 @@ class PricingState extends Equatable {
   final String selectedZoneId;
   final ServiceTier selectedTier;
 
-  PricingRuleModel? get activeRule => rules.firstWhere(
-        (r) => r.status == PricingRuleStatus.active && r.tier == selectedTier,
-        orElse: () => rules.firstWhere((r) => r.status == PricingRuleStatus.active),
-      );
+  PricingRuleModel? get activeRule {
+    if (rules.isEmpty) return null;
+    final matching = rules.where((r) => r.status == PricingRuleStatus.active);
+    final byTier = matching.where((r) => r.tier == selectedTier);
+    if (byTier.isNotEmpty) return byTier.first;
+    if (matching.isNotEmpty) return matching.first;
+    return null;
+  }
 
   List<PricingRuleModel> get draftRules =>
       rules.where((r) => r.status == PricingRuleStatus.draft).toList();
@@ -29,8 +34,12 @@ class PricingState extends Equatable {
   List<PricingRuleModel> get archivedRules =>
       rules.where((r) => r.status == PricingRuleStatus.archived).toList();
 
-  ServiceAreaZoneModel? get currentZone =>
-      zones.firstWhere((z) => z.zoneId == selectedZoneId, orElse: () => zones.first);
+  ServiceAreaZoneModel? get currentZone {
+    if (zones.isEmpty) return null;
+    final matching = zones.where((z) => z.zoneId == selectedZoneId);
+    if (matching.isNotEmpty) return matching.first;
+    return zones.first;
+  }
 
   PricingState copyWith({
     List<PricingRuleModel>? rules,
@@ -133,115 +142,16 @@ const List<RideCategoryDto> _defaultRideCategories = [
 class PricingNotifier extends StateNotifier<PricingState> {
   PricingNotifier()
       : super(
-          PricingState(
-            rules: _seedRules,
-            zones: _seedZones,
+          const PricingState(
+            rules: [],
+            zones: [],
           ),
         );
 
-  static final List<PricingRuleModel> _seedRules = [
-    PricingRuleModel(
-      id: 'pr_commute_v2_1',
-      version: 'v2.1',
-      tier: ServiceTier.commute,
-      baseFareKobo: BigInt.from(60000), // ₦600
-      perKmKobo: BigInt.from(12000), // ₦120/km
-      perMinuteKobo: BigInt.from(2500), // ₦25/min
-      minimumFareKobo: BigInt.from(80000), // ₦800
-      surgeMultiplierCap: 2.0,
-      status: PricingRuleStatus.active,
-      effectiveDate: DateTime(2026, 9, 1),
-      createdBy: 'admin_sys',
-      notes: 'Harmonized fuel subsidy price baseline for Lagos metropolis',
-    ),
-    PricingRuleModel(
-      id: 'pr_parcel_v1_8',
-      version: 'v1.8',
-      tier: ServiceTier.expressParcel,
-      baseFareKobo: BigInt.from(50000), // ₦500
-      perKmKobo: BigInt.from(10000), // ₦100/km
-      perMinuteKobo: BigInt.from(1500), // ₦15/min
-      minimumFareKobo: BigInt.from(70000), // ₦700
-      surgeMultiplierCap: 1.8,
-      status: PricingRuleStatus.active,
-      effectiveDate: DateTime(2026, 8, 15),
-      createdBy: 'admin_sys',
-      notes: 'B2B e-commerce parcel matrix baseline',
-    ),
-    PricingRuleModel(
-      id: 'pr_school_v1_2',
-      version: 'v1.2',
-      tier: ServiceTier.schoolRun,
-      baseFareKobo: BigInt.from(120000), // ₦1,200
-      perKmKobo: BigInt.from(15000), // ₦150/km
-      perMinuteKobo: BigInt.from(3000), // ₦30/min
-      minimumFareKobo: BigInt.from(150000), // ₦1,500
-      surgeMultiplierCap: 1.5,
-      status: PricingRuleStatus.active,
-      effectiveDate: DateTime(2026, 9, 10),
-      createdBy: 'safety_officer_ade',
-      notes: 'Child safeguard chaperone surcharge included',
-    ),
-    PricingRuleModel(
-      id: 'pr_commute_v2_0_archived',
-      version: 'v2.0',
-      tier: ServiceTier.commute,
-      baseFareKobo: BigInt.from(50000),
-      perKmKobo: BigInt.from(10000),
-      perMinuteKobo: BigInt.from(2000),
-      minimumFareKobo: BigInt.from(70000),
-      surgeMultiplierCap: 2.5,
-      status: PricingRuleStatus.archived,
-      effectiveDate: DateTime(2026, 5, 1),
-      createdBy: 'admin_sys',
-      notes: 'Superseded by v2.1 fuel adjustment',
-    ),
-  ];
-
-  static final List<ServiceAreaZoneModel> _seedZones = [
-    const ServiceAreaZoneModel(
-      zoneId: 'lagos_island',
-      zoneName: 'Lagos Island / VI / Lekki',
-      city: 'Lagos',
-      isActive: true,
-      enabledTiers: {
-        ServiceTier.commute,
-        ServiceTier.expressParcel,
-        ServiceTier.scheduled,
-        ServiceTier.schoolRun,
-      },
-      currentSurgeMultiplier: 1.25,
-      maxSurgeCap: 2.0,
-      activeRidersCount: 42,
-    ),
-    const ServiceAreaZoneModel(
-      zoneId: 'lagos_mainland',
-      zoneName: 'Ikeja / Maryland / Surulere',
-      city: 'Lagos',
-      isActive: true,
-      enabledTiers: {
-        ServiceTier.commute,
-        ServiceTier.expressParcel,
-        ServiceTier.scheduled,
-      },
-      currentSurgeMultiplier: 1.0,
-      maxSurgeCap: 1.8,
-      activeRidersCount: 38,
-    ),
-    const ServiceAreaZoneModel(
-      zoneId: 'abuja_central',
-      zoneName: 'Abuja Central / Maitama / Wuse',
-      city: 'Abuja',
-      isActive: true,
-      enabledTiers: {
-        ServiceTier.commute,
-        ServiceTier.expressParcel,
-      },
-      currentSurgeMultiplier: 1.0,
-      maxSurgeCap: 1.5,
-      activeRidersCount: 16,
-    ),
-  ];
+    @visibleForTesting
+  void updateStateForTesting(PricingState newState) {
+    state = newState;
+  }
 
   void selectZone(String zoneId) {
     state = state.copyWith(selectedZoneId: zoneId);

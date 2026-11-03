@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/core/auth/admin_auth_notifier.dart';
 import 'package:admin_web/src/core/auth/admin_role.dart';
 import 'package:admin_web/src/core/navigation/admin_router.dart';
@@ -19,6 +20,16 @@ Widget createTestApp(Widget home, {StaffRole role = StaffRole.admin}) {
         notifier.setRole(role);
         return notifier;
       }),
+      safetySosNotifierProvider.overrideWith((ref) {
+        final notifier = SafetySosNotifier();
+        notifier.seedForTest();
+        return notifier;
+      }),
+      batterySwapNotifierProvider.overrideWith((ref) {
+        final notifier = BatterySwapNotifier();
+        notifier.seedForTest();
+        return notifier;
+      }),
     ],
     child: MaterialApp(
       home: home,
@@ -33,6 +44,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(safetySosNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(safetySosNotifierProvider);
 
       expect(state.totalAlertsCount, equals(4));
@@ -166,6 +178,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(batterySwapNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(batterySwapNotifierProvider);
 
       expect(state.totalStationsCount, equals(4));

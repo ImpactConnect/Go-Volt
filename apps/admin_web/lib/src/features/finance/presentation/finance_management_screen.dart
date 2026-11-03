@@ -326,7 +326,18 @@ class _FinanceManagementScreenState
                   ],
                 ),
                 const SizedBox(height: GVSpacing.md),
-                Table(
+                if (financeState.refunds.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'No refund requests recorded or pending sign-off.',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                  )
+                else
+                  Table(
                   columnWidths: const {
                     0: FlexColumnWidth(1.4),
                     1: FlexColumnWidth(1.8),
@@ -493,7 +504,18 @@ class _FinanceManagementScreenState
                   ],
                 ),
                 const SizedBox(height: GVSpacing.md),
-                ...financeState.payoutBatches.map((batch) {
+                if (financeState.payoutBatches.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'No payout batches generated yet.',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                  )
+                else
+                  ...financeState.payoutBatches.map((batch) {
                   final isSettled = batch.status == 'settled';
 
                   return Container(

@@ -1,5 +1,7 @@
 import 'package:app_models/app_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/booking_management_state.dart';
 
 final bookingManagementNotifierProvider =
@@ -9,128 +11,56 @@ final bookingManagementNotifierProvider =
 
 class BookingManagementNotifier extends StateNotifier<BookingManagementState> {
   BookingManagementNotifier() : super(const BookingManagementState()) {
-    _loadInitialBookings();
+    fetchRealBookings();
   }
 
-  void _loadInitialBookings() {
-    state = state.copyWith(
-      bookings: [
-        const AdminBookingItem(
-          id: 'BK-001',
-          reference: 'GV-BK-2026-001',
-          source: 'Customer Mobile App',
-          customerName: 'Chidinma Okafor',
-          customerPhone: '+2348039988776',
-          riderName: 'Babajide Ogundipe',
-          riderPhone: '+2348031122334',
-          riderPlate: 'LAG-428-EV',
-          serviceType: ServiceTierEligibility.parcelDelivery,
-          status: BookingStatus.inProgress,
-          pickupAddress: 'Plot 14 Admiralty Way, Lekki',
-          dropoffAddress: 'Ahmadu Bello Way, Victoria Island',
-          grossFareKobo: 300000,
-          platformCommissionKobo: 60000,
-          createdAt: '2026-10-24 14:15',
-          timeline: [
-            AdminBookingTimelineEvent(
-              status: 'QUOTED',
-              timestamp: '14:10:02',
-              note: 'Upfront quote locked at ₦3,000 (1.0x baseline)',
-            ),
-            AdminBookingTimelineEvent(
-              status: 'RIDER_ASSIGNED',
-              timestamp: '14:11:45',
-              note: 'Assigned to Babajide Ogundipe (LAG-428-EV)',
-            ),
-            AdminBookingTimelineEvent(
-              status: 'PICKED_UP',
-              timestamp: '14:22:10',
-              note: 'Package collected with sender digital signature',
-            ),
-          ],
-        ),
-        const AdminBookingItem(
-          id: 'BK-002',
-          reference: 'GV-BK-2026-002',
-          source: 'Retail Ai Partner',
-          customerName: 'Mrs. Folake Adeleke',
-          customerPhone: '+2348021122334',
-          riderName: 'Tunde Adeleke',
-          riderPhone: '+2348029988776',
-          riderPlate: 'LAG-992-ET',
-          serviceType: ServiceTierEligibility.schoolRunCommute,
-          status: BookingStatus.assigned,
-          pickupAddress: 'Corona School, VI',
-          dropoffAddress: 'Parkview Estate, Ikoyi',
-          grossFareKobo: 400000,
-          platformCommissionKobo: 80000,
-          createdAt: '2026-10-24 14:00',
-          timeline: [
-            AdminBookingTimelineEvent(
-              status: 'QUOTED',
-              timestamp: '13:58:00',
-              note: 'Plan subscription quote verified',
-            ),
-            AdminBookingTimelineEvent(
-              status: 'RIDER_ASSIGNED',
-              timestamp: '14:02:15',
-              note: 'Dedicated chaperone Tunde Adeleke confirmed',
-            ),
-          ],
-        ),
-        const AdminBookingItem(
-          id: 'BK-003',
-          reference: 'GV-BK-2026-003',
-          source: 'Merchant Portal',
-          customerName: 'Ereke E-Commerce Store',
-          customerPhone: '+2348099988877',
-          serviceType: ServiceTierEligibility.parcelDelivery,
-          status: BookingStatus.searchingRider,
-          pickupAddress: '18 Allen Avenue, Ikeja',
-          dropoffAddress: 'Gbagada Expressway, Lagos',
-          grossFareKobo: 350000,
-          platformCommissionKobo: 70000,
-          createdAt: '2026-10-24 14:28',
-          timeline: [
-            AdminBookingTimelineEvent(
-              status: 'QUOTED',
-              timestamp: '14:28:10',
-              note: 'Merchant API bulk dispatch created',
-            ),
-            AdminBookingTimelineEvent(
-              status: 'DISPATCHING',
-              timestamp: '14:28:15',
-              note: 'Searching for nearby EV trikes',
-            ),
-          ],
-        ),
-        const AdminBookingItem(
-          id: 'BK-004',
-          reference: 'GV-BK-2026-004',
-          source: 'Customer Mobile App',
-          customerName: 'Dr. Kehinde Balogun',
-          customerPhone: '+2348055544433',
-          riderName: 'Emeka Nwosu',
-          riderPhone: '+2348038877665',
-          riderPlate: 'LAG-889-ET',
+  Future<void> fetchRealBookings() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
+
+    try {
+      state = state.copyWith(isLoading: true);
+      final res = await client.from('bookings').select();
+      final list = res as List<dynamic>;
+
+      final mapped = list.map((b) {
+        final status = BookingStatus.fromString(b['status']?.toString() ?? '');
+
+        return AdminBookingItem(
+          id: b['id']?.toString() ?? '',
+          reference: b['reference']?.toString() ?? b['id']?.toString() ?? '',
+          source: b['source']?.toString() ?? 'Go-Volts Mobile App',
+          customerName: b['customer_name']?.toString() ?? 'Customer',
+          customerPhone: b['customer_phone']?.toString() ?? '',
+          riderName: b['rider_name']?.toString(),
+          riderPhone: b['rider_phone']?.toString(),
+          riderPlate: b['rider_plate']?.toString(),
           serviceType: ServiceTierEligibility.passengerRide,
-          status: BookingStatus.completed,
-          pickupAddress: 'Ozumba Mbadiwe Ave, VI',
-          dropoffAddress: 'Broad Street, Lagos Island',
-          grossFareKobo: 280000,
-          platformCommissionKobo: 56000,
-          createdAt: '2026-10-24 12:30',
-          timeline: [
-            AdminBookingTimelineEvent(
-              status: 'COMPLETED',
-              timestamp: '13:05:00',
-              note: 'Trip ended. Fare settled to wallet ledger.',
-            ),
-          ],
-        ),
-      ],
-    );
+          status: status,
+          pickupAddress: b['pickup_address']?.toString() ?? 'Lagos',
+          dropoffAddress: b['dropoff_address']?.toString() ?? 'Lagos',
+          grossFareKobo: (b['fare_kobo'] as num?)?.toInt() ?? 0,
+          platformCommissionKobo: (b['commission_kobo'] as num?)?.toInt() ?? 0,
+          createdAt: b['created_at']?.toString() ?? '',
+          timeline: const [],
+        );
+      }).toList();
+
+      state = state.copyWith(
+        isLoading: false,
+        bookings: mapped,
+      );
+    } catch (e) {
+      debugPrint('[BookingManagementNotifier] Error fetching bookings: $e');
+      state = state.copyWith(isLoading: false);
+    }
   }
+
+  @visibleForTesting
+  void updateStateForTesting(BookingManagementState newState) {
+    state = newState;
+  }
+
 
   void setStatusFilter(String status) {
     state = state.copyWith(selectedStatusFilter: status);

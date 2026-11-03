@@ -291,9 +291,21 @@ class OperationsDashboardScreen extends ConsumerWidget {
                               ],
                             ),
                             const Divider(color: Color(0xFF25332C), height: GVSpacing.md),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: DataTable(
+                            if (state.onlineRiders.isEmpty) ...[
+                              const Padding(
+                                padding: EdgeInsets.all(32),
+                                child: Center(
+                                  child: Text(
+                                    'No riders currently online or transmitting telemetry.',
+                                    style: TextStyle(color: Colors.white54),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
                                 columns: const [
                                   DataColumn(label: Text('Rider Name')),
                                   DataColumn(label: Text('Vehicle & Plate')),
@@ -363,6 +375,7 @@ class OperationsDashboardScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
+                        ],
                         ),
                       ),
                     ),

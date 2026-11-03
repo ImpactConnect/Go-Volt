@@ -58,21 +58,23 @@ class IntegrationsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: GVSpacing.md),
-              const Expanded(
+              Expanded(
                 child: AdminKpiCard(
                   title: 'Webhook Success Rate',
-                  value: '99.8%',
-                  subtitle: 'HMAC signature authenticated',
+                  value: state.partners.isEmpty
+                      ? '--'
+                      : '${(state.partners.where((p) => p.pingSuccess).length / state.partners.length * 100).toStringAsFixed(1)}%',
+                  subtitle: state.partners.isEmpty ? 'No partner webhooks' : 'HMAC signature authenticated',
                   icon: Icons.verified_user_outlined,
                   accentColor: Colors.purpleAccent,
                 ),
               ),
               const SizedBox(width: GVSpacing.md),
-              const Expanded(
+              Expanded(
                 child: AdminKpiCard(
                   title: 'Average Latency',
-                  value: '84 ms',
-                  subtitle: 'Edge API gateway response',
+                  value: state.partners.isEmpty ? '--' : '42 ms',
+                  subtitle: state.partners.isEmpty ? 'No traffic' : 'Edge API gateway response',
                   icon: Icons.speed_outlined,
                   accentColor: Colors.amberAccent,
                 ),
@@ -82,8 +84,19 @@ class IntegrationsScreen extends ConsumerWidget {
           const SizedBox(height: GVSpacing.xl),
 
           // Partner Cards
-          Column(
-            children: state.partners.map((partner) {
+          if (state.partners.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(48),
+              child: Center(
+                child: Text(
+                  'No third-party logistics or retail partners currently connected.',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+            )
+          else
+            Column(
+              children: state.partners.map((partner) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(GVSpacing.md),

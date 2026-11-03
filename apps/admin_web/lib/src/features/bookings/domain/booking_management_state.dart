@@ -54,6 +54,46 @@ class AdminBookingItem {
   double get grossFareNaira => grossFareKobo / 100.0;
   double get commissionNaira => platformCommissionKobo / 100.0;
   double get riderTakeHomeNaira => (grossFareKobo - platformCommissionKobo) / 100.0;
+
+  AdminBookingItem copyWith({
+    String? id,
+    String? reference,
+    String? source,
+    String? customerName,
+    String? customerPhone,
+    String? riderName,
+    String? riderPhone,
+    String? riderPlate,
+    ServiceTierEligibility? serviceType,
+    BookingStatus? status,
+    String? pickupAddress,
+    String? dropoffAddress,
+    int? grossFareKobo,
+    int? platformCommissionKobo,
+    String? createdAt,
+    String? scheduledFor,
+    List<AdminBookingTimelineEvent>? timeline,
+  }) {
+    return AdminBookingItem(
+      id: id ?? this.id,
+      reference: reference ?? this.reference,
+      source: source ?? this.source,
+      customerName: customerName ?? this.customerName,
+      customerPhone: customerPhone ?? this.customerPhone,
+      riderName: riderName ?? this.riderName,
+      riderPhone: riderPhone ?? this.riderPhone,
+      riderPlate: riderPlate ?? this.riderPlate,
+      serviceType: serviceType ?? this.serviceType,
+      status: status ?? this.status,
+      pickupAddress: pickupAddress ?? this.pickupAddress,
+      dropoffAddress: dropoffAddress ?? this.dropoffAddress,
+      grossFareKobo: grossFareKobo ?? this.grossFareKobo,
+      platformCommissionKobo: platformCommissionKobo ?? this.platformCommissionKobo,
+      createdAt: createdAt ?? this.createdAt,
+      scheduledFor: scheduledFor ?? this.scheduledFor,
+      timeline: timeline ?? this.timeline,
+    );
+  }
 }
 
 class BookingManagementState {

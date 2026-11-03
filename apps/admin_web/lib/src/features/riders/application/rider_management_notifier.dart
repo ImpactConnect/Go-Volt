@@ -1,5 +1,7 @@
 import 'package:app_models/app_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/rider_management_state.dart';
 
 final riderManagementNotifierProvider =
@@ -9,123 +11,66 @@ final riderManagementNotifierProvider =
 
 class RiderManagementNotifier extends StateNotifier<RiderManagementState> {
   RiderManagementNotifier() : super(const RiderManagementState()) {
-    _loadInitialRiders();
+    fetchRealRiders();
   }
 
-  void _loadInitialRiders() {
-    state = state.copyWith(
-      riders: [
-        AdminRiderApplicant(
-          id: 'RDR-APP-101',
-          fullName: 'Babatunde Fashola',
-          phone: '+2348021122334',
-          email: 'tunde.fashola@govolts.ng',
-          vehiclePlate: 'LA-999-IS',
-          vehicleClass: 'Roam Air EV Bike',
+  Future<void> fetchRealRiders() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
+
+    try {
+      state = state.copyWith(isLoading: true);
+      final res = await client.from('rider_profiles').select();
+      final list = res as List<dynamic>;
+
+      final mapped = list.map((r) {
+        final statusRaw = r['compliance_status']?.toString().toLowerCase() ??
+            r['status']?.toString().toLowerCase() ??
+            '';
+        RiderComplianceStatus status = RiderComplianceStatus.pendingReview;
+        if (statusRaw == 'approved' || statusRaw == 'active') {
+          status = RiderComplianceStatus.approved;
+        } else if (statusRaw == 'suspended') {
+          status = RiderComplianceStatus.suspended;
+        }
+
+        return AdminRiderApplicant(
+          id: r['id']?.toString() ?? '',
+          fullName: r['full_name']?.toString() ?? 'Rider Applicant',
+          phone: r['phone']?.toString() ?? '',
+          email: r['email']?.toString() ?? '',
+          vehiclePlate: r['vehicle_plate']?.toString() ?? 'N/A',
+          vehicleClass: r['vehicle_model']?.toString() ?? 'Roam Air EV Bike',
           batteryCapacity: '3.2 kWh LFP',
-          batteryHealthPercent: 96,
-          status: RiderComplianceStatus.pendingReview,
+          batteryHealthPercent:
+              (r['battery_health_percent'] as num?)?.toInt() ?? 95,
+          status: status,
           certifiedTiers: const [
             ServiceTierEligibility.parcelDelivery,
             ServiceTierEligibility.passengerRide,
           ],
-          documents: [
-            RiderDocumentDto(
-              id: 'doc-1',
-              type: DocumentType.nationalId,
-              documentNumber: '10928374651',
-              fileUrl: 'https://cdn.govolts.ng/docs/nin_fashola.jpg',
-              expiryDate: DateTime.now().add(const Duration(days: 800)),
-              status: DocumentVerificationStatus.approved,
-            ),
-            RiderDocumentDto(
-              id: 'doc-2',
-              type: DocumentType.driversLicense,
-              documentNumber: 'DL-LAG-2024-991',
-              fileUrl: 'https://cdn.govolts.ng/docs/dl_fashola.jpg',
-              expiryDate: DateTime.now().add(const Duration(days: 360)),
-              status: DocumentVerificationStatus.pending,
-            ),
-            RiderDocumentDto(
-              id: 'doc-3',
-              type: DocumentType.vehicleRegistration,
-              documentNumber: 'VR-LAG-8821-EV',
-              fileUrl: 'https://cdn.govolts.ng/docs/vr_fashola.jpg',
-              expiryDate: DateTime.now().add(const Duration(days: 300)),
-              status: DocumentVerificationStatus.pending,
-            ),
-          ],
-          ratingAverage: 0.0,
-          completedTrips: 0,
-          appliedDate: '2026-10-24 11:30',
-        ),
-        AdminRiderApplicant(
-          id: 'RDR-APP-102',
-          fullName: 'Babajide Ogundipe',
-          phone: '+2348031122334',
-          email: 'babajide.ogundipe@govolts.ng',
-          vehiclePlate: 'LAG-428-EV',
-          vehicleClass: 'Roam Air EV Bike',
-          batteryCapacity: '3.2 kWh LFP',
-          batteryHealthPercent: 92,
-          status: RiderComplianceStatus.approved,
-          certifiedTiers: const [
-            ServiceTierEligibility.parcelDelivery,
-            ServiceTierEligibility.passengerRide,
-            ServiceTierEligibility.schoolRunCommute,
-          ],
-          documents: [
-            RiderDocumentDto(
-              id: 'doc-4',
-              type: DocumentType.nationalId,
-              documentNumber: '10928374651',
-              fileUrl: 'https://cdn.govolts.ng/docs/nin.jpg',
-              expiryDate: DateTime.now().add(const Duration(days: 900)),
-              status: DocumentVerificationStatus.approved,
-            ),
-            RiderDocumentDto(
-              id: 'doc-5',
-              type: DocumentType.driversLicense,
-              documentNumber: 'DL-882-LAG',
-              fileUrl: 'https://cdn.govolts.ng/docs/dl.jpg',
-              expiryDate: DateTime.now().add(const Duration(days: 420)),
-              status: DocumentVerificationStatus.approved,
-            ),
-          ],
-          ratingAverage: 4.96,
-          completedTrips: 184,
-          appliedDate: '2026-09-12 09:15',
-        ),
-        AdminRiderApplicant(
-          id: 'RDR-APP-103',
-          fullName: 'Aminu Dantata',
-          phone: '+2348051234567',
-          email: 'aminu.dantata@govolts.ng',
-          vehiclePlate: 'LAG-310-EV',
-          vehicleClass: 'Roam Air EV Bike',
-          batteryCapacity: '3.2 kWh LFP',
-          batteryHealthPercent: 84,
-          status: RiderComplianceStatus.suspended,
-          certifiedTiers: const [
-            ServiceTierEligibility.parcelDelivery,
-          ],
-          documents: [
-            RiderDocumentDto(
-              id: 'doc-6',
-              type: DocumentType.driversLicense,
-              documentNumber: 'DL-EXPIRED-777',
-              fileUrl: 'https://cdn.govolts.ng/docs/dl_expired.jpg',
-              expiryDate: DateTime.now().subtract(const Duration(days: 15)),
-              status: DocumentVerificationStatus.rejected,
-            ),
-          ],
-          ratingAverage: 4.2,
-          completedTrips: 45,
-          appliedDate: '2026-08-01 14:00',
-        ),
-      ],
-    );
+          documents: const [],
+          ratingAverage: (r['rating'] as num?)?.toDouble() ?? 5.0,
+          completedTrips: (r['completed_trips'] as num?)?.toInt() ?? 0,
+          appliedDate: r['created_at']?.toString() ?? '',
+        );
+      }).toList();
+
+      state = state.copyWith(
+        isLoading: false,
+        riders: mapped,
+      );
+    } catch (e) {
+      debugPrint('[RiderManagementNotifier] Error fetching riders: $e');
+      state = state.copyWith(isLoading: false);
+    }
   }
+
+  @visibleForTesting
+  void updateStateForTesting(RiderManagementState newState) {
+    state = newState;
+  }
+
 
   void setStatusFilter(String filter) {
     state = state.copyWith(selectedStatusFilter: filter);

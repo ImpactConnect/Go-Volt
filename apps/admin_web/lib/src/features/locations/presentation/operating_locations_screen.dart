@@ -10,25 +10,7 @@ final adminLocationsProvider =
     );
 
 class AdminLocationsNotifier extends StateNotifier<List<OperatingLocationDto>> {
-  AdminLocationsNotifier()
-    : super([
-        const OperatingLocationDto(
-          id: 'loc_01',
-          state: 'Ogun',
-          city: 'Shaganu',
-          isActive: true,
-          status: 'fully_supported',
-          statusDescription: 'Fully supported',
-          availableServices: [
-            'instant_ride',
-            'instant_delivery',
-            'scheduled_ride',
-            'scheduled_pickup',
-          ],
-          centerLat: 6.8403,
-          centerLng: 3.6487,
-        ),
-      ]);
+  AdminLocationsNotifier() : super(const []);
 
   void addLocation(OperatingLocationDto location) {
     state = [...state, location];
@@ -72,10 +54,10 @@ class _OperatingLocationsScreenState
   }
 
   void _showAddLocationDialog() {
-    final stateCtrl = TextEditingController(text: 'Ogun');
+    final stateCtrl = TextEditingController();
     final cityCtrl = TextEditingController();
-    final latCtrl = TextEditingController(text: '6.8403');
-    final lngCtrl = TextEditingController(text: '3.6487');
+    final latCtrl = TextEditingController();
+    final lngCtrl = TextEditingController();
     String selectedStatus = 'fully_supported';
 
     showDialog<void>(

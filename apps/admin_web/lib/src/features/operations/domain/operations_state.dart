@@ -54,14 +54,14 @@ class UnassignedJobAlert {
 
 class OperationsDashboardState {
   const OperationsDashboardState({
-    this.activeTripsCount = 42,
-    this.onlineRidersCount = 58,
-    this.unassignedJobsCount = 7,
-    this.overduePickupsCount = 2,
-    this.avgResponseTimeMins = 3.4,
-    this.grossRevenueTodayKobo = 142080000, // ₦1,420,800
-    this.surgeMultiplier = 1.3,
-    this.activeZone = 'Lekki / Victoria Island',
+    this.activeTripsCount = 0,
+    this.onlineRidersCount = 0,
+    this.unassignedJobsCount = 0,
+    this.overduePickupsCount = 0,
+    this.avgResponseTimeMins = 0.0,
+    this.grossRevenueTodayKobo = 0,
+    this.surgeMultiplier = 1.0,
+    this.activeZone = 'Lagos Central',
     this.onlineRiders = const [],
     this.urgentJobs = const [],
     this.isLoading = false,

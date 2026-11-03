@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/core/auth/admin_auth_notifier.dart';
 import 'package:admin_web/src/core/auth/admin_role.dart';
 import 'package:admin_web/src/features/customers/application/customer_verification_notifier.dart';
@@ -21,6 +22,16 @@ Widget createTestApp(Widget home, {StaffRole role = StaffRole.admin}) {
         notifier.setRole(role);
         return notifier;
       }),
+      customerVerificationNotifierProvider.overrideWith((ref) {
+        final notifier = CustomerVerificationNotifier();
+        notifier.seedForTest();
+        return notifier;
+      }),
+      supportSafetyNotifierProvider.overrideWith((ref) {
+        final notifier = SupportSafetyNotifier(ref);
+        notifier.seedForTest();
+        return notifier;
+      }),
     ],
     child: MaterialApp(
       home: home,
@@ -35,6 +46,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(customerVerificationNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(customerVerificationNotifierProvider);
 
       expect(state.totalSubmitted, equals(5));
@@ -141,6 +153,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(supportSafetyNotifierProvider.notifier);
+      notifier.seedForTest();
       var state = container.read(supportSafetyNotifierProvider);
 
       expect(state.tickets.length, equals(5));

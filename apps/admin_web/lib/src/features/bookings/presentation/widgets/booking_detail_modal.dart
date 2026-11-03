@@ -16,9 +16,9 @@ class BookingDetailModal extends StatelessWidget {
   final BookingManagementNotifier notifier;
 
   void _showReassignDialog(BuildContext context) {
-    final riderCtrl = TextEditingController(text: 'Aminu Dantata');
-    final plateCtrl = TextEditingController(text: 'LAG-310-EV');
-    final reasonCtrl = TextEditingController(text: 'Previous rider delayed in traffic');
+    final riderCtrl = TextEditingController();
+    final plateCtrl = TextEditingController();
+    final reasonCtrl = TextEditingController();
 
     showDialog<void>(
       context: context,
@@ -48,6 +48,9 @@ class BookingDetailModal extends StatelessWidget {
               TextField(
                 controller: riderCtrl,
                 style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Enter replacement rider full name...',
+                ),
               ),
               const SizedBox(height: GVSpacing.sm),
               Text('Vehicle Plate *', style: GVTypography.caption.copyWith(color: Colors.white70)),
@@ -55,6 +58,9 @@ class BookingDetailModal extends StatelessWidget {
               TextField(
                 controller: plateCtrl,
                 style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Vehicle plate number',
+                ),
               ),
               const SizedBox(height: GVSpacing.sm),
               Text('Mandatory Audit Reason *', style: GVTypography.caption.copyWith(color: Colors.white70)),

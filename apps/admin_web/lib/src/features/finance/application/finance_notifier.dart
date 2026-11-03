@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/supabase_admin_client.dart';
 import '../domain/finance_models.dart';
 
 class FinanceState extends Equatable {
@@ -46,77 +48,55 @@ class FinanceNotifier extends StateNotifier<FinanceState> {
       : super(
           FinanceState(
             summary: FinancialLedgerSummary(
-              grossGmvKobo: BigInt.from(1425000000), // ₦14,250,000 GMV
-              netPlatformRevenueKobo: BigInt.from(285000000), // ₦2,850,000 (20% take)
-              totalRiderEarningsKobo: BigInt.from(1140000000), // ₦11,400,000 (80%)
-              pendingRefundsKobo: BigInt.from(3850000), // ₦38,500
-              settlementDate: DateTime(2026, 10, 24),
+              grossGmvKobo: BigInt.zero,
+              netPlatformRevenueKobo: BigInt.zero,
+              totalRiderEarningsKobo: BigInt.zero,
+              pendingRefundsKobo: BigInt.zero,
+              settlementDate: DateTime.now(),
             ),
-            refunds: _seedRefunds,
-            payoutBatches: _seedBatches,
+            refunds: const [],
+            payoutBatches: const [],
           ),
-        );
+        ) {
+    fetchRealFinance();
+  }
 
-  static final List<RefundRequestModel> _seedRefunds = [
-    RefundRequestModel(
-      id: 'ref_req_101',
-      bookingRef: 'GV-LKG-9021',
-      customerName: 'Chiamaka Okonjo',
-      amountKobo: BigInt.from(1500000), // ₦15,000 (>= ₦10,000 => requires dual approval)
-      reason: 'School-Run trip cancelled due to sudden route flooding; parent pre-paid weekly bundle',
-      makerId: 'staff_ops_ade',
-      makerName: 'Adeola Sowande (Ops Agent)',
-      makerTimestamp: DateTime(2026, 10, 24, 8, 30),
-      status: RefundStatus.pendingCheckerSignoff,
-    ),
-    RefundRequestModel(
-      id: 'ref_req_102',
-      bookingRef: 'GV-B2B-4412',
-      customerName: 'Emeka Eze',
-      amountKobo: BigInt.from(450000), // ₦4,500 (< ₦10,000 => single review)
-      reason: 'Delivery package delayed by 45 mins due to tire puncture',
-      makerId: 'staff_ops_kemi',
-      makerName: 'Kemi Balogun (Ops Agent)',
-      makerTimestamp: DateTime(2026, 10, 24, 11, 15),
-      status: RefundStatus.pendingReview,
-    ),
-    RefundRequestModel(
-      id: 'ref_req_103',
-      bookingRef: 'GV-TRIP-3310',
-      customerName: 'Babatunde Fashola',
-      amountKobo: BigInt.from(2500000), // ₦25,000 (Approved via dual signoff)
-      reason: 'VIP hourly dispatch cancelled 24h prior in accordance with refund policy',
-      makerId: 'staff_ops_ade',
-      makerName: 'Adeola Sowande (Ops Agent)',
-      makerTimestamp: DateTime(2026, 10, 23, 14, 0),
-      status: RefundStatus.approved,
-      checkerId: 'staff_fin_olumide',
-      checkerName: 'Olumide Bakare (Finance Officer)',
-      checkerTimestamp: DateTime(2026, 10, 23, 16, 20),
-    ),
-  ];
+    @visibleForTesting
+  void updateStateForTesting(FinanceState newState) {
+    state = newState;
+  }
 
-  static final List<PayoutBatchModel> _seedBatches = [
-    PayoutBatchModel(
-      batchId: 'BATCH-2026-W42',
-      period: '17 Oct - 23 Oct 2026',
-      totalRiders: 142,
-      totalAmountKobo: BigInt.from(894500000), // ₦8,945,000
-      status: 'settled',
-      generatedAt: DateTime(2026, 10, 24, 6, 0),
-      settledAt: DateTime(2026, 10, 24, 7, 30),
-    ),
-    PayoutBatchModel(
-      batchId: 'BATCH-2026-W43-MID',
-      period: '24 Oct 2026 (Daily Instant)',
-      totalRiders: 36,
-      totalAmountKobo: BigInt.from(245500000), // ₦2,455,000
-      status: 'pending_payout',
-      generatedAt: DateTime(2026, 10, 24, 17, 0),
-    ),
-  ];
+  Future<void> fetchRealFinance() async {
+    final client = tryGetSupabaseClient();
+    if (client == null) return;
+    try {
+      final bookingsRes = await client.from('bookings').select();
+      final bookings = bookingsRes as List<dynamic>;
 
-  /// Request a refund. If >= ₦10,000 (1,000,000 kobo), requires Maker-Checker dual sign-off.
+      int gmv = 0;
+      int commission = 0;
+      for (final b in bookings) {
+        gmv += (b['fare_kobo'] as num?)?.toInt() ?? 0;
+        commission += (b['commission_kobo'] as num?)?.toInt() ?? 0;
+      }
+      final riderEarnings = gmv - commission;
+
+      state = state.copyWith(
+        summary: FinancialLedgerSummary(
+          grossGmvKobo: BigInt.from(gmv),
+          netPlatformRevenueKobo: BigInt.from(commission),
+          totalRiderEarningsKobo: BigInt.from(riderEarnings),
+          pendingRefundsKobo: BigInt.zero,
+          settlementDate: DateTime.now(),
+        ),
+        refunds: const [],
+        payoutBatches: const [],
+      );
+    } catch (e) {
+      debugPrint('[FinanceNotifier] Error fetching finance data: $e');
+    }
+  }
+
   void requestRefund({
     required String bookingRef,
     required String customerName,

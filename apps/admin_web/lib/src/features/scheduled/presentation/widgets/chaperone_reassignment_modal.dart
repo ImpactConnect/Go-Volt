@@ -3,6 +3,8 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/admin_modal_dialog.dart';
+import '../../../riders/application/rider_management_notifier.dart';
+import '../../../riders/domain/rider_management_state.dart';
 import '../../application/scheduled_operations_notifier.dart';
 
 class ChaperoneReassignmentModal extends ConsumerStatefulWidget {
@@ -20,44 +22,8 @@ class ChaperoneReassignmentModal extends ConsumerStatefulWidget {
 
 class _ChaperoneReassignmentModalState
     extends ConsumerState<ChaperoneReassignmentModal> {
-  final _reasonController = TextEditingController(
-    text: 'Pre-scheduled vehicle battery top-up / routine maintenance',
-  );
+  final _reasonController = TextEditingController();
   RiderDto? _selectedDriver;
-
-  // Vetted standby school chaperones with LASRRA / background checks
-  final List<RiderDto> _availableChaperones = const [
-    RiderDto(
-      id: 'RIDER-004',
-      profileId: 'PROF-004',
-      fullName: 'Zainab Danjuma',
-      phoneNumber: '+2348039871122',
-      email: 'zainab.danjuma@govolts.ng',
-      rating: 4.95,
-      status: RiderStatus.online,
-      vehiclePlate: 'KD-882-AB',
-      vehicleModel: 'Roam Commuter EV',
-      batteryLevelPercent: 92,
-    ),
-    RiderDto(
-      id: 'RIDER-005',
-      profileId: 'PROF-005',
-      fullName: 'Bala Mohammed',
-      phoneNumber: '+2348052219988',
-      email: 'bala.mohammed@govolts.ng',
-      rating: 4.88,
-      status: RiderStatus.online,
-      vehiclePlate: 'KD-331-ZX',
-      vehicleModel: 'Spiro EV Sedan',
-      batteryLevelPercent: 85,
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDriver = _availableChaperones.first;
-  }
 
   @override
   void dispose() {
@@ -68,6 +34,22 @@ class _ChaperoneReassignmentModalState
   @override
   Widget build(BuildContext context) {
     final notifier = ref.read(scheduledOperationsNotifierProvider.notifier);
+    final ridersState = ref.watch(riderManagementNotifierProvider);
+    final availableChaperones = ridersState.riders
+        .where((r) => r.status == RiderComplianceStatus.approved)
+        .map((r) => RiderDto(
+              id: r.id,
+              profileId: r.id,
+              fullName: r.fullName,
+              phoneNumber: r.phone,
+              email: r.email,
+              rating: r.ratingAverage,
+              status: RiderStatus.online,
+              vehiclePlate: r.vehiclePlate,
+              vehicleModel: r.vehicleClass,
+              batteryLevelPercent: r.batteryHealthPercent,
+            ))
+        .toList();
 
     return AdminModalDialog(
       title: 'Reassign Vetted Chaperone — ${widget.trip.tripReference}',
@@ -131,9 +113,26 @@ class _ChaperoneReassignmentModalState
             ),
           ),
           const SizedBox(height: 8),
-          Column(
-            children: _availableChaperones.map((driver) {
-              final isSelected = _selectedDriver?.id == driver.id;
+          if (availableChaperones.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161F1A),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF263C2E)),
+              ),
+              child: const Center(
+                child: Text(
+                  'No verified chaperones currently online. Please onboard or activate a driver in Riders & KYC.',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: availableChaperones.map((driver) {
+                final isSelected = _selectedDriver?.id == driver.id;
               return GestureDetector(
                 onTap: () => setState(() => _selectedDriver = driver),
                 child: Container(
@@ -240,6 +239,8 @@ class _ChaperoneReassignmentModalState
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFF161F1A),
+              hintText: 'Enter reason for chaperone reassignment...',
+              hintStyle: const TextStyle(color: Colors.white38),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: Color(0xFF263C2E)),

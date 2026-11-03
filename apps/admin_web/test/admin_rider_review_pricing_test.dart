@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/features/pricing/application/pricing_notifier.dart';
 import 'package:admin_web/src/features/pricing/domain/pricing_models.dart';
 import 'package:admin_web/src/features/pricing/presentation/pricing_management_screen.dart';
@@ -14,10 +15,12 @@ void main() {
   group('Rider Compliance & KYC Review Module Tests', () {
     test('RiderManagementNotifier approves, certifies tiers, and suspends riders', () async {
       final container = ProviderContainer();
+      container.read(riderManagementNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
-      final state = container.read(riderManagementNotifierProvider);
       final notifier = container.read(riderManagementNotifierProvider.notifier);
+      notifier.seedForTest();
+      final state = container.read(riderManagementNotifierProvider);
 
       final pendingApplicants = state.riders.where((r) => r.status == RiderComplianceStatus.pendingReview).toList();
       expect(pendingApplicants.length, greaterThanOrEqualTo(1));
@@ -63,6 +66,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(riderManagementNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -88,6 +92,7 @@ void main() {
   group('Pricing & Service Areas Module Tests', () {
     test('PricingNotifier creates draft, publishes immutable version, and toggles zone tiers', () {
       final container = ProviderContainer();
+      container.read(pricingNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(pricingNotifierProvider.notifier);
@@ -152,6 +157,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(pricingNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -174,6 +180,7 @@ void main() {
 
     test('PricingNotifier manages 5 seeded ride options (2 bikes, 3 cars) and allows toggle and addition', () {
       final container = ProviderContainer();
+      container.read(pricingNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final state = container.read(pricingNotifierProvider);
@@ -223,6 +230,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(pricingNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(

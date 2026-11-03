@@ -1,3 +1,4 @@
+import 'helpers/test_seeds.dart';
 import 'package:admin_web/src/features/bookings/application/booking_management_notifier.dart';
 import 'package:admin_web/src/features/bookings/presentation/booking_management_screen.dart';
 import 'package:admin_web/src/features/operations/application/operations_notifier.dart';
@@ -12,10 +13,12 @@ void main() {
   group('Live Operations Module Tests', () {
     test('OperationsNotifier calculates KPIs and handles manual reassignment override', () async {
       final container = ProviderContainer();
+      container.read(operationsNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
-      final state = container.read(operationsNotifierProvider);
       final notifier = container.read(operationsNotifierProvider.notifier);
+      notifier.seedForTest();
+      final state = container.read(operationsNotifierProvider);
 
       expect(state.onlineRiders.length, greaterThanOrEqualTo(3));
       expect(state.urgentJobs.isNotEmpty, isTrue);
@@ -43,6 +46,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(operationsNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -69,9 +73,11 @@ void main() {
   group('Booking Management Module Tests', () {
     test('BookingManagementNotifier filters bookings by service, status and query', () async {
       final container = ProviderContainer();
+      container.read(operationsNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       final notifier = container.read(bookingManagementNotifierProvider.notifier);
+      notifier.seedForTest();
 
       // Initially shows all bookings
       expect(container.read(bookingManagementNotifierProvider).filteredBookings.length, equals(4));
@@ -110,6 +116,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final container = ProviderContainer();
+      container.read(operationsNotifierProvider.notifier).seedForTest();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(

@@ -43,8 +43,6 @@ class AdminSidebar extends ConsumerWidget {
             title: 'Live Operations',
             icon: Icons.dashboard_outlined,
             route: '/overview',
-            badge: 'LIVE',
-            badgeColor: GVColors.brandGreen,
             isVisible: role.canAccessOperations,
           ),
           AdminSidebarItem(
@@ -132,16 +130,12 @@ class AdminSidebar extends ConsumerWidget {
             title: 'Finance & Refunds',
             icon: Icons.account_balance_wallet_outlined,
             route: '/finance',
-            badge: '1 Req',
-            badgeColor: Colors.redAccent,
             isVisible: role.canAccessFinance,
           ),
           AdminSidebarItem(
             title: 'Paystack Gateway',
             icon: Icons.payments_outlined,
             route: '/paystack',
-            badge: 'PROV',
-            badgeColor: GVColors.brandGreen,
             isVisible: role.canAccessFinance || role.canAccessIntegrations,
           ),
           AdminSidebarItem(
@@ -350,7 +344,7 @@ class AdminSidebar extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      'STAGING',
+                      'LIVE CONSOLE',
                       style: GVTypography.caption.copyWith(
                         color: GVColors.brandGreen,
                         fontSize: 9,

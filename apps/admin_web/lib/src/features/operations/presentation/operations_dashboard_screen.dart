@@ -157,28 +157,30 @@ class OperationsDashboardScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: GVSpacing.md),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF14241B),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: GVColors.brandGreen),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bolt, color: GVColors.brandGreen, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${state.surgeMultiplier}x Active Surge',
-                        style: GVTypography.caption.copyWith(
-                          color: GVColors.brandGreen,
-                          fontWeight: FontWeight.bold,
+                if (state.surgeMultiplier > 1.0) ...[
+                  const SizedBox(width: GVSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF14241B),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: GVColors.brandGreen),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.bolt, color: GVColors.brandGreen, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${state.surgeMultiplier}x Active Surge',
+                          style: GVTypography.caption.copyWith(
+                            color: GVColors.brandGreen,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
             const SizedBox(height: GVSpacing.lg),
@@ -224,31 +226,31 @@ class OperationsDashboardScreen extends ConsumerWidget {
                       title: 'Active Trips',
                       value: '${state.activeTripsCount}',
                       icon: Icons.electric_moped,
-                      subtitle: '+12% vs last hour',
-                      isPositive: true,
+                      subtitle: state.activeTripsCount > 0 ? '${state.activeTripsCount} trips in transit' : 'No active trips',
+                      isPositive: state.activeTripsCount > 0,
                     ),
                     AdminKpiCard(
                       title: 'Online Fleet',
                       value: '${state.onlineRidersCount}',
                       icon: Icons.battery_charging_full,
-                      subtitle: '88% avg battery health',
-                      isPositive: true,
+                      subtitle: state.onlineRidersCount > 0 ? '${state.onlineRidersCount} riders transmitting' : 'No online riders',
+                      isPositive: state.onlineRidersCount > 0,
                     ),
                     AdminKpiCard(
                       title: 'Unassigned Queue',
                       value: '${state.urgentJobs.length}',
                       icon: Icons.assignment_late_outlined,
-                      subtitle: 'High demand dispatch',
-                      iconColor: Colors.amber,
-                      badgeLabel: 'Escalation',
+                      subtitle: state.urgentJobs.isNotEmpty ? '${state.urgentJobs.length} jobs awaiting dispatch' : 'Queue cleared',
+                      iconColor: state.urgentJobs.isNotEmpty ? Colors.amber : GVColors.brandGreen,
+                      badgeLabel: state.urgentJobs.isNotEmpty ? 'Escalation' : null,
                     ),
                     AdminKpiCard(
                       title: 'Overdue Pickups',
                       value: '${state.overduePickupsCount}',
                       icon: Icons.warning_amber_rounded,
-                      subtitle: 'Needs immediate dispatch',
-                      isPositive: false,
-                      iconColor: Colors.redAccent,
+                      subtitle: state.overduePickupsCount > 0 ? '${state.overduePickupsCount} overdue pickups' : 'All pickups on-time',
+                      isPositive: state.overduePickupsCount == 0,
+                      iconColor: state.overduePickupsCount > 0 ? Colors.redAccent : GVColors.brandGreen,
                     ),
                   ],
                 );
@@ -406,13 +408,19 @@ class OperationsDashboardScreen extends ConsumerWidget {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.redAccent.withValues(alpha: 0.2),
+                                    color: state.urgentJobs.isNotEmpty
+                                        ? Colors.redAccent.withValues(alpha: 0.2)
+                                        : GVColors.brandGreen.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    '${state.urgentJobs.length} PENDING',
-                                    style: const TextStyle(
-                                      color: Colors.redAccent,
+                                    state.urgentJobs.isNotEmpty
+                                        ? '${state.urgentJobs.length} PENDING'
+                                        : 'CLEARED',
+                                    style: TextStyle(
+                                      color: state.urgentJobs.isNotEmpty
+                                          ? Colors.redAccent
+                                          : GVColors.brandGreen,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),

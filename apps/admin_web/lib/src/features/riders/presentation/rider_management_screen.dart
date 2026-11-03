@@ -86,9 +86,9 @@ class RiderManagementScreen extends ConsumerWidget {
                       title: 'Pending Review',
                       value: '${state.pendingCount}',
                       icon: Icons.pending_actions,
-                      subtitle: 'Awaiting Document Audit',
-                      iconColor: Colors.amber,
-                      badgeLabel: 'Audit',
+                      subtitle: state.pendingCount > 0 ? 'Awaiting Document Audit' : 'All profiles reviewed',
+                      iconColor: state.pendingCount > 0 ? Colors.amber : GVColors.brandGreen,
+                      badgeLabel: state.pendingCount > 0 ? 'Audit' : null,
                     ),
                     AdminKpiCard(
                       title: 'Certified Active',

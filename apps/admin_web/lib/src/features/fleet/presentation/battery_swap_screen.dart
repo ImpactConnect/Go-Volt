@@ -80,31 +80,45 @@ class BatterySwapScreen extends ConsumerWidget {
                   AdminKpiCard(
                     title: 'ACTIVE SWAP HUBS',
                     value: '${state.totalStationsCount}',
-                    subtitle: 'Lagos Island & Mainland grid',
-                    badgeLabel: '100% Solar & Grid Active',
+                    subtitle: state.totalStationsCount > 0
+                        ? 'Lagos Island & Mainland grid'
+                        : 'No stations connected',
+                    badgeLabel: state.totalStationsCount > 0
+                        ? 'Solar & Grid Active'
+                        : null,
                     accentColor: GVColors.brandGreen,
                     icon: Icons.ev_station,
                   ),
                   AdminKpiCard(
                     title: 'CHARGED PACKS (SoC ≥ 90%)',
                     value: '${state.totalChargedPacks}',
-                    subtitle: 'Ready for instant automated swap',
-                    badgeLabel: 'High Availability',
+                    subtitle: state.totalChargedPacks > 0
+                        ? 'Ready for instant automated swap'
+                        : 'No charged packs in hubs',
+                    badgeLabel: state.totalChargedPacks > 0
+                        ? 'High Availability'
+                        : null,
                     accentColor: GVColors.brandGreen,
                     icon: Icons.battery_charging_full,
                   ),
                   AdminKpiCard(
                     title: 'ACTIVE CHARGING PACKS',
                     value: '${state.totalChargingPacks}',
-                    subtitle: 'Fast DC multi-bay charging',
-                    badgeLabel: 'Optimized Off-Peak',
+                    subtitle: state.totalChargingPacks > 0
+                        ? 'Fast DC multi-bay charging'
+                        : 'No active packs charging',
+                    badgeLabel: state.totalChargingPacks > 0
+                        ? 'Optimized Off-Peak'
+                        : null,
                     accentColor: Colors.lightBlueAccent,
                     icon: Icons.bolt,
                   ),
                   AdminKpiCard(
                     title: 'QUARANTINED / DEGRADED',
                     value: '${state.totalQuarantinedPacks}',
-                    subtitle: 'Thermal runaway & BMS safety locks',
+                    subtitle: state.totalQuarantinedPacks > 0
+                        ? 'Thermal runaway & BMS safety locks'
+                        : 'All batteries operating normally',
                     badgeLabel: state.totalQuarantinedPacks > 0
                         ? '${state.totalQuarantinedPacks} ISOLATED'
                         : 'Zero Hazards',

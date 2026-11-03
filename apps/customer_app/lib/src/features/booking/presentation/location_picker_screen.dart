@@ -1,15 +1,10 @@
-import 'dart:async';
-
 import 'package:app_models/app_models.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../core/presentation/widgets/live_google_map_view.dart';
 import '../../../core/router/app_router.dart';
-import '../../../core/services/google_places_service.dart';
 import '../../../core/services/gps_location_service.dart';
 import '../../home/application/home_notifier.dart';
 import '../../home/presentation/create_destinations_pop_sheet.dart';
@@ -24,10 +19,7 @@ enum _PickerMode {
 
 /// Screen 2, Screen 3 & Screen 5 — Location Picker & Dual Route Entry
 class LocationPickerScreen extends ConsumerStatefulWidget {
-  const LocationPickerScreen({
-    super.key,
-    this.initialMode,
-  });
+  const LocationPickerScreen({super.key, this.initialMode});
 
   final String? initialMode;
 
@@ -39,10 +31,6 @@ class LocationPickerScreen extends ConsumerStatefulWidget {
 class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   late _PickerMode _mode;
   final TextEditingController _searchController = TextEditingController();
-  Timer? _debounceTimer;
-  String? _placesSessionToken;
-  List<PlacePrediction> _livePredictions = [];
-  bool _isLoadingPredictions = false;
 
   static const LocationDto _defaultCurrentLocation = LocationDto(
     latitude: GpsLocationService.defaultLat,
@@ -51,13 +39,21 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     label: 'Shaganu Central',
   );
 
+  static final List<LocationDto> _pickupSuggestions =
+      GpsLocationService.getOperatingLandmarks();
+
+  static final List<LocationDto> _destinationSuggestions =
+      GpsLocationService.getOperatingLandmarks();
+
   @override
   void initState() {
     super.initState();
     if (widget.initialMode == 'pickup') {
-      _startSearchMode(_PickerMode.searchPickup);
+      _mode = _PickerMode.searchPickup;
+      _searchController.text = 'Eko Hotel';
     } else if (widget.initialMode == 'destination') {
-      _startSearchMode(_PickerMode.searchDestination);
+      _mode = _PickerMode.searchDestination;
+      _searchController.text = 'Palms Mall';
     } else {
       _mode = _PickerMode.dualEntry;
     }
@@ -75,81 +71,8 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _startSearchMode(_PickerMode mode, {String? initialText}) {
-    setState(() {
-      _mode = mode;
-      _placesSessionToken = GooglePlacesService.generateSessionToken();
-      _searchController.text = initialText ?? '';
-    });
-    _fetchPredictions(_searchController.text);
-  }
-
-  void _onSearchQueryChanged(String query) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
-      _fetchPredictions(query);
-    });
-  }
-
-  Future<void> _fetchPredictions(String query) async {
-    if (!mounted) return;
-    setState(() => _isLoadingPredictions = true);
-    try {
-      final predictions = await ref
-          .read(googlePlacesServiceProvider)
-          .searchPredictions(query, sessionToken: _placesSessionToken);
-      if (mounted) {
-        setState(() {
-          _livePredictions = predictions;
-          _isLoadingPredictions = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingPredictions = false);
-      }
-    }
-  }
-
-  Future<void> _handlePredictionSelected(
-    PlacePrediction prediction,
-    ValueChanged<LocationDto> onSelect,
-  ) async {
-    setState(() => _isLoadingPredictions = true);
-    final placesService = ref.read(googlePlacesServiceProvider);
-    LocationDto? resolved;
-    try {
-      resolved = await placesService.getPlaceDetails(
-        prediction.placeId,
-        sessionToken: _placesSessionToken,
-      );
-    } catch (_) {
-      // Fallback handled below
-    }
-
-    // Refresh session token for future searches
-    _placesSessionToken = null;
-
-    resolved ??= LocationDto(
-      latitude: GooglePlacesService.operatingLat,
-      longitude: GooglePlacesService.operatingLng,
-      address: prediction.description.isNotEmpty
-          ? prediction.description
-          : prediction.mainText,
-      label: prediction.mainText,
-      city: 'Shaganu',
-      state: 'Ogun',
-    );
-
-    if (mounted) {
-      setState(() => _isLoadingPredictions = false);
-      onSelect(resolved);
-    }
   }
 
   void _onSelectPickup(LocationDto location) {
@@ -157,7 +80,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     setState(() {
       _mode = _PickerMode.dualEntry;
       _searchController.clear();
-      _livePredictions.clear();
     });
   }
 
@@ -166,7 +88,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
     setState(() {
       _mode = _PickerMode.dualEntry;
       _searchController.clear();
-      _livePredictions.clear();
     });
   }
 
@@ -196,12 +117,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
         return _buildSearchScreen(
           isDark: isDark,
           isPickup: true,
+          suggestions: _pickupSuggestions,
           onSelect: _onSelectPickup,
         );
       case _PickerMode.searchDestination:
         return _buildSearchScreen(
           isDark: isDark,
           isPickup: false,
+          suggestions: _destinationSuggestions,
           onSelect: _onSelectDestination,
         );
       case _PickerMode.dualEntry:
@@ -212,10 +135,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   /// Screen 2 — Dual Entry (Pickup & Destination)
   Widget _buildDualEntryScreen({required bool isDark}) {
     final booking = ref.watch(bookingNotifierProvider);
-    final pickupLabel = booking.pickupLocation?.label ??
+    final pickupLabel =
+        booking.pickupLocation?.label ??
         booking.pickupLocation?.address ??
         'Pickup location';
-    final destinationLabel = booking.dropoffLocation?.label ??
+    final destinationLabel =
+        booking.dropoffLocation?.label ??
         booking.dropoffLocation?.address ??
         'Where are you going?';
 
@@ -227,64 +152,13 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Live Google Map Background (Screen 2 top half)
+          // Simulated Map Background (Screen 2 top half)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.42,
-            child: LiveGoogleMapView(
-              initialLatitude: booking.pickupLocation?.latitude ??
-                  _defaultCurrentLocation.latitude,
-              initialLongitude: booking.pickupLocation?.longitude ??
-                  _defaultCurrentLocation.longitude,
-              initialZoom: 15.0,
-              showZoomControls: false,
-              showMyLocationButton: false,
-              markers: {
-                if (booking.pickupLocation != null)
-                  Marker(
-                    markerId: const MarkerId('dual_pickup'),
-                    position: LatLng(
-                      booking.pickupLocation!.latitude,
-                      booking.pickupLocation!.longitude,
-                    ),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueGreen,
-                    ),
-                  ),
-                if (booking.dropoffLocation != null)
-                  Marker(
-                    markerId: const MarkerId('dual_dropoff'),
-                    position: LatLng(
-                      booking.dropoffLocation!.latitude,
-                      booking.dropoffLocation!.longitude,
-                    ),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueRed,
-                    ),
-                  ),
-              },
-              polylines: {
-                if (booking.pickupLocation != null &&
-                    booking.dropoffLocation != null)
-                  Polyline(
-                    polylineId: const PolylineId('route_preview'),
-                    color: GVColors.brandGreen,
-                    width: 4,
-                    points: [
-                      LatLng(
-                        booking.pickupLocation!.latitude,
-                        booking.pickupLocation!.longitude,
-                      ),
-                      LatLng(
-                        booking.dropoffLocation!.latitude,
-                        booking.dropoffLocation!.longitude,
-                      ),
-                    ],
-                  ),
-              },
-            ),
+            height: MediaQuery.of(context).size.height * 0.40,
+            child: _MapHeaderPreview(isDark: isDark),
           ),
 
           // Top Floating Navigation Bar
@@ -372,12 +246,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                           // Pickup Row
                           InkWell(
                             onTap: () {
-                              _startSearchMode(
-                                _PickerMode.searchPickup,
-                                initialText: booking.pickupLocation?.label ??
-                                    booking.pickupLocation?.address ??
-                                    '',
-                              );
+                              setState(() {
+                                _mode = _PickerMode.searchPickup;
+                                _searchController.text =
+                                    booking.pickupLocation?.label ??
+                                    'Eko Hotel';
+                              });
                             },
                             child: Row(
                               children: [
@@ -417,13 +291,6 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                                       ),
                                     ],
                                   ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.map_outlined, size: 18),
-                                  tooltip: 'Set pickup on map',
-                                  color: GVColors.brandGreen,
-                                  onPressed: () =>
-                                      _openMapPicker(isPickup: true),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.close, size: 18),
@@ -469,12 +336,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                           // Destination Row
                           InkWell(
                             onTap: () {
-                              _startSearchMode(
-                                _PickerMode.searchDestination,
-                                initialText: booking.dropoffLocation?.label ??
-                                    booking.dropoffLocation?.address ??
-                                    '',
-                              );
+                              setState(() {
+                                _mode = _PickerMode.searchDestination;
+                                _searchController.text =
+                                    booking.dropoffLocation?.label ??
+                                    'Palms Mall';
+                              });
                             },
                             child: Row(
                               children: [
@@ -509,24 +376,17 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                                               : FontWeight.normal,
                                           color: hasDestination
                                               ? (isDark
-                                                  ? Colors.white
-                                                  : GVColors.textPrimary)
+                                                    ? Colors.white
+                                                    : GVColors.textPrimary)
                                               : (isDark
-                                                  ? GVColors.neutral500
-                                                  : GVColors.neutral400),
+                                                    ? GVColors.neutral500
+                                                    : GVColors.neutral400),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.map_outlined, size: 18),
-                                  tooltip: 'Set destination on map',
-                                  color: GVColors.error,
-                                  onPressed: () =>
-                                      _openMapPicker(isPickup: false),
                                 ),
                                 Icon(
                                   Icons.add,
@@ -573,8 +433,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                               height: 32,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color:
-                                    GVColors.brandGreen.withValues(alpha: 0.12),
+                                color: GVColors.brandGreen.withValues(
+                                  alpha: 0.12,
+                                ),
                               ),
                               child: const Icon(
                                 Icons.near_me_rounded,
@@ -613,13 +474,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                     const SizedBox(height: GVSpacing.xs),
 
                     // Dynamic Saved Places List
-                    for (final place in ref.watch(homeNotifierProvider).savedPlaces)
+                    for (final place
+                        in ref.watch(homeNotifierProvider).savedPlaces)
                       _SavedPlaceTile(
                         icon: place.isHome
                             ? Icons.home_rounded
                             : (place.isWork
-                                ? Icons.work_rounded
-                                : Icons.place_rounded),
+                                  ? Icons.work_rounded
+                                  : Icons.place_rounded),
                         title: place.label,
                         subtitle: place.address,
                         onTap: () {
@@ -666,8 +528,17 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
   Widget _buildSearchScreen({
     required bool isDark,
     required bool isPickup,
+    required List<LocationDto> suggestions,
     required ValueChanged<LocationDto> onSelect,
   }) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? suggestions
+        : suggestions.where((s) {
+            return (s.label?.toLowerCase().contains(query) ?? false) ||
+                s.address.toLowerCase().contains(query);
+          }).toList();
+
     final pinColor = isPickup ? GVColors.brandGreen : GVColors.error;
 
     return Scaffold(
@@ -681,11 +552,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
             color: isDark ? Colors.white : GVColors.textPrimary,
           ),
           onPressed: () {
-            _debounceTimer?.cancel();
-            setState(() {
-              _mode = _PickerMode.dualEntry;
-              _livePredictions.clear();
-            });
+            setState(() => _mode = _PickerMode.dualEntry);
           },
         ),
         titleSpacing: 0,
@@ -706,7 +573,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
               style: GVTypography.bodyMedium.copyWith(
                 color: isDark ? Colors.white : GVColors.textPrimary,
               ),
-              onChanged: _onSearchQueryChanged,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: isPickup
                     ? 'Enter pickup location'
@@ -721,27 +588,15 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                suffixIcon: _isLoadingPredictions
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: GVColors.brandGreen,
-                          ),
-                        ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
                       )
-                    : (_searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              _fetchPredictions('');
-                            },
-                          )
-                        : null),
+                    : null,
               ),
             ),
           ),
@@ -796,11 +651,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                 shape: BoxShape.circle,
                 color: pinColor.withValues(alpha: 0.12),
               ),
-              child: Icon(
-                Icons.map_outlined,
-                color: pinColor,
-                size: 20,
-              ),
+              child: Icon(Icons.map_outlined, color: pinColor, size: 20),
             ),
             title: Text(
               'Set location on map',
@@ -820,112 +671,47 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
           ),
           const Divider(color: GVColors.divider),
 
-          // Header for suggestions or results
-          Padding(
-            padding:
-                const EdgeInsets.fromLTRB(GVSpacing.md, 8, GVSpacing.md, 6),
-            child: Row(
-              children: [
-                Text(
-                  _searchController.text.trim().isEmpty
-                      ? 'Suggested places in Shaganu, Ogun'
-                      : 'Search results',
-                  style: GVTypography.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color:
-                        isDark ? GVColors.neutral400 : GVColors.textSecondary,
-                  ),
+          // Autocomplete suggestions
+          ...filtered.map((location) {
+            return ListTile(
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? const Color(0xFF243029)
+                      : GVColors.softBackground,
                 ),
-              ],
-            ),
-          ),
-
-          // Autocomplete suggestions / live predictions
-          if (_livePredictions.isNotEmpty)
-            ..._livePredictions.map((prediction) {
-              return ListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark
-                        ? const Color(0xFF243029)
-                        : GVColors.softBackground,
-                  ),
-                  child: Icon(
-                    Icons.location_on_rounded,
-                    color: pinColor,
-                    size: 20,
-                  ),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  color: pinColor,
+                  size: 20,
                 ),
-                title: Text(
-                  prediction.mainText,
-                  style: GVTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : GVColors.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  prediction.secondaryText.isNotEmpty
-                      ? prediction.secondaryText
-                      : prediction.description,
-                  style: GVTypography.caption.copyWith(
-                    color:
-                        isDark ? GVColors.neutral400 : GVColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(
-                  Icons.north_west_rounded,
-                  size: 16,
-                  color: GVColors.neutral400,
-                ),
-                onTap: () => _handlePredictionSelected(prediction, onSelect),
-              );
-            })
-          else if (!_isLoadingPredictions &&
-              _searchController.text.trim().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(GVSpacing.xl),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.search_off_rounded,
-                    size: 40,
-                    color: isDark ? GVColors.neutral500 : GVColors.neutral400,
-                  ),
-                  const SizedBox(height: GVSpacing.sm),
-                  Text(
-                    'No addresses found for "${_searchController.text}"',
-                    style: GVTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : GVColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: GVSpacing.xs),
-                  Text(
-                    'Try setting your exact position on the map instead.',
-                    style: GVTypography.caption.copyWith(
-                      color:
-                          isDark ? GVColors.neutral400 : GVColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: GVSpacing.md),
-                  OutlinedButton.icon(
-                    icon: Icon(Icons.map_outlined, color: pinColor, size: 18),
-                    label: Text(
-                      'Choose on Map',
-                      style: TextStyle(color: pinColor),
-                    ),
-                    onPressed: () => _openMapPicker(isPickup: isPickup),
-                  ),
-                ],
               ),
-            ),
+              title: Text(
+                location.label ?? location.address.split(',').first,
+                style: GVTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : GVColors.textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                location.address,
+                style: GVTypography.caption.copyWith(
+                  color: isDark ? GVColors.neutral400 : GVColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(
+                Icons.north_west_rounded,
+                size: 16,
+                color: GVColors.neutral400,
+              ),
+              onTap: () => onSelect(location),
+            );
+          }),
         ],
       ),
     );
@@ -961,13 +747,11 @@ class _SavedPlaceTile extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? const Color(0xFF243029) : const Color(0xFF1E2822),
+                color: isDark
+                    ? const Color(0xFF243029)
+                    : const Color(0xFF1E2822),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 18,
-              ),
+              child: Icon(icon, color: Colors.white, size: 18),
             ),
             const SizedBox(width: GVSpacing.md),
             Expanded(
@@ -984,8 +768,9 @@ class _SavedPlaceTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: GVTypography.caption.copyWith(
-                      color:
-                          isDark ? GVColors.neutral400 : GVColors.textSecondary,
+                      color: isDark
+                          ? GVColors.neutral400
+                          : GVColors.textSecondary,
                     ),
                   ),
                 ],
@@ -1025,11 +810,7 @@ class _CircularIconButton extends StatelessWidget {
         shape: BoxShape.circle,
         color: isDark ? const Color(0xFF1E2621) : Colors.white,
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: IconButton(
@@ -1040,4 +821,84 @@ class _CircularIconButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MapHeaderPreview extends StatelessWidget {
+  const _MapHeaderPreview({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: isDark ? const Color(0xFF111814) : const Color(0xFFE8ECE9),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size.infinite,
+            painter: _HeaderMapPainter(isDark: isDark),
+          ),
+          // Center pickup marker on map
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.withValues(alpha: 0.3),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.location_on_rounded,
+                size: 32,
+                color: GVColors.brandGreen,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderMapPainter extends CustomPainter {
+  const _HeaderMapPainter({required this.isDark});
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final streetColor = isDark
+        ? const Color(0xFF1E2822)
+        : const Color(0xFFFCFDFD);
+    final streetPaint = Paint()
+      ..color = streetColor
+      ..strokeWidth = 8
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(0, size.height * 0.4),
+      Offset(size.width, size.height * 0.4),
+      streetPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.5, 0),
+      Offset(size.width * 0.5, size.height),
+      streetPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeaderMapPainter oldDelegate) => false;
 }

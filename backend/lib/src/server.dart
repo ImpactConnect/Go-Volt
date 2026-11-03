@@ -24,6 +24,7 @@ import 'routes/errands_route.dart';
 import 'routes/profile_route.dart';
 import 'routes/settings_route.dart';
 import 'routes/safety_support_route.dart';
+import 'routes/admin_route.dart';
 import 'shared/partner_database.dart';
 
 /// Configures and returns the root Shelf request handler with all middlewares and routes.
@@ -78,6 +79,9 @@ Handler createServerHandler({
   v1Router.mount('/safety', safetyRouter().call);
   v1Router.mount('/support', supportRouter().call);
 
+  final adminRoutes = adminRouter();
+  v1Router.mount('/admin', adminRoutes.call);
+  router.mount('/admin', adminRoutes.call);
   router.mount('/api/v1', v1Router.call);
   router.mount('/profile', profileRouter().call);
   router.mount('/notification-preferences', notificationPreferencesRouter().call);

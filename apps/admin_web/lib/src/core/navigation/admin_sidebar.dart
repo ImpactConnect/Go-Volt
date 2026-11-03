@@ -53,11 +53,43 @@ class AdminSidebar extends ConsumerWidget {
             route: '/bookings',
             isVisible: role.canAccessOperations,
           ),
+          AdminSidebarItem(
+            title: 'Market Errands Desk',
+            icon: Icons.storefront_outlined,
+            route: '/errands',
+            badge: '1 Disp',
+            badgeColor: Colors.amber,
+            isVisible: role.canAccessErrands,
+          ),
+          AdminSidebarItem(
+            title: 'Scheduled School-Run',
+            icon: Icons.school_outlined,
+            route: '/scheduled',
+            badge: '4 Runs',
+            badgeColor: GVColors.brandGreen,
+            isVisible: role.canAccessScheduled,
+          ),
+          AdminSidebarItem(
+            title: 'Emergency SOS Desk',
+            icon: Icons.emergency_outlined,
+            route: '/safety/sos',
+            badge: '1 CRIT',
+            badgeColor: Colors.redAccent,
+            isVisible: role.canAccessSafetySos,
+          ),
         ],
       },
       {
         'group': 'FLEET & PARTNERS',
         'items': [
+          AdminSidebarItem(
+            title: 'Battery Swap & IoT',
+            icon: Icons.battery_charging_full_outlined,
+            route: '/battery-swap',
+            badge: '24 BAYS',
+            badgeColor: GVColors.brandGreen,
+            isVisible: role.canAccessBatterySwap,
+          ),
           AdminSidebarItem(
             title: 'Riders & KYC',
             icon: Icons.electric_moped_outlined,
@@ -65,6 +97,14 @@ class AdminSidebar extends ConsumerWidget {
             badge: '3 Review',
             badgeColor: Colors.amber,
             isVisible: role.canAccessRiders,
+          ),
+          AdminSidebarItem(
+            title: 'Customer KYC',
+            icon: Icons.verified_user_outlined,
+            route: '/customers',
+            badge: '2 Pending',
+            badgeColor: Colors.amber,
+            isVisible: role.canAccessCustomers,
           ),
           AdminSidebarItem(
             title: 'Merchants & Hubs',

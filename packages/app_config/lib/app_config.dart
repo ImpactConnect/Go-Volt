@@ -40,7 +40,8 @@ class AppConfig {
     return const AppConfig(
       environment: AppEnvironment.development,
       appName: 'Go-Volts Dev',
-      apiBaseUrl: 'http://10.0.2.2:8080/api/v1',
+      apiBaseUrl:
+          kIsWeb ? 'http://localhost:8080/api/v1' : 'http://10.0.2.2:8080/api/v1',
       supabaseUrl: 'https://bxrhqpvarxaqcuhfqieq.supabase.co',
       supabaseAnonKey:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4cmhxcHZhcnhhcWN1aGZxaWVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMDI4MjMsImV4cCI6MjEwODY3ODgyM30.0ddSWsHWCYzJBlOuaAC0WB8bLKWwpVJZY7IfnFKVQ-Q',

@@ -1286,6 +1286,214 @@ class ApiClient {
     );
   }
 
+  // ==========================================================================
+  // ADMIN PLATFORM REST GATEWAY (§5.1-§5.4)
+  // ==========================================================================
+
+  /// Fetches system-wide administrative operational overview KPIs.
+  Future<ApiResponse<Map<String, dynamic>>> getAdminOverview() async {
+    return _send<Map<String, dynamic>>(
+      method: 'GET',
+      path: '/admin/overview',
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Fetches safety SOS distress alerts.
+  Future<ApiResponse<List<Map<String, dynamic>>>> getAdminSosAlerts({
+    String? status,
+    String? search,
+  }) async {
+    return _send<List<Map<String, dynamic>>>(
+      method: 'GET',
+      path: '/admin/sos/alerts',
+      queryParameters: {
+        'status': ?status,
+        'search': ?search,
+      },
+      parser: (data) =>
+          (data as List).map((e) => e as Map<String, dynamic>).toList(),
+    );
+  }
+
+  /// Dispatches external emergency services for an SOS alert.
+  Future<ApiResponse<Map<String, dynamic>>> dispatchAdminSosAgency(
+    String alertId, {
+    required String agency,
+    required String officerName,
+    String? notes,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/sos/alerts/$alertId/dispatch-agency',
+      data: {
+        'agency': agency,
+        'officerName': officerName,
+        'notes': ?notes,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Deploys Go-Volts rapid EV patrol unit.
+  Future<ApiResponse<Map<String, dynamic>>> dispatchAdminSosPatrol(
+    String alertId, {
+    required String patrolUnitCode,
+    required String officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/sos/alerts/$alertId/dispatch-patrol',
+      data: {
+        'patrolUnitCode': patrolUnitCode,
+        'officerName': officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Resolves an SOS distress alert.
+  Future<ApiResponse<Map<String, dynamic>>> resolveAdminSosAlert(
+    String alertId, {
+    required bool isFalseAlarm,
+    required String resolutionSummary,
+    required String officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/sos/alerts/$alertId/resolve',
+      data: {
+        'isFalseAlarm': isFalseAlarm,
+        'resolutionSummary': resolutionSummary,
+        'officerName': officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Fetches battery swap station telemetry and bay counts.
+  Future<ApiResponse<List<Map<String, dynamic>>>> getAdminBatterySwapStations({
+    String? status,
+    String? search,
+  }) async {
+    return _send<List<Map<String, dynamic>>>(
+      method: 'GET',
+      path: '/admin/battery-swap/stations',
+      queryParameters: {
+        'status': ?status,
+        'search': ?search,
+      },
+      parser: (data) =>
+          (data as List).map((e) => e as Map<String, dynamic>).toList(),
+    );
+  }
+
+  /// Quarantines an overheating or degraded battery bay.
+  Future<ApiResponse<Map<String, dynamic>>> quarantineAdminBatteryBay(
+    String stationId,
+    int bayNumber, {
+    required String reason,
+    required String officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/battery-swap/stations/$stationId/bays/$bayNumber/quarantine',
+      data: {
+        'reason': reason,
+        'officerName': officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Releases a quarantined battery bay.
+  Future<ApiResponse<Map<String, dynamic>>> releaseAdminBatteryBay(
+    String stationId,
+    int bayNumber, {
+    required String officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/battery-swap/stations/$stationId/bays/$bayNumber/release',
+      data: {
+        'officerName': officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Remotely unlocks cabinet bay door.
+  Future<ApiResponse<Map<String, dynamic>>> unlockAdminBatteryBay(
+    String stationId,
+    int bayNumber, {
+    required String officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/battery-swap/stations/$stationId/bays/$bayNumber/unlock',
+      data: {
+        'officerName': officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Approves an errand store receipt reconciliation with maker-checker controls.
+  Future<ApiResponse<Map<String, dynamic>>> approveAdminErrandReconciliation(
+    String errandId, {
+    required int actualSpentKobo,
+    required String officerName,
+    required String officerRole,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/errands/$errandId/reconciliation/approve',
+      data: {
+        'actualSpentKobo': actualSpentKobo,
+        'officerName': officerName,
+        'officerRole': officerRole,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Verifies school-run student handover via 6-digit OTP code.
+  Future<ApiResponse<Map<String, dynamic>>> verifyAdminHandoverOtp({
+    required String tripId,
+    required String otpCode,
+    String? officerName,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/scheduled/handover/verify-otp',
+      data: {
+        'tripId': tripId,
+        'otpCode': otpCode,
+        'officerName': ?officerName,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Reviews a customer KYC identity verification submission.
+  Future<ApiResponse<Map<String, dynamic>>> reviewAdminKyc(
+    String userId, {
+    required String decision,
+    required String reviewerName,
+    String? rejectionReason,
+  }) async {
+    return _send<Map<String, dynamic>>(
+      method: 'POST',
+      path: '/admin/kyc/$userId/review',
+      data: {
+        'decision': decision,
+        'reviewerName': reviewerName,
+        'rejectionReason': ?rejectionReason,
+      },
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // INTERNAL REQUEST DISPATCHER
   // ---------------------------------------------------------------------------

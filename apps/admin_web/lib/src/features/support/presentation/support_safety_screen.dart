@@ -7,13 +7,14 @@ import '../../../core/widgets/admin_kpi_card.dart';
 import '../../../core/widgets/admin_modal_dialog.dart';
 import '../application/support_safety_notifier.dart';
 import '../domain/support_safety_models.dart';
+import 'widgets/faq_editor_modal.dart';
+import 'widgets/support_ticket_chat_modal.dart';
 
 class SupportSafetyScreen extends ConsumerStatefulWidget {
   const SupportSafetyScreen({super.key});
 
   @override
-  ConsumerState<SupportSafetyScreen> createState() =>
-      _SupportSafetyScreenState();
+  ConsumerState<SupportSafetyScreen> createState() => _SupportSafetyScreenState();
 }
 
 class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
@@ -53,6 +54,7 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
               TextField(
                 controller: noteController,
                 maxLines: 3,
+                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: 'Investigation Action / Authority Liaison Update',
                   filled: true,
@@ -71,12 +73,15 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
     final authState = ref.watch(adminAuthNotifierProvider);
     final canAccessSafety = authState.role.canAccessSafety;
     final supportState = ref.watch(supportSafetyNotifierProvider);
+    final notifier = ref.read(supportSafetyNotifierProvider.notifier);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(GVSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Scaffold(
+      backgroundColor: const Color(0xFF0C120F),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(GVSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Header Bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,12 +92,41 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'SLA support queue and restricted safeguarding incident files (§5.1)',
+                'SLA support queue, FAQ Knowledge Base CMS, and restricted safeguarding incident files (§5.1, §D1-D5)',
                 style: GVTypography.bodySmall.copyWith(color: Colors.white60),
               ),
             ],
           ),
           const SizedBox(height: GVSpacing.lg),
+
+          // Feedback Action Message Alert Banner
+          if (supportState.actionMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(GVSpacing.md),
+              margin: const EdgeInsets.only(bottom: GVSpacing.md),
+              decoration: BoxDecoration(
+                color: const Color(0xFF143021),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: GVColors.brandGreen),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: GVColors.brandGreen, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      supportState.actionMessage!,
+                      style: GVTypography.bodySmall.copyWith(color: Colors.white),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54, size: 16),
+                    onPressed: () => notifier.clearActionMessage(),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // KPIs
           Row(
@@ -109,21 +143,21 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
               const SizedBox(width: GVSpacing.md),
               Expanded(
                 child: AdminKpiCard(
+                  title: 'Published FAQs',
+                  value: '${supportState.totalFaqsCount} Articles',
+                  subtitle: 'Synchronized with Customer App',
+                  icon: Icons.menu_book_outlined,
+                  accentColor: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(width: GVSpacing.md),
+              Expanded(
+                child: AdminKpiCard(
                   title: 'Active Safety Investigations',
                   value: canAccessSafety ? '${supportState.activeIncidentsCount}' : 'Restricted',
                   subtitle: 'Safeguarding & crash response',
                   icon: Icons.shield_outlined,
                   accentColor: Colors.redAccent,
-                ),
-              ),
-              const SizedBox(width: GVSpacing.md),
-              const Expanded(
-                child: AdminKpiCard(
-                  title: 'Average Resolution Time',
-                  value: '22 mins',
-                  subtitle: 'Within Tier-1 SLA parameters',
-                  icon: Icons.timer_outlined,
-                  accentColor: Colors.blueAccent,
                 ),
               ),
               const SizedBox(width: GVSpacing.md),
@@ -140,11 +174,11 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
           ),
           const SizedBox(height: GVSpacing.xl),
 
-          // Tab Switcher
+          // Tab Switcher (0 = Tickets, 1 = Safety Incidents, 2 = FAQ Knowledge Base)
           Row(
             children: [
               ChoiceChip(
-                label: const Text('Customer Support Queue (SLA)'),
+                label: Text('Customer Support Queue (${supportState.tickets.length})'),
                 selected: supportState.selectedTab == 0,
                 selectedColor: GVColors.brandGreen.withValues(alpha: 0.3),
                 labelStyle: TextStyle(
@@ -153,7 +187,7 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                 ),
                 backgroundColor: const Color(0xFF14241B),
                 onSelected: (val) {
-                  if (val) ref.read(supportSafetyNotifierProvider.notifier).setTab(0);
+                  if (val) notifier.setTab(0);
                 },
               ),
               const SizedBox(width: 12),
@@ -176,7 +210,28 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                 ),
                 backgroundColor: const Color(0xFF14241B),
                 onSelected: (val) {
-                  if (val) ref.read(supportSafetyNotifierProvider.notifier).setTab(1);
+                  if (val) notifier.setTab(1);
+                },
+              ),
+              const SizedBox(width: 12),
+              ChoiceChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.library_books, size: 14, color: Colors.blueAccent),
+                    const SizedBox(width: 6),
+                    Text('FAQ Knowledge Base CMS (${supportState.faqs.length})'),
+                  ],
+                ),
+                selected: supportState.selectedTab == 2,
+                selectedColor: Colors.blueAccent.withValues(alpha: 0.3),
+                labelStyle: TextStyle(
+                  color: supportState.selectedTab == 2 ? Colors.blueAccent : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                ),
+                backgroundColor: const Color(0xFF14241B),
+                onSelected: (val) {
+                  if (val) notifier.setTab(2);
                 },
               ),
             ],
@@ -199,20 +254,65 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Customer & Rider Inquiries Queue', style: GVTypography.h3.copyWith(color: Colors.white)),
-                      Text('${supportState.tickets.length} tickets recorded', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                      Text('Customer & Rider Inquiries Queue',
+                          style: GVTypography.h3.copyWith(color: Colors.white)),
+                      Text('${supportState.tickets.length} tickets recorded',
+                          style: const TextStyle(color: Colors.white38, fontSize: 12)),
                     ],
                   ),
+                  const SizedBox(height: 12),
+
+                  // Service Category & Status Filters
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text('Category: ',
+                            style: TextStyle(
+                                color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 12)),
+                        _buildTicketFilterChip(
+                          label: 'All',
+                          isSelected: supportState.ticketCategoryFilter == null,
+                          onSelected: () => notifier.filterTicketsByCategory(null),
+                        ),
+                        const SizedBox(width: 6),
+                        _buildTicketFilterChip(
+                          label: 'Rides',
+                          isSelected: supportState.ticketCategoryFilter == 'rides',
+                          onSelected: () => notifier.filterTicketsByCategory('rides'),
+                        ),
+                        const SizedBox(width: 6),
+                        _buildTicketFilterChip(
+                          label: 'Market Errand',
+                          isSelected: supportState.ticketCategoryFilter == 'market_errand',
+                          onSelected: () => notifier.filterTicketsByCategory('market_errand'),
+                        ),
+                        const SizedBox(width: 6),
+                        _buildTicketFilterChip(
+                          label: 'Scheduled Commute',
+                          isSelected: supportState.ticketCategoryFilter == 'scheduled',
+                          onSelected: () => notifier.filterTicketsByCategory('scheduled'),
+                        ),
+                        const SizedBox(width: 6),
+                        _buildTicketFilterChip(
+                          label: 'Wallet',
+                          isSelected: supportState.ticketCategoryFilter == 'wallet',
+                          onSelected: () => notifier.filterTicketsByCategory('wallet'),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: GVSpacing.md),
+
                   Table(
                     columnWidths: const {
                       0: FlexColumnWidth(1.2),
                       1: FlexColumnWidth(1.6),
                       2: FlexColumnWidth(1.2),
-                      3: FlexColumnWidth(1.0),
+                      3: FlexColumnWidth(0.9),
                       4: FlexColumnWidth(2.0),
-                      5: FlexColumnWidth(1.2),
-                      6: FlexColumnWidth(1.2),
+                      5: FlexColumnWidth(1.0),
+                      6: FlexColumnWidth(1.8),
                     },
                     children: [
                       TableRow(
@@ -229,9 +329,11 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                           _headerCell('ACTION'),
                         ],
                       ),
-                      ...supportState.tickets.map((ticket) {
+                      ...supportState.filteredTickets.map((ticket) {
                         Color priorityColor = Colors.white70;
-                        if (ticket.priority == TicketPriority.urgent) priorityColor = Colors.redAccent;
+                        if (ticket.priority == TicketPriority.urgent) {
+                          priorityColor = Colors.redAccent;
+                        }
                         if (ticket.priority == TicketPriority.high) priorityColor = Colors.amber;
 
                         final isResolved = ticket.status == TicketStatus.resolved;
@@ -245,8 +347,13 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(ticket.ticketRef, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                                  Text(_dateFormat.format(ticket.createdAt), style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                                  Text(ticket.ticketRef,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12)),
+                                  Text(_dateFormat.format(ticket.createdAt),
+                                      style: const TextStyle(color: Colors.white38, fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -254,24 +361,37 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('C: ${ticket.customerName}', style: const TextStyle(color: Colors.white, fontSize: 11)),
-                                  Text('R: ${ticket.riderName}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                  Text('C: ${ticket.customerName}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                  Text('R: ${ticket.riderName}',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11)),
                                 ],
                               ),
                             ),
-                            _dataCell(Text(ticket.category, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                            _dataCell(Text(ticket.category,
+                                style: const TextStyle(color: Colors.white70, fontSize: 11))),
                             _dataCell(
                               Text(
                                 ticket.priority.name.toUpperCase(),
-                                style: TextStyle(color: priorityColor, fontWeight: FontWeight.bold, fontSize: 10),
+                                style: TextStyle(
+                                    color: priorityColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10),
                               ),
                             ),
                             _dataCell(
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(ticket.subject, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-                                  Text(ticket.description, style: const TextStyle(color: Colors.white60, fontSize: 10), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  Text(ticket.subject,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11)),
+                                  Text(ticket.description,
+                                      style: const TextStyle(color: Colors.white60, fontSize: 10),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis),
                                 ],
                               ),
                             ),
@@ -295,24 +415,54 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               ),
                             ),
                             _dataCell(
-                              !isResolved
-                                  ? ElevatedButton(
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  // Open 2-Way Chat Modal Button
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      showDialog<void>(
+                                        context: context,
+                                        builder: (ctx) => SupportTicketChatModal(ticket: ticket),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.chat_bubble_outline, size: 12),
+                                    label: Text(
+                                      'Chat (${ticket.messages.length})',
+                                      style: const TextStyle(fontSize: 10),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: GVColors.brandGreen,
+                                      side: const BorderSide(color: Color(0xFF263C2E)),
+                                      padding:
+                                          const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                      minimumSize: const Size(60, 26),
+                                    ),
+                                  ),
+                                  if (!isResolved)
+                                    ElevatedButton(
                                       key: Key('resolve_ticket_${ticket.id}'),
                                       onPressed: () {
-                                        ref.read(supportSafetyNotifierProvider.notifier).resolveTicket(ticket.id);
+                                        ref
+                                            .read(supportSafetyNotifierProvider.notifier)
+                                            .resolveTicket(ticket.id);
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Ticket ${ticket.ticketRef} resolved.')),
+                                          SnackBar(
+                                              content: Text('Ticket ${ticket.ticketRef} resolved.')),
                                         );
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: GVColors.brandGreen,
                                         foregroundColor: Colors.black,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding:
+                                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         minimumSize: const Size(60, 26),
                                       ),
                                       child: const Text('Resolve', style: TextStyle(fontSize: 10)),
-                                    )
-                                  : const Text('—', style: TextStyle(color: Colors.white38)),
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
                         );
@@ -322,7 +472,7 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                 ],
               ),
             ),
-          ] else ...[
+          ] else if (supportState.selectedTab == 1) ...[
             // Safety Incidents Tab (Confidential)
             if (!canAccessSafety) ...[
               Container(
@@ -355,7 +505,8 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                       ),
                       child: Text(
                         'Your Current Role: ${authState.role.label} (Access Prohibited)',
-                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                   ],
@@ -396,13 +547,19 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                                   ),
                                   child: Text(
                                     incident.severity.name.toUpperCase(),
-                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
+                                    style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   incident.incidentRef,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
@@ -438,7 +595,8 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Parties: ${incident.partiesInvolved}',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -458,7 +616,10 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               const SizedBox(width: 6),
                               Text(
                                 'Police FIR Reference: ${incident.lawEnforcementReportRef}',
-                                style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 11),
+                                style: const TextStyle(
+                                    color: Colors.blueAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11),
                               ),
                             ],
                           ),
@@ -466,7 +627,8 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                         const Divider(color: Color(0xFF1F2B25), height: 24),
                         Text(
                           'Investigation Log Audit Trail:',
-                          style: GVTypography.caption.copyWith(color: Colors.white38, fontWeight: FontWeight.bold),
+                          style: GVTypography.caption
+                              .copyWith(color: Colors.white38, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
                         ...incident.investigationNotes.map((note) {
@@ -476,7 +638,10 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text('• ', style: TextStyle(color: GVColors.brandGreen)),
-                                Expanded(child: Text(note, style: const TextStyle(color: Colors.white70, fontSize: 12))),
+                                Expanded(
+                                    child: Text(note,
+                                        style: const TextStyle(
+                                            color: Colors.white70, fontSize: 12))),
                               ],
                             ),
                           );
@@ -500,9 +665,13 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                               ElevatedButton.icon(
                                 key: Key('resolve_incident_btn_${incident.id}'),
                                 onPressed: () {
-                                  ref.read(supportSafetyNotifierProvider.notifier).resolveSafetyIncident(incident.id);
+                                  ref
+                                      .read(supportSafetyNotifierProvider.notifier)
+                                      .resolveSafetyIncident(incident.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Safety case ${incident.incidentRef} marked resolved.')),
+                                    SnackBar(
+                                        content: Text(
+                                            'Safety case ${incident.incidentRef} marked resolved.')),
                                   );
                                 },
                                 icon: const Icon(Icons.verified, size: 16),
@@ -520,9 +689,214 @@ class _SupportSafetyScreenState extends ConsumerState<SupportSafetyScreen> {
                 }).toList(),
               ),
             ],
+          ] else if (supportState.selectedTab == 2) ...[
+            // Tab 2: FAQ Knowledge Base CMS
+            Container(
+              padding: const EdgeInsets.all(GVSpacing.md),
+              decoration: BoxDecoration(
+                color: const Color(0xFF101713),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF1F2B25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Help Centre Knowledge Base (CMS)',
+                              style: GVTypography.h3.copyWith(color: Colors.white)),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Manage customer FAQ accordions, resolutions, and service category guides (§D3)',
+                            style: TextStyle(color: Colors.white60, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog<void>(
+                            context: context,
+                            builder: (ctx) => const FaqEditorModal(),
+                          );
+                        },
+                        icon: const Icon(Icons.add_circle_outline, size: 16),
+                        label: const Text('Publish New FAQ Article'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GVColors.brandGreen,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Category Filter Chips
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      'All',
+                      'Rides',
+                      'Delivery',
+                      'Market Errand',
+                      'School Run',
+                      'Wallet',
+                      'Safety',
+                    ].map((cat) {
+                      final isSelected =
+                          (supportState.faqCategoryFilter == null && cat == 'All') ||
+                              supportState.faqCategoryFilter == cat;
+                      return ChoiceChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        selectedColor: Colors.blueAccent,
+                        backgroundColor: const Color(0xFF14241B),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.white70,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        onSelected: (val) {
+                          if (val) notifier.filterFaqsByCategory(cat == 'All' ? null : cat);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // FAQ Cards List
+                  if (supportState.filteredFaqs.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      alignment: Alignment.center,
+                      child: const Text('No FAQ articles in this category.',
+                          style: TextStyle(color: Colors.white38)),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: supportState.filteredFaqs.length,
+                      itemBuilder: (context, index) {
+                        final faq = supportState.filteredFaqs[index];
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(GVSpacing.md),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF142018),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF263C2E)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blueAccent.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          faq.category.toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.blueAccent,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        '${faq.helpfulCount} Customer Upvotes',
+                                        style: const TextStyle(
+                                            color: GVColors.brandGreen, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined,
+                                            size: 16, color: Colors.white70),
+                                        onPressed: () {
+                                          showDialog<void>(
+                                            context: context,
+                                            builder: (ctx) =>
+                                                FaqEditorModal(existingFaq: faq),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            size: 16, color: Colors.redAccent),
+                                        onPressed: () {
+                                          notifier.deleteFaq(faq.id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                faq.question,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                faq.answer,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
           ],
         ],
       ),
+    ),
+  );
+}
+
+  Widget _buildTicketFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onSelected,
+  }) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: GVColors.brandGreen,
+      backgroundColor: const Color(0xFF14241B),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : Colors.white70,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 11,
+      ),
+      onSelected: (_) => onSelected(),
     );
   }
 

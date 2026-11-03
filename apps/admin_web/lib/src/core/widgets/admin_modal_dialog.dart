@@ -96,7 +96,11 @@ class AdminModalDialog extends StatelessWidget {
                 ],
               ),
               const Divider(color: Color(0xFF25332C), height: GVSpacing.lg),
-              effectiveContent,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: effectiveContent,
+                ),
+              ),
               const SizedBox(height: GVSpacing.lg),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

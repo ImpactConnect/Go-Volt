@@ -44,8 +44,25 @@ enum StaffRole {
   /// Check if the role can access Live Operations & Bookings.
   bool get canAccessOperations => true;
 
+  /// Check if the role can access Market Errand Shopping Supervision.
+  bool get canAccessErrands => true;
+
+  /// Check if the role can access Scheduled Commute & School-Run Command Desk.
+  bool get canAccessScheduled =>
+      this == StaffRole.opsAgent ||
+      this == StaffRole.safetyOfficer ||
+      this == StaffRole.admin ||
+      this == StaffRole.superAdmin;
+
   /// Check if the role can access Rider Onboarding & Compliance Review.
   bool get canAccessRiders =>
+      this == StaffRole.opsAgent ||
+      this == StaffRole.safetyOfficer ||
+      this == StaffRole.admin ||
+      this == StaffRole.superAdmin;
+
+  /// Check if the role can access Customer Accounts & Identity Verification.
+  bool get canAccessCustomers =>
       this == StaffRole.opsAgent ||
       this == StaffRole.safetyOfficer ||
       this == StaffRole.admin ||
@@ -77,6 +94,20 @@ enum StaffRole {
   bool get canAccessAudit =>
       this == StaffRole.admin ||
       this == StaffRole.superAdmin;
+
+  /// Check if the role can access Emergency SOS Rapid Dispatch Desk.
+  bool get canAccessSafetySos =>
+      this == StaffRole.safetyOfficer ||
+      this == StaffRole.opsAgent ||
+      this == StaffRole.admin ||
+      this == StaffRole.superAdmin;
+
+  /// Check if the role can access EV Battery Swap & Telematics Station Desk.
+  bool get canAccessBatterySwap =>
+      this == StaffRole.opsAgent ||
+      this == StaffRole.admin ||
+      this == StaffRole.superAdmin ||
+      this == StaffRole.finance;
 
   /// Check if the role can manage Partner Integrations (Retail Ai).
   bool get canAccessIntegrations =>

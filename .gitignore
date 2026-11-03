@@ -44,6 +44,10 @@ lcov.info
 # Generated OpenAPI
 backend/lib/generated/
 
+# Firebase
+.firebase/
+firebase-debug.log*
+
 # Test artifacts
 test-results/
 

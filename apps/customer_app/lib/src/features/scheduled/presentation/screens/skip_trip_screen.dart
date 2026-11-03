@@ -22,13 +22,16 @@ class SkipTripScreen extends ConsumerWidget {
     final cardBg = isDark ? const Color(0xFF1C2420) : const Color(0xFFF6F8F7);
     final borderColor = isDark ? const Color(0xFF2E3D35) : GVColors.border;
 
-    final trip = state.selectedTrip ??
+    final trip =
+        state.selectedTrip ??
         (state.upcomingTrips.isNotEmpty ? state.upcomingTrips.first : null);
 
     final dateStr = trip?.scheduledDateStr ?? 'Tue, 7 Nov 2026';
     final timeStr = trip?.scheduledTimeStr ?? '8:00 AM';
-    final pickupStr = trip?.pickupLocation.address ?? 'Central Roundabout, Shaganu, Ogun State';
-    final destStr = trip?.destinationLocation.address ?? 'Remo High Street, Shaganu, Ogun State';
+    final pickupStr =
+        trip?.pickupLocation.address ?? '3, Ahmadu Bello Way, Kaduna';
+    final destStr =
+        trip?.destinationLocation.address ?? 'Bayero University, Kaduna';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -74,8 +77,11 @@ class SkipTripScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_rounded,
-                            size: 18, color: GVColors.primary),
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 18,
+                          color: GVColors.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           '$dateStr, $timeStr',
@@ -90,8 +96,11 @@ class SkipTripScreen extends ConsumerWidget {
                     const Divider(height: 20),
                     Row(
                       children: [
-                        Icon(Icons.location_on_rounded,
-                            size: 16, color: GVColors.primary),
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 16,
+                          color: GVColors.primary,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -107,8 +116,11 @@ class SkipTripScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded,
-                            size: 16, color: Colors.redAccent),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 16,
+                          color: Colors.redAccent,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -135,15 +147,16 @@ class SkipTripScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF8E6),
                   borderRadius: BorderRadius.circular(GVBorderRadius.md),
-                  border: Border.all(
-                    color: const Color(0xFFFFE082),
-                  ),
+                  border: Border.all(color: const Color(0xFFFFE082)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_rounded,
-                        color: Color(0xFFFFA000), size: 20),
+                    const Icon(
+                      Icons.info_rounded,
+                      color: Color(0xFFFFA000),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(

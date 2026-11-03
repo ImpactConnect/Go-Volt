@@ -1,3 +1,4 @@
+import 'package:app_models/app_models.dart';
 import 'package:equatable/equatable.dart';
 
 enum TicketPriority { normal, high, urgent }
@@ -17,19 +18,23 @@ class SupportTicketModel extends Equatable {
     required this.description,
     required this.createdAt,
     this.assignedAgentId,
+    this.serviceCategory = 'rides',
+    this.messages = const [],
   });
 
   final String id;
   final String ticketRef;
   final String customerName;
   final String riderName;
-  final String category; // 'Lost Item', 'Fare Dispute', 'App Bug', 'General'
+  final String category; // 'Lost Item', 'Fare Dispute', 'App Bug', 'General', 'Item Substitution'
   final TicketPriority priority;
   final TicketStatus status;
   final String subject;
   final String description;
   final DateTime createdAt;
   final String? assignedAgentId;
+  final String serviceCategory; // 'rides', 'parcel', 'market_errand', 'scheduled', 'wallet', 'safety', 'general'
+  final List<SupportTicketMessageDto> messages;
 
   SupportTicketModel copyWith({
     String? id,
@@ -43,6 +48,8 @@ class SupportTicketModel extends Equatable {
     String? description,
     DateTime? createdAt,
     String? assignedAgentId,
+    String? serviceCategory,
+    List<SupportTicketMessageDto>? messages,
   }) {
     return SupportTicketModel(
       id: id ?? this.id,
@@ -56,6 +63,8 @@ class SupportTicketModel extends Equatable {
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
       assignedAgentId: assignedAgentId ?? this.assignedAgentId,
+      serviceCategory: serviceCategory ?? this.serviceCategory,
+      messages: messages ?? this.messages,
     );
   }
 
@@ -72,6 +81,8 @@ class SupportTicketModel extends Equatable {
         description,
         createdAt,
         assignedAgentId,
+        serviceCategory,
+        messages,
       ];
 }
 

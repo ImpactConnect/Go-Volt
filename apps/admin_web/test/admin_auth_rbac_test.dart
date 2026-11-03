@@ -99,7 +99,7 @@ void main() {
 
   group('Admin Shell UI Tests', () {
     testWidgets('Sidebar filters modules dynamically based on active role', (tester) async {
-      tester.view.physicalSize = const Size(1440, 1200);
+      tester.view.physicalSize = const Size(1440, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
